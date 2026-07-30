@@ -1,0 +1,14 @@
+Data and Artificial Intelligence Internship
+
+Required qualifications:
+- Knowledge of Python and SQL.
+- Basic knowledge of Machine Learning and statistics.
+- Experience using Git or GitHub.
+
+Preferred qualifications:
+- Experience with Power BI.
+- Knowledge of AWS.
+- Experience with API development.
+
+Desired profile:
+Good communication, organization, teamwork, and willingness to learn.

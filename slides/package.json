@@ -1,0 +1,12 @@
+{
+  "name": "multi-agent-resume-analysis-slides",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Source code for the project presentation.",
+  "scripts": {
+    "build": "node create_deck.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.0"
+  }
+}

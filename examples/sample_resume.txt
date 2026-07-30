@@ -1,0 +1,15 @@
+Vinicius Mangueira
+Email: vinicius@example.com
+Phone: +55 83 99999-9999
+
+Education
+Bachelor's degree in Data Science and Artificial Intelligence at UFPB, expected graduation in 2028.
+
+Skills
+Python, SQL, Git, GitHub, Machine Learning, Pandas, NumPy, Power BI, statistics, and communication.
+
+Experience and Projects
+Built a clinic management system using Python and SQL.
+Created Power BI dashboards for data analysis.
+Developed an academic Machine Learning project involving classification and regression.
+Participated in a health project focused on data analysis and information organization.
