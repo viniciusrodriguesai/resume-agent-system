@@ -1,13 +1,26 @@
-Estágio em Ciência de Dados
+ESTÁGIO EM CIÊNCIA DE DADOS
 
 REQUISITOS OBRIGATÓRIOS
-É obrigatório estar cursando Ciência de Dados, Computação, Inteligência Artificial, Estatística ou área relacionada.
-Conhecimento obrigatório de Python, SQL, Pandas, NumPy, Scikit-learn, aprendizado de máquina e análise de dados.
-São necessárias comunicação, trabalho em equipe e resolução de problemas.
+- Estar cursando Ciência de Dados, Ciência da Computação, Inteligência Artificial, Estatística ou área relacionada.
+- Conhecimento de Python e SQL.
+- Experiência com Pandas, NumPy e Scikit-learn.
+- Conhecimento de machine learning e estatística.
+- Experiência com modelos de classificação e regressão.
+- Avaliação de modelos com precisão, recall e F1-score.
+- Conhecimento de Git e GitHub.
+- Inglês intermediário.
 
 RESPONSABILIDADES
-Analisar conjuntos de dados, limpar e preparar informações, desenvolver modelos preditivos, avaliar métricas e criar painéis.
-Colaborar com cientistas de dados, desenvolvedores e áreas de negócio.
+- Limpar e analisar conjuntos de dados.
+- Desenvolver modelos preditivos.
+- Criar gráficos, dashboards e relatórios.
+- Documentar código e colaborar com equipes de negócio.
 
-DIFERENCIAIS DESEJÁVEIS
-Power BI ou Tableau, PyTorch ou TensorFlow, API REST, Docker, AWS, PostgreSQL e inglês intermediário.
+REQUISITOS DESEJÁVEIS
+- Power BI ou Tableau.
+- PyTorch ou TensorFlow.
+- PostgreSQL.
+- Docker e Linux.
+- AWS.
+- FastAPI e APIs REST.
+- Implantação de modelos de machine learning.
