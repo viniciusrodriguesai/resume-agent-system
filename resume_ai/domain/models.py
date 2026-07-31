@@ -96,11 +96,13 @@ class CategoryScore(BaseModel):
 
 class ScoreSummary(BaseModel):
     overall_score: int
-    level: Literal["alta", "média", "baixa"]
+    level: Literal["excelente", "alta", "boa", "moderada", "baixa"]
     matched: int
     partial: int
     missing: int
     required_missing: int
+    desired_missing: int = 0
+    neutral_missing: int = 0
     categories: list[CategoryScore] = Field(default_factory=list)
     thresholds: dict[str, float] = Field(default_factory=dict)
     explanation: list[str] = Field(default_factory=list)
@@ -141,7 +143,7 @@ class AnalysisResult(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str = "ok"
-    version: str = "5.1.0"
+    version: str = "5.2.0"
     profile: str
     model_loaded: bool
     memory_mb: float | None = None

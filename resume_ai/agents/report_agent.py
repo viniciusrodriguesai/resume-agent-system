@@ -25,7 +25,7 @@ class ReportAgent:
                 "",
                 "## Resumo",
                 "",
-                f"Atendidos: **{result.score.matched}** · Parciais: **{result.score.partial}** · Ausentes: **{result.score.missing}**",
+                f"Correspondidos: **{result.score.matched}** · Parcialmente atendidos: **{result.score.partial}** · Desejáveis ausentes: **{result.score.desired_missing}** · Obrigatórios ausentes: **{result.score.required_missing}**",
                 "",
                 "## Evidências por requisito",
                 "",

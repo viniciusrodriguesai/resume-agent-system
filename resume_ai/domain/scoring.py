@@ -30,6 +30,8 @@ def calculate_score(matches: list[EvidenceMatch], strictness: str) -> ScoreSumma
     gain = 0.0
     required = 0
     required_missing = 0
+    desired_missing = 0
+    neutral_missing = 0
 
     for match in matches:
         match.status = classify(match.final_score, strictness)  # type: ignore[assignment]
@@ -45,6 +47,10 @@ def calculate_score(matches: list[EvidenceMatch], strictness: str) -> ScoreSumma
             required += 1
             if match.status == "missing":
                 required_missing += 1
+        elif match.requirement.priority == "desired" and match.status == "missing":
+            desired_missing += 1
+        elif match.requirement.priority == "neutral" and match.status == "missing":
+            neutral_missing += 1
 
     overall = round(100 * gain / total) if total else 0
     if required:
@@ -68,7 +74,16 @@ def calculate_score(matches: list[EvidenceMatch], strictness: str) -> ScoreSumma
     matched = sum(m.status == "matched" for m in matches)
     partial = sum(m.status == "partial" for m in matches)
     missing = sum(m.status == "missing" for m in matches)
-    level = "alta" if overall >= 82 else "média" if overall >= 62 else "baixa"
+    if overall >= 90:
+        level = "excelente"
+    elif overall >= 75:
+        level = "alta"
+    elif overall >= 60:
+        level = "boa"
+    elif overall >= 40:
+        level = "moderada"
+    else:
+        level = "baixa"
 
     explanation = [
         f"A nota usa pesos diferentes: obrigatório 1,00; desejável 0,45; neutro 0,20.",
@@ -86,6 +101,8 @@ def calculate_score(matches: list[EvidenceMatch], strictness: str) -> ScoreSumma
         partial=partial,
         missing=missing,
         required_missing=required_missing,
+        desired_missing=desired_missing,
+        neutral_missing=neutral_missing,
         categories=categories,
         thresholds=THRESHOLDS.get(strictness, THRESHOLDS["equilibrado"]),
         explanation=explanation,

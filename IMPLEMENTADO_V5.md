@@ -1,4 +1,4 @@
-# Escopo entregue na V5.1
+# Escopo entregue na V5.2
 
 ## Implementado e funcional localmente
 
