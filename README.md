@@ -1,24 +1,64 @@
-# Advanced Multi-Agent Resume and Job Analysis System
+# Professional Multi-Agent Resume AI
 
-A fully local multi-agent system that compares a resume with a job description,
-extracts evidence, calculates explainable compatibility scores, reviews its own
-analysis, and generates prioritized recommendations and downloadable reports.
+A local, multilingual, explainable system for comparing resumes with job
+descriptions. The application combines a real conditional agent graph,
+document parsing, privacy preprocessing, a local skill catalog, semantic
+retrieval, CrossEncoder reranking, evidence-based scoring, self-review,
+recommendations, reports, history, evaluation, tests, and GitHub Actions.
 
-## Main features
+## What makes this version stronger
 
-- Coordinator Agent controlling the complete workflow
-- Resume and job structure extraction
-- Local hybrid semantic matching
-- Evidence for every requirement
-- Required, desirable, and neutral priorities
-- Compatibility scores by category
-- Review Agent with a second-pass feedback loop
-- Prioritized recommendations
-- Agent confidence, timing, warnings, and execution trace
-- Markdown and JSON report downloads
-- No paid API and no API key
+- **LangGraph workflow:** agents run through a conditional graph, and the Review
+  Agent can send borderline cases back to the retrieval stage.
+- **Sentence Transformers:** a multilingual bi-encoder retrieves semantically
+  related resume evidence.
+- **CrossEncoder reranking:** the strongest retrieved passages are reranked for
+  better pairwise relevance.
+- **Docling support:** PDF and DOCX documents can be converted into structured
+  Markdown when Docling is installed.
+- **Automatic fallbacks:** the app still works without heavy AI packages by
+  using local lexical TF-IDF similarity, PyPDF, and python-docx.
+- **Privacy and fairness:** direct identifiers and selected sensitive lines are
+  removed before matching.
+- **Explainability:** every requirement shows its best resume evidence, score,
+  priority, status, and matching engine.
+- **SQLite history:** analyses are saved locally.
+- **ESCO-ready catalog:** the project includes a sample skill catalog and a
+  script for importing an official ESCO CSV into SQLite.
+- **Evaluation:** labeled examples can be evaluated with accuracy, precision,
+  recall, and F1.
+- **Continuous integration:** GitHub Actions runs tests on every push and pull
+  request.
 
-## Run in VS Code on Windows
+## Agent graph
+
+```text
+START
+  ↓
+Privacy and Fairness Agent
+  ↓
+Resume Structurer Agent
+  ↓
+Job Structurer Agent
+  ↓
+Semantic Retriever + CrossEncoder Reranker
+  ↓
+Explainable Scoring Agent
+  ↓
+Review Agent ── revise ──┐
+  │                       │
+  └── approve             └── back to retrieval
+          ↓
+Recommendation Agent
+          ↓
+Report Agent
+          ↓
+END
+```
+
+## Fast setup in VS Code
+
+Open this project folder in VS Code and run:
 
 ```powershell
 py -m venv .venv
@@ -27,13 +67,86 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-Then open:
+The basic version opens at:
 
 ```text
 http://localhost:8501
 ```
 
-You may also double-click `install_and_run.bat`.
+It works immediately with the lexical fallback.
+
+On Windows, you can also double-click:
+
+```text
+run.bat
+```
+
+## Install the complete local AI version
+
+The complete setup is larger because it installs document and transformer
+models:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements-full.txt
+python scripts\download_models.py
+python -m streamlit run app.py
+```
+
+Or double-click:
+
+```text
+install_full_ai.bat
+```
+
+The first model download requires internet access. After the models are cached,
+analysis runs locally without an API key.
+
+If a heavy dependency does not install on your current Python version, create
+the environment with Python 3.11 or 3.12:
+
+```powershell
+py -3.12 -m venv .venv
+```
+
+## Application modes
+
+### Full local AI
+
+Uses:
+
+- `paraphrase-multilingual-MiniLM-L12-v2`
+- `mmarco-mMiniLMv2-L12-H384-v1`
+- LangGraph
+- Docling
+
+### Automatic fallback
+
+Uses:
+
+- local skill aliases;
+- TF-IDF cosine similarity;
+- exact phrase matching;
+- PyPDF;
+- python-docx;
+- the same scoring, review, reporting, history, and UI.
+
+## Import a complete ESCO skills file
+
+Download an ESCO skills CSV from the official ESCO download page. Then run:
+
+```powershell
+python scripts\import_esco.py "C:\path	o\esco_skills.csv"
+```
+
+The script recognizes common label, alternative-label, and concept-URI column
+names and creates:
+
+```text
+data/esco.sqlite
+```
+
+Restart the app after importing.
 
 ## Run the demonstration
 
@@ -41,35 +154,79 @@ You may also double-click `install_and_run.bat`.
 python run_demo.py
 ```
 
-## Run the tests
+## Run tests
 
 ```powershell
-python -m pytest -q
+pytest -q
 ```
+
+or:
+
+```text
+run_tests.bat
+```
+
+## Evaluate matching quality
+
+The included example dataset uses the labels `matched`, `partial`, and
+`missing`.
+
+Fallback evaluation:
+
+```powershell
+python scripts\evaluate.py
+```
+
+Full-model evaluation:
+
+```powershell
+python scripts\evaluate.py --full-ai
+```
+
+Replace `examples/evaluation_labels.csv` with a larger manually labeled dataset
+for a valid academic experiment.
 
 ## Project structure
 
 ```text
 resume-agent-system/
-├── agents/
-├── services/
-├── utils/
-├── tests/
-├── examples/
-├── docs/
 ├── app.py
-├── pipeline.py
-├── run_demo.py
-└── requirements.txt
+├── resume_ai/
+│   ├── analyzer.py
+│   ├── catalog.py
+│   ├── config.py
+│   ├── documents.py
+│   ├── evaluation.py
+│   ├── privacy.py
+│   ├── profiles.py
+│   ├── reporting.py
+│   ├── scoring.py
+│   ├── semantic.py
+│   ├── state.py
+│   ├── storage.py
+│   └── text.py
+├── data/
+│   └── esco_sample_skills.csv
+├── examples/
+│   ├── sample_resume.txt
+│   ├── sample_job.txt
+│   └── evaluation_labels.csv
+├── scripts/
+│   ├── download_models.py
+│   ├── evaluate.py
+│   └── import_esco.py
+├── tests/
+├── docs/
+└── .github/workflows/tests.yml
 ```
 
-## Local AI method
+## Responsible-use limitation
 
-The matching engine combines canonical skill aliases, exact phrase matching,
-token overlap, local TF-IDF cosine similarity, weighted scoring, evidence
-extraction, and a review loop.
+This application is decision support, not an automatic hiring system. A human
+must review the evidence, candidate context, accessibility needs, possible
+biases, and the limitations of the models. The application must not be the sole
+basis for accepting or rejecting a candidate.
 
-## Ethical limitation
+## License
 
-This system must support, not replace, human evaluation. Recommendations must not
-invent skills or experience.
+MIT

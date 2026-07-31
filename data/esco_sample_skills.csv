@@ -1,0 +1,9 @@
+concept_uri,preferred_label,alternative_labels
+http://data.europa.eu/esco/skill/python,Python,python3|Python programming
+http://data.europa.eu/esco/skill/sql,SQL,structured query language|database querying
+http://data.europa.eu/esco/skill/machine-learning,machine learning,predictive modelling|predictive analytics
+http://data.europa.eu/esco/skill/data-analysis,data analysis,data analytics|analyse data|analise de dados
+http://data.europa.eu/esco/skill/statistics,statistics,statistical analysis|estatistica
+http://data.europa.eu/esco/skill/teamwork,teamwork,collaboration|team work|trabalho em equipe
+http://data.europa.eu/esco/skill/communication,communication,presentation skills|comunicacao
+http://data.europa.eu/esco/skill/cloud-computing,cloud computing,AWS|Azure|Google Cloud
