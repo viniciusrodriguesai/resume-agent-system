@@ -1,19 +1,29 @@
 # System Architecture
 
 ```text
-Resume ───────▶ Resume Agent ────────┐
-                                     ├──▶ Matching Agent ─▶ Recommendation Agent ─▶ Review Agent ─▶ Final response
-Job description ─▶ Job Agent ────────┘
+User
+  |
+  v
+Coordinator Agent
+  |
+  +--> Resume Agent
+  +--> Job Agent
+  +--> Experience Agent
+  +--> Semantic Matching Agent
+  +--> Review Agent
+  |       |
+  |       +--> revision requested --> Semantic Matching Agent (second pass)
+  +--> Recommendation Agent
+  +--> Report Agent
+  |
+  v
+Final explainable result
 ```
 
-## Responsibilities
+Each agent has a specialized responsibility, structured output, confidence,
+execution time, and warnings. The Review Agent can request a second matching
+pass, creating a feedback loop instead of a fixed one-way pipeline.
 
-- **Resume Agent:** extracts the candidate's skills and main information.
-- **Job Agent:** identifies required, desirable, and general skills.
-- **Matching Agent:** calculates a weighted compatibility score.
-- **Recommendation Agent:** generates practical suggestions.
-- **Review Agent:** consolidates the final response and reports warnings.
-
-## Communication model
-
-The project uses a sequential pipeline. Each agent produces a standardized `AgentResult`, which contains its name, summary, structured data, and warnings. The next agent consumes the relevant result instead of reading all raw inputs again.
+The project runs locally and combines a skill ontology, aliases, exact phrase
+detection, token overlap, TF-IDF cosine similarity, weighted scoring, evidence
+tracing, and deterministic review rules.

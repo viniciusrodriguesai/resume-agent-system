@@ -1,15 +1,13 @@
 from pathlib import Path
-
 from pipeline import run_pipeline
 
-BASE_DIR = Path(__file__).parent
-resume_text = (BASE_DIR / "examples" / "sample_resume.txt").read_text(encoding="utf-8")
-job_text = (BASE_DIR / "examples" / "sample_job.txt").read_text(encoding="utf-8")
+base = Path(__file__).resolve().parent
+resume = (base / "examples" / "sample_resume.txt").read_text(encoding="utf-8")
+job = (base / "examples" / "sample_job.txt").read_text(encoding="utf-8")
+results = run_pipeline(resume, job)
 
-results = run_pipeline(resume_text, job_text)
-
-print("=== FINAL RESULT ===")
+print(results["coordinator"].summary)
+print(results["matching"].summary)
 print(results["review"].data["final_answer"])
-print("\n=== AGENT EXECUTION TRACE ===")
-for stage, result in results.items():
-    print(f"{stage}: {result.agent_name} -> {result.summary}")
+print()
+print(results["report"].data["markdown_report"])

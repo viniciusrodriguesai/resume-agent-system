@@ -1,65 +1,32 @@
 # Presentation Script
 
-## Slide 1 — Title
+## Problem
+Keyword-only resume comparison misses equivalent expressions and does not explain
+why a candidate received a score.
 
-Introduce the topic: a multi-agent system that analyzes a resume and a job description.
+## Solution
+Specialized agents cooperate to extract resume information, structure job
+requirements, locate evidence, calculate scores, review the result, and produce
+recommendations and reports.
 
-Suggested speech:
+## Agents
+1. Coordinator Agent
+2. Resume Agent
+3. Job Agent
+4. Experience Agent
+5. Semantic Matching Agent
+6. Review Agent
+7. Recommendation Agent
+8. Report Agent
 
-> Our project uses agent-based programming to solve a common problem: understanding whether a resume matches a job opportunity.
+## Strongest agent-based feature
+The Review Agent may reject the first matching result. The Coordinator Agent then
+runs a second pass with adjusted thresholds.
 
-## Slide 2 — Problem
+## Explainability
+Every requirement receives a priority, category, status, similarity score, and
+resume evidence.
 
-Explain that candidates may struggle to interpret scattered job requirements.
-
-Suggested speech:
-
-> A job description may mix required qualifications, preferred skills, and general expectations. Our system organizes this information automatically.
-
-## Slide 3 — Solution idea
-
-Explain that each agent performs one part of the analysis.
-
-Suggested speech:
-
-> Instead of using one large block of code, the system distributes the work among specialized agents.
-
-## Slide 4 — Architecture
-
-Show the flow from the two inputs to the final response.
-
-Suggested speech:
-
-> The Resume Agent identifies candidate skills. The Job Agent identifies requirements. The Matching Agent then calculates compatibility, and the remaining agents generate and review recommendations.
-
-## Slide 5 — Implementation
-
-Present Python, Streamlit, pandas, and pdfplumber.
-
-Suggested speech:
-
-> The application was developed in Python with a simple Streamlit interface. It accepts pasted text or PDF, TXT, and Markdown files.
-
-## Slide 6 — Demonstration
-
-Run the application using the files in the `examples` directory.
-
-Suggested speech:
-
-> Here we have a sample resume and a sample internship. The system calculates the compatibility percentage and displays strengths, gaps, and recommendations.
-
-## Slide 7 — Expected result
-
-Show the score, matched skills, missing skills, and suggestions.
-
-Suggested speech:
-
-> The result is not only a score. It explains what was found and indicates what the candidate can improve.
-
-## Slide 8 — Conclusion
-
-Explain limitations and future improvements.
-
-Suggested speech:
-
-> The current version uses keywords, but its architecture can evolve to use embeddings, language models, and integrations with real platforms.
+## Limitation
+The system is deterministic and local. It supports human judgment but must not
+replace it.

@@ -1,62 +1,49 @@
+from __future__ import annotations
+import time
+from typing import Dict, List
 from agents.base_agent import AgentResult, BaseAgent
 
-
 class RecommendationAgent(BaseAgent):
-    """Transform the comparison into practical recommendations."""
-
     name = "Recommendation Agent"
 
-    def run(
-        self,
-        resume_result: AgentResult,
-        job_result: AgentResult,
-        matching_result: AgentResult,
-    ) -> AgentResult:
-        del resume_result, job_result
-
-        missing_required = matching_result.data.get("missing_required", [])
-        missing_desirable = matching_result.data.get("missing_desirable", [])
-        matched_required = matching_result.data.get("matched_required", [])
-        score = matching_result.data.get("score", 0)
-
+    def run(self, resume_result: AgentResult, matching_result: AgentResult) -> AgentResult:
+        started = time.perf_counter()
+        matches: List[Dict[str, object]] = matching_result.data.get("matches", [])
         recommendations = []
 
-        if matched_required:
-            recommendations.append(
-                "Highlight the skills that already match the position: "
-                + ", ".join(matched_required[:6])
-                + "."
-            )
+        required_missing = [i for i in matches if i.get("priority") == "required" and i.get("status") == "missing"]
+        required_partial = [i for i in matches if i.get("priority") == "required" and i.get("status") == "partial"]
+        desirable_missing = [i for i in matches if i.get("priority") == "desirable" and i.get("status") == "missing"]
 
-        if missing_required:
-            recommendations.append(
-                "Study or provide stronger evidence for the missing required skills: "
-                + ", ".join(missing_required[:6])
-                + "."
-            )
-
-        if missing_desirable:
-            recommendations.append(
-                "As an additional improvement, gain experience with: "
-                + ", ".join(missing_desirable[:6])
-                + "."
-            )
-
-        if score < 60:
-            recommendations.append(
-                "Apply only after adapting the resume and reviewing the main requirements."
-            )
-        elif score < 80:
-            recommendations.append(
-                "The application is reasonable, but the resume should be tailored more closely to the job description."
-            )
-        else:
-            recommendations.append(
-                "The position is a strong match; emphasize concrete projects, actions, and measurable results."
-            )
+        for item in required_missing[:5]:
+            recommendations.append({
+                "priority": "High",
+                "type": "Skill gap",
+                "action": f"Build real evidence for the required item '{item['label']}'. Add it only after gaining the skill or completing a relevant project.",
+            })
+        for item in required_partial[:5]:
+            recommendations.append({
+                "priority": "High",
+                "type": "Resume evidence",
+                "action": f"Strengthen the resume evidence for '{item['label']}'. Use a concrete action, technology, and measurable result.",
+            })
+        for item in desirable_missing[:4]:
+            recommendations.append({
+                "priority": "Medium",
+                "type": "Development",
+                "action": f"Consider studying or practicing '{item['label']}' because it appears as a desirable qualification.",
+            })
+        if resume_result.data.get("contact", {}).get("email") == "not identified":
+            recommendations.append({"priority": "High", "type": "Resume format", "action": "Add a professional email address to the resume."})
+        if not resume_result.data.get("projects"):
+            recommendations.append({"priority": "Medium", "type": "Projects", "action": "Add a projects section with the problem, technologies, your contribution, and the result."})
+        if not recommendations:
+            recommendations.append({"priority": "Low", "type": "Tailoring", "action": "Tailor the summary and project bullets to the job while preserving only truthful information."})
 
         return AgentResult(
             agent_name=self.name,
-            summary=f"The agent generated {len(recommendations)} recommendations.",
+            summary=f"Generated {len(recommendations)} prioritized recommendations.",
             data={"recommendations": recommendations},
+            confidence=.92,
+            elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
         )
