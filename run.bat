@@ -5,6 +5,5 @@ if not exist .venv (
 )
 call .venv\Scripts\activate.bat
 python -m pip install -r requirements.txt
-pytest -q
-pause
+python -m streamlit run app.py
 endlocal

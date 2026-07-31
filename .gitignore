@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .streamlit/
+data/*.sqlite
 .DS_Store
 Thumbs.db
 *.log

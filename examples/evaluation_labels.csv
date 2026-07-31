@@ -1,0 +1,7 @@
+requirement,evidence,expected
+Python,Developed a clinic management system using Python and SQL.,matched
+AWS,Developed a clinic management system using Python and SQL.,missing
+data analysis,Analyzed healthcare datasets and built predictive machine learning models.,matched
+communication,Communicated findings and collaborated with a multidisciplinary team.,matched
+Docker,Implemented relational database queries and data preprocessing pipelines.,missing
+predictive models,Built classification models with scikit-learn.,partial

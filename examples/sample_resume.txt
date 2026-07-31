@@ -1,5 +1,6 @@
 Vinicius Mangueira
 vinicius@example.com
+João Pessoa, Brazil
 
 Data Science and Artificial Intelligence student at the Federal University of Paraíba.
 
@@ -16,3 +17,4 @@ Created Power BI dashboards to support healthcare data analysis.
 PROJECTS
 Built classification models with scikit-learn.
 Implemented relational database queries and data preprocessing pipelines.
+Processed more than 10,000 records in a data quality project.

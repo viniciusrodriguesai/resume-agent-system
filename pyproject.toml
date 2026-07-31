@@ -1,0 +1,9 @@
+[project]
+name = "professional-multi-agent-resume-ai"
+version = "3.0.0"
+description = "Local explainable multi-agent resume and job matching system"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
