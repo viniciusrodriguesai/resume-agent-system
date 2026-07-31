@@ -6,7 +6,7 @@
 
 Compare requisitos, encontre evidências no currículo, identifique lacunas e gere recomendações sem depender de APIs pagas e sem enviar os documentos para serviços externos.
 
-[![Version](https://img.shields.io/badge/version-5.1.0-5B5BD6)](https://github.com/viniciusrodriguesai/resume-agent-system)
+[![Version](https://img.shields.io/badge/version-5.2.0-5B5BD6)](https://github.com/viniciusrodriguesai/resume-agent-system)
 [![Python](https://img.shields.io/badge/Python-3.11%20%E2%80%93%203.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![CI](https://github.com/viniciusrodriguesai/resume-agent-system/actions/workflows/ci.yml/badge.svg)](https://github.com/viniciusrodriguesai/resume-agent-system/actions/workflows/ci.yml)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
@@ -42,7 +42,7 @@ Em vez de retornar apenas uma porcentagem, o sistema mostra:
 - um relatório de privacidade;
 - relatórios para download em Markdown, JSON e CSV.
 
-A versão atual é a **5.1.0** e foi projetada para funcionar localmente em computadores com CPU, mantendo opções mais pesadas para máquinas com maior capacidade.
+A versão atual é a **5.2.0** e foi projetada para funcionar localmente em computadores com CPU, mantendo opções mais pesadas para máquinas com maior capacidade.
 
 > [!IMPORTANT]
 > O sistema oferece apoio à análise humana. Ele não deve ser usado como único critério para selecionar, rejeitar ou classificar pessoas.
@@ -165,20 +165,18 @@ O fluxo é dividido em agentes especializados:
 - integração contínua com GitHub Actions;
 - atualizações automatizadas com Dependabot.
 
-## O que mudou na V5.1
+## O que mudou na V5.2
 
-- evidências agora são curtas e específicas;
-- marcadores técnicos de anonimização não aparecem na interface;
-- requisitos compostos exigem cobertura adequada das competências;
-- embeddings do currículo são calculados uma vez e reutilizados;
-- consultas são processadas em lote;
-- cache de embeddings é mantido durante a sessão;
-- filtros, tabelas, métricas e status foram padronizados em português;
-- o painel de privacidade ficou mais legível;
-- a opção **Enviar arquivos** foi corrigida;
-- textos introdutórios da vaga deixaram de ser tratados como requisitos;
-- tempos dos agentes passaram a ser exibidos em unidades legíveis;
-- o cache de análise passou a considerar a versão do sistema.
+- classificação mais clara em baixa, moderada, boa, alta e excelente compatibilidade;
+- correção do texto de nível exibido no cartão principal;
+- cards renomeados para Correspondidos e Parcialmente atendidos;
+- separação visual entre requisitos desejáveis e obrigatórios ausentes;
+- aviso positivo quando todos os requisitos obrigatórios possuem evidência;
+- resumo automático da compatibilidade;
+- destaque dos principais pontos fortes e das principais lacunas;
+- cartão principal mais compacto;
+- relatórios atualizados com os novos indicadores;
+- cache de análises versionado para impedir reutilização de resultados antigos.
 
 ## Como funciona
 
@@ -553,13 +551,13 @@ O status atual aparece no badge no início deste README.
 Construa a imagem:
 
 ```powershell
-docker build -t resume-match-ai:5.1 .
+docker build -t resume-match-ai:5.2 .
 ```
 
 Execute:
 
 ```powershell
-docker run --rm -p 8501:8501 resume-match-ai:5.1
+docker run --rm -p 8501:8501 resume-match-ai:5.2
 ```
 
 Abra:

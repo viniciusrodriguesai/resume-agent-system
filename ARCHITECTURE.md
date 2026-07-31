@@ -1,4 +1,4 @@
-# Arquitetura V5.1
+# Arquitetura V5.2
 
 ```text
 Streamlit ─┐
@@ -17,4 +17,4 @@ FastAPI ───┘                                  │
 O serviço de aplicação não importa Streamlit nem FastAPI. Isso permite trocar a interface sem reescrever o pipeline.
 
 
-Na V5.1, o motor de evidências codifica os trechos do currículo uma única vez, processa as consultas em lote e reutiliza embeddings durante a sessão.
+Na V5.2, o motor de evidências codifica os trechos do currículo uma única vez, processa as consultas em lote e reutiliza embeddings durante a sessão.

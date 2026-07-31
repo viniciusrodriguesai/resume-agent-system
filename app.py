@@ -39,7 +39,7 @@ ENTITY_LABELS = {
 }
 
 st.set_page_config(
-    page_title="Resume Match AI V5.1",
+    page_title="Resume Match AI V5.2",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -75,17 +75,120 @@ def format_duration(duration_ms: float) -> str:
     return f"{duration_ms:.2f} ms".replace(".", ",")
 
 
-def score_ring(score: int, level: str) -> None:
+def compatibility_label(score: int) -> str:
+    if score >= 90:
+        return "Compatibilidade excelente"
+    if score >= 75:
+        return "Alta compatibilidade"
+    if score >= 60:
+        return "Boa compatibilidade"
+    if score >= 40:
+        return "Compatibilidade moderada"
+    return "Baixa compatibilidade"
+
+
+def score_ring(score: int) -> None:
     degrees = score * 3.6
+    label = compatibility_label(score)
     st.markdown(
         f"""
         <div class="score-panel">
           <div class="score-ring" style="background:conic-gradient(#5b5bd6 {degrees}deg,#e7e8ef 0deg)">
             <div class="score-inner"><strong>{score}%</strong><span>compatibilidade</span></div>
           </div>
-          <div><span class="chip">Nível {html.escape(level)}</span><h2>Análise explicável e local</h2><p>A nota considera prioridade, evidência lexical, similaridade semântica e cobertura das competências exigidas.</p></div>
+          <div class="score-copy">
+            <span class="chip">{html.escape(label)}</span>
+            <h2>Análise explicável e local</h2>
+            <p>A nota considera prioridade, evidência lexical, similaridade semântica e cobertura das competências exigidas.</p>
+          </div>
         </div>
         """,
+        unsafe_allow_html=True,
+    )
+
+
+def concise_requirement(text: str, max_chars: int = 54) -> str:
+    cleaned = text.strip().rstrip(".;:")
+    prefixes = (
+        "experiência com ",
+        "experiencia com ",
+        "conhecimento de ",
+        "conhecimento em ",
+        "familiaridade com ",
+        "domínio de ",
+        "dominio de ",
+        "capacidade de ",
+    )
+    lowered = cleaned.casefold()
+    for prefix in prefixes:
+        if lowered.startswith(prefix):
+            cleaned = cleaned[len(prefix):].strip()
+            break
+    if len(cleaned) > max_chars:
+        return cleaned[: max_chars - 1].rstrip() + "…"
+    return cleaned
+
+
+def top_requirement_labels(result: AnalysisResult, status: str, *, priority: str | None = None, limit: int = 4) -> list[str]:
+    candidates = [
+        match
+        for match in result.matches
+        if match.status == status and (priority is None or match.requirement.priority == priority)
+    ]
+    candidates.sort(key=lambda item: item.final_score, reverse=status != "missing")
+    labels: list[str] = []
+    for match in candidates:
+        label = concise_requirement(match.requirement.text)
+        if label and label not in labels:
+            labels.append(label)
+        if len(labels) == limit:
+            break
+    return labels
+
+
+def render_result_summary(result: AnalysisResult) -> None:
+    score = result.score.overall_score
+    desired_missing = result.score.desired_missing
+    required_missing = result.score.required_missing
+
+    if required_missing == 0:
+        st.success("Todos os requisitos obrigatórios possuem alguma evidência no currículo.")
+    else:
+        st.warning(
+            f"{required_missing} requisito(s) obrigatório(s) não possuem evidência suficiente e precisam de revisão."
+        )
+
+    if score >= 75:
+        opening = "O currículo apresenta alta compatibilidade com a vaga."
+    elif score >= 60:
+        opening = "O currículo apresenta boa compatibilidade com a vaga."
+    elif score >= 40:
+        opening = "O currículo apresenta compatibilidade moderada com a vaga."
+    else:
+        opening = "O currículo apresenta baixa compatibilidade com a vaga."
+
+    if desired_missing:
+        detail = f"As principais oportunidades de melhoria estão em {desired_missing} requisito(s) desejável(is) ainda ausente(s)."
+    elif required_missing == 0:
+        detail = "Não foram identificadas lacunas obrigatórias ou desejáveis totalmente ausentes."
+    else:
+        detail = "Priorize primeiro os requisitos obrigatórios sem evidência."
+    st.info(f"{opening} {detail}")
+
+    strengths = top_requirement_labels(result, "matched", limit=4)
+    gaps = top_requirement_labels(result, "missing", priority="desired", limit=4)
+    if not gaps:
+        gaps = top_requirement_labels(result, "missing", limit=4)
+
+    left, right = st.columns(2)
+    strengths_text = " · ".join(html.escape(item) for item in strengths) or "Nenhum ponto forte destacado ainda."
+    gaps_text = " · ".join(html.escape(item) for item in gaps) or "Nenhuma lacuna principal identificada."
+    left.markdown(
+        f'<div class="insight-card strength-card"><span>Pontos fortes</span><strong>{strengths_text}</strong></div>',
+        unsafe_allow_html=True,
+    )
+    right.markdown(
+        f'<div class="insight-card gap-card"><span>Lacunas principais</span><strong>{gaps_text}</strong></div>',
         unsafe_allow_html=True,
     )
 
@@ -192,7 +295,7 @@ def render_agents(result: AnalysisResult) -> None:
 
 
 def render_result(result: AnalysisResult, service: ResumeAnalysisService) -> None:
-    score_ring(result.score.overall_score, result.score.level)
+    score_ring(result.score.overall_score)
     total_ms = result.timings_ms.get("total", 0.0)
     main_stage = max(
         ((name, value) for name, value in result.timings_ms.items() if name != "total"),
@@ -212,15 +315,16 @@ def render_result(result: AnalysisResult, service: ResumeAnalysisService) -> Non
 
     cols = st.columns(5)
     values = [
-        ("Atendidos", result.score.matched),
-        ("Parciais", result.score.partial),
-        ("Ausentes", result.score.missing),
+        ("Correspondidos", result.score.matched),
+        ("Parcialmente atendidos", result.score.partial),
+        ("Desejáveis ausentes", result.score.desired_missing),
         ("Obrigatórios ausentes", result.score.required_missing),
-        ("Tempo total", format_duration(total_ms)),
+        ("Tempo de análise", format_duration(total_ms)),
     ]
     for column, (label, value) in zip(cols, values):
         column.metric(label, value)
     st.caption(f"Principal etapa nesta execução: {stage_labels.get(main_stage, main_stage)}.")
+    render_result_summary(result)
 
     tabs = st.tabs(["Visão geral", "Evidências", "Recomendações", "Privacidade", "Agentes", "Exportar"])
     with tabs[0]:
@@ -307,7 +411,7 @@ def main() -> None:
     st.markdown(
         """
         <div class="hero">
-          <div><span class="eyebrow">V5.1 · LOCAL · CÓDIGO ABERTO</span><h1>IA de Correspondência de Currículos</h1><p>Plataforma multiagente para comparar currículos e vagas com evidências, privacidade e explicabilidade.</p></div>
+          <div><span class="eyebrow">V5.2 · LOCAL · CÓDIGO ABERTO</span><h1>IA de Correspondência de Currículos</h1><p>Plataforma multiagente para comparar currículos e vagas com evidências, privacidade e explicabilidade.</p></div>
           <div class="hero-badges"><span>Otimizado para CPU</span><span>API local com FastAPI</span><span>Fallback totalmente offline</span></div>
         </div>
         """,

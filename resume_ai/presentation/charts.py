@@ -29,7 +29,7 @@ def category_chart(result: AnalysisResult) -> go.Figure:
 
 def status_chart(result: AnalysisResult) -> go.Figure:
     figure = go.Figure(go.Pie(
-        labels=["Atendidos", "Parciais", "Ausentes"],
+        labels=["Correspondidos", "Parcialmente atendidos", "Ausentes"],
         values=[result.score.matched, result.score.partial, result.score.missing],
         hole=0.62,
         textinfo="label+value",

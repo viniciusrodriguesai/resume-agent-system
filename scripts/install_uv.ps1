@@ -4,4 +4,4 @@ uv python install 3.11
 uv venv --python 3.11
 .\.venv\Scripts\Activate.ps1
 uv pip install -r requirements-ai.txt
-Write-Host "Ambiente V5.1 instalado com uv." -ForegroundColor Green
+Write-Host "Ambiente V5.2 instalado com uv." -ForegroundColor Green
