@@ -13,6 +13,7 @@ Compare requisitos, encontre evidências no currículo, identifique lacunas e ge
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 [![Local First](https://img.shields.io/badge/AI-local--first-111827)](#privacidade-e-segurança)
+[![Academic Project](https://img.shields.io/badge/projeto-acad%C3%AAmico-Programa%C3%A7%C3%A3o%20com%20Agentes-7C3AED)](#contexto-acad%C3%AAmico)
 
 [Visão geral](#visão-geral) ·
 [Recursos](#principais-recursos) ·
@@ -45,6 +46,47 @@ A versão atual é a **5.1.0** e foi projetada para funcionar localmente em comp
 
 > [!IMPORTANT]
 > O sistema oferece apoio à análise humana. Ele não deve ser usado como único critério para selecionar, rejeitar ou classificar pessoas.
+
+
+## Contexto acadêmico
+
+Este projeto foi desenvolvido para a disciplina **Programação com Agentes**, ministrada pelo professor **Andrei de Araujo Formiga**.
+
+A proposta da disciplina é aprender a programar melhor com o apoio de agentes de inteligência artificial, usando a IA não apenas para gerar trechos isolados de código, mas como parte ativa de todo o processo de desenvolvimento de software.
+
+No projeto, os agentes de IA foram utilizados para apoiar atividades como:
+
+- levantamento e refinamento de requisitos;
+- definição da arquitetura;
+- implementação de funcionalidades;
+- revisão e refatoração de código;
+- criação de testes;
+- identificação de erros;
+- melhoria da documentação;
+- análise de segurança;
+- organização do projeto para apresentação e evolução futura.
+
+O objetivo acadêmico não é substituir o aprendizado de programação, mas desenvolver a capacidade de:
+
+- formular instruções técnicas claras;
+- avaliar criticamente código produzido por IA;
+- validar resultados;
+- detectar erros e inconsistências;
+- compreender decisões de arquitetura;
+- melhorar código de forma iterativa;
+- usar agentes como ferramentas de engenharia de software.
+
+Este repositório representa, portanto, tanto o resultado funcional do sistema quanto o processo de aprendizagem sobre desenvolvimento assistido por agentes.
+
+### Informações da disciplina
+
+| Item | Informação |
+|---|---|
+| Disciplina | Programação com Agentes |
+| Professor | Andrei de Araujo Formiga |
+| Tipo de trabalho | Projeto final |
+| Tema | Sistema multiagente para análise de currículos e vagas |
+| Objetivo acadêmico | Aprender a programar e desenvolver software de forma mais eficiente com agentes de IA |
 
 ## Problema
 
@@ -644,9 +686,11 @@ Inclua:
 
 Distribuído sob a licença MIT. Consulte [LICENSE](LICENSE).
 
-## Autor
+## Autor e orientação acadêmica
 
-Desenvolvido por **Vinicius Mangueira**.
+Desenvolvido por **Vinicius Mangueira** como projeto da disciplina **Programação com Agentes**.
+
+Professor da disciplina: **Andrei de Araujo Formiga**.
 
 GitHub: [@viniciusrodriguesai](https://github.com/viniciusrodriguesai)
 
