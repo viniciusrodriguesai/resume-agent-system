@@ -1,120 +1,67 @@
-# Analisador Multiagente de Currículos e Vagas — V4
+# Resume Match AI V5
 
-Sistema local, multilíngue e explicável para comparar currículos com descrições de vagas.
-A interface, os relatórios e a documentação estão em português.
+Plataforma local e open source para comparar currículo e vaga com **agentes tipados, privacidade antes dos embeddings, evidências por requisito, pontuação explicável, FastAPI, Streamlit, testes e fallback offline**.
 
-## O que mudou na V4
+## O que foi implementado
 
-- Orquestração por grafo com LangGraph e rota condicional de revisão.
-- Recuperação semântica multilíngue com BGE-M3.
-- Reranqueamento de evidências com BGE Reranker v2 M3.
-- Leitura estruturada de PDF e DOCX com Docling.
-- Anonimização de dados pessoais com Microsoft Presidio.
-- Catálogo local de competências preparado para importar o ESCO.
-- Combinação de embeddings, TF-IDF e RapidFuzz.
-- Evidência textual para cada requisito da vaga.
-- Pontuação por categoria, prioridade e criticidade.
-- Agente revisor que pode solicitar uma segunda passagem.
-- Histórico local em SQLite.
-- Exportação em Markdown, JSON e CSV.
-- Avaliação experimental com precisão, recall, F1 e matriz de confusão.
-- Testes da lógica e da interface Streamlit.
-- GitHub Actions para testar cada push.
+- núcleo Python desacoplado do frontend;
+- modelos Pydantic para entradas, perfis, evidências, pontuação e relatórios;
+- perfis `demo`, `balanced` e `complete`;
+- MiniLM/E5 em ONNX quando instalados e TF-IDF + RapidFuzz como fallback;
+- reranker opcional aplicado somente aos melhores candidatos;
+- anonimização pt-BR antes de embeddings, cache e logs;
+- upload seguro de PDF, DOCX e TXT com limite de 10 MB e validação de assinatura;
+- parsing com pypdf/python-docx e Docling opcional;
+- cache local por hash e histórico SQLite sem documentos brutos;
+- interface Streamlit com gráficos Plotly e exportação Markdown/JSON/CSV;
+- API FastAPI com `/health`, `/v1/analyze`, `/v1/profiles` e `/metrics`;
+- Docker, Compose, GitHub Actions, Dependabot, Ruff, mypy, pytest e pip-audit;
+- testes opcionais de acessibilidade com Playwright + axe-core.
 
-## Agentes
-
-1. **Agente de Privacidade e Justiça** — remove dados pessoais antes da comparação.
-2. **Agente de Currículo** — estrutura competências, formação, experiência e projetos.
-3. **Agente de Vaga** — identifica requisitos obrigatórios, desejáveis e responsabilidades.
-4. **Agente de Recuperação e Reranqueamento** — encontra as melhores evidências no currículo.
-5. **Agente de Pontuação Explicável** — calcula a compatibilidade geral e por categoria.
-6. **Agente Revisor e Auditor** — verifica inconsistências e pode solicitar nova busca.
-7. **Agente de Recomendações** — gera ações priorizadas sem inventar experiências.
-8. **Agente de Relatório** — produz os arquivos finais.
-
-## Instalação recomendada no VS Code
-
-### Modo base
-
-Funciona sem baixar modelos grandes. Utiliza TF-IDF e RapidFuzz.
+## Instalação recomendada no seu notebook
 
 ```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
+cd C:/Users/vinic/resume-agent-system
+py -3.11 -m venv .venv
+./.venv/Scripts/Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-ai.txt
+python scripts\preload_models.py --profile demo
 python -m streamlit run app.py
 ```
 
-### Modo de IA completa
+Ou execute `install_demo.bat` e depois `run_demo.bat`.
 
-Instala Docling, Presidio, BGE-M3 e o reranker multilíngue.
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements-full.txt
-python scriptsaixar_modelos.py
-python -m streamlit run app.py
-```
-
-A primeira execução pode demorar porque os modelos são baixados. Depois eles ficam no cache local.
-
-## Atalhos no Windows
-
-- `instalar_base.bat` — instala o modo base e inicia.
-- `instalar_ia_completa.bat` — instala a IA completa, baixa os modelos e inicia.
-- `executar.bat` — inicia uma instalação já pronta.
-- `testar.bat` — executa os testes.
-
-## Testar
+## API local
 
 ```powershell
-python -m pytest -q
+./.venv/Scripts/Activate.ps1
+python -m uvicorn api.main:app --reload
 ```
 
-## Executar a demonstração
+Documentação automática: `http://127.0.0.1:8000/docs`.
+
+## Testes
 
 ```powershell
-python run_demo.py
+python -m pip install -r requirements-dev.txt
+python -m pytest
+python -m ruff check .
+python -m pip_audit -r requirements.txt
 ```
 
-## Importar o ESCO
+## Perfis
 
-Baixe um pacote CSV oficial do ESCO e execute:
+| Perfil | Modelo | Reranker | Parser avançado | Uso |
+|---|---|---|---|---|
+| Demo | MiniLM ONNX | Não | Não | apresentação e CPU |
+| Balanced | E5-small ONNX | top 3 | Não | qualidade e velocidade |
+| Complete | BGE-M3 | BGE | Docling + Presidio | máquina mais forte |
 
-```powershell
-python scripts\importar_esco.py caminho\para\skills_pt.csv
-```
+## Privacidade
 
-A aplicação passará a utilizar o catálogo importado no lugar da amostra local.
+O currículo é anonimizado antes da busca semântica. O histórico guarda somente metadados, nota e tempos. Nenhum texto bruto é enviado para APIs externas.
 
-## Avaliar cientificamente
+## Limitação
 
-```powershell
-python scriptsvaliar_dataset.py data\dataset_avaliacao_exemplo.csv
-```
-
-O script calcula relatório de classificação e matriz de confusão.
-
-## Estrutura
-
-```text
-resume-agent-system-v4-portugues/
-├── app.py
-├── resume_v4/
-│   ├── agentes/
-│   ├── services/
-│   ├── utils/
-│   └── workflow.py
-├── data/
-├── docs/
-├── examples/
-├── scripts/
-├── tests/
-├── requirements.txt
-└── requirements-full.txt
-```
-
-## Limitação ética
-
-O sistema é uma ferramenta de apoio. Não deve tomar decisões automáticas de contratação nem utilizar nome, contato, localização, idade, deficiência ou outros atributos pessoais para pontuar candidatos.
+A ferramenta apoia revisão humana. Ela não deve selecionar, rejeitar ou classificar pessoas automaticamente sem supervisão e validação de viés.

@@ -1,21 +1,22 @@
-Vinicius Mangueira
-vinicius@example.com
-João Pessoa, Paraíba
+VINICIUS MANGUEIRA
+vinicius.teste@example.com | (83) 99999-9999 | João Pessoa, PB
 
 RESUMO
-Estudante de Ciência de Dados e Inteligência Artificial da Universidade Federal da Paraíba, com experiência em Python, SQL, análise de dados, aprendizado de máquina e projetos de tecnologia em saúde.
+Estudante de Ciência de Dados e Inteligência Artificial na UFPB, com experiência acadêmica em Python, SQL, análise de dados e machine learning.
 
 FORMAÇÃO
-Bacharelado em Ciência de Dados e Inteligência Artificial — UFPB — conclusão prevista para 2028.
-
-COMPETÊNCIAS
-Python, SQL, Pandas, NumPy, Scikit-learn, aprendizado de máquina, estatística, análise de dados, Power BI, Git, GitHub, PyTorch, comunicação e trabalho em equipe.
+Bacharelado em Ciência de Dados e Inteligência Artificial — UFPB — conclusão prevista em 2028.
 
 EXPERIÊNCIA
-Atuei em projeto de pesquisa em saúde com equipe multidisciplinar, organizando dados e comunicando resultados.
-Desenvolvi um sistema de gestão de clínica usando Python e SQL.
-Criei painéis no Power BI para apoiar decisões orientadas por dados.
+PET-Saúde — Assistente de pesquisa e ensino.
+- Colaborei com equipes multidisciplinares da área da saúde.
+- Organizei informações e apoiei análises de dados para projetos de saúde.
 
 PROJETOS
-Construí modelos de classificação e regressão com Scikit-learn.
-Implementei limpeza, preparação e visualização de dados com Pandas, NumPy e Matplotlib.
+Sistema de gestão de clínica desenvolvido com Python, SQL e SQLite, incluindo cadastro de pacientes e agendamentos.
+Projeto de machine learning com Pandas, NumPy e Scikit-learn, usando precisão, recall e F1-score.
+Dashboard de indicadores desenvolvido no Power BI.
+
+HABILIDADES
+Python, SQL, Pandas, NumPy, Scikit-learn, PyTorch, Estatística, Power BI, Matplotlib, Git e GitHub.
+Inglês intermediário. Comunicação, trabalho em equipe e resolução de problemas.
