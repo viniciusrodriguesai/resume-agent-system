@@ -1,132 +1,75 @@
-# Multi-Agent Resume and Job Analysis System
+# Advanced Multi-Agent Resume and Job Analysis System
 
-Final project for an Agent-Based Programming course.
+A fully local multi-agent system that compares a resume with a job description,
+extracts evidence, calculates explainable compatibility scores, reviews its own
+analysis, and generates prioritized recommendations and downloadable reports.
 
-## Overview
+## Main features
 
-The system receives a resume and a job description. Five specialized agents cooperate to identify skills, calculate compatibility, detect skill gaps, and generate practical recommendations.
+- Coordinator Agent controlling the complete workflow
+- Resume and job structure extraction
+- Local hybrid semantic matching
+- Evidence for every requirement
+- Required, desirable, and neutral priorities
+- Compatibility scores by category
+- Review Agent with a second-pass feedback loop
+- Prioritized recommendations
+- Agent confidence, timing, warnings, and execution trace
+- Markdown and JSON report downloads
+- No paid API and no API key
 
-## Agents
+## Run in VS Code on Windows
 
-1. **Resume Agent:** extracts skills, education, contact information, and experience.
-2. **Job Agent:** identifies required, desirable, and general skills.
-3. **Matching Agent:** calculates the compatibility score and skill gaps.
-4. **Recommendation Agent:** generates practical improvement suggestions.
-5. **Review Agent:** consolidates and validates the final response.
-
-## Features
-
-- Paste resume and job-description text directly into the application.
-- Upload `.pdf`, `.txt`, or `.md` files.
-- View the compatibility percentage.
-- See matched and missing skills.
-- Receive personalized recommendations.
-- Inspect the execution trace of every agent.
-
-## Installation
-
-Create a virtual environment:
-
-```bash
-python -m venv .venv
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
 ```
 
-Activate it on Windows:
+Then open:
 
-```bash
-.venv\Scripts\activate
+```text
+http://localhost:8501
 ```
 
-Activate it on Linux or macOS:
+You may also double-click `install_and_run.bat`.
 
-```bash
-source .venv/bin/activate
-```
+## Run the demonstration
 
-Install the dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Running the application
-
-Start the Streamlit interface:
-
-```bash
-streamlit run app.py
-```
-
-Run the terminal demonstration:
-
-```bash
+```powershell
 python run_demo.py
 ```
 
-## Input
+## Run the tests
 
-The system accepts:
-
-- Text pasted manually.
-- `.pdf`, `.txt`, or `.md` files.
-
-## Output
-
-The system displays:
-
-- Compatibility percentage and level.
-- Required and desirable skills that were matched.
-- Required and desirable skills that are missing.
-- Practical recommendations.
-- The complete execution trace.
+```powershell
+python -m pytest -q
+```
 
 ## Project structure
 
 ```text
-resume-analysis-multi-agent-system/
+resume-agent-system/
+├── agents/
+├── services/
+├── utils/
+├── tests/
+├── examples/
+├── docs/
 ├── app.py
 ├── pipeline.py
 ├── run_demo.py
-├── requirements.txt
-├── agents/
-├── utils/
-├── examples/
-├── docs/
-└── slides/
+└── requirements.txt
 ```
 
-## Presentation
+## Local AI method
 
-The English PowerPoint presentation is included as:
+The matching engine combines canonical skill aliases, exact phrase matching,
+token overlap, local TF-IDF cosine similarity, weighted scoring, evidence
+extraction, and a review loop.
 
-```text
-Multi_Agent_Resume_Analysis_Presentation.pptx
-```
+## Ethical limitation
 
-The editable presentation source is available in the `slides/` directory. To rebuild it:
-
-```bash
-cd slides
-npm install
-npm run build
-```
-
-## Matching method
-
-The compatibility score uses weighted categories:
-
-- Required skills: **65%**
-- Desirable skills: **25%**
-- General skills: **10%**
-
-## Limitations
-
-The current version uses keyword matching. It demonstrates a clear multi-agent architecture, but it does not fully understand context, synonyms, or the quality of a candidate's experience.
-
-## Future improvements
-
-- Semantic comparison with embeddings.
-- Integration with large language models.
-- Integration with real job platforms.
-- Automatic resume rewriting.
-- Application-history tracking.
+This system must support, not replace, human evaluation. Recommendations must not
+invent skills or experience.

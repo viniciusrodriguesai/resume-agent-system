@@ -1,111 +1,90 @@
+from __future__ import annotations
+import time
+from typing import Dict, List
 from agents.base_agent import AgentResult, BaseAgent
-from agents.text_tools import (
-    DESIRABLE_WORDS,
-    HIGH_PRIORITY_WORDS,
-    find_skills,
-    split_lines,
-    unique_sorted,
-)
-
+from agents.skill_ontology import DESIRABLE_MARKERS, REQUIRED_MARKERS, RESPONSIBILITY_MARKERS
+from utils.text_utils import detect_skills, extract_job_title, normalize_text, split_content_units
 
 class JobAgent(BaseAgent):
-    """Analyze a job description and classify its requested skills."""
-
     name = "Job Agent"
 
-    def _classify_skills(self, job_text: str):
-        required = set()
-        desirable = set()
-        neutral = set()
-        current_section = None
-
-        for line in split_lines(job_text):
-            lower = line.lower()
-
-            if any(
-                phrase in lower
-                for phrase in [
-                    "required qualifications",
-                    "required skills",
-                    "mandatory requirements",
-                    "requirements",
-                    "required",
-                ]
-            ):
-                current_section = "required"
-                continue
-
-            if any(
-                phrase in lower
-                for phrase in [
-                    "preferred qualifications",
-                    "preferred skills",
-                    "desirable skills",
-                    "nice to have",
-                    "differentials",
-                    "plus",
-                ]
-            ):
-                current_section = "desirable"
-                continue
-
-            line_skills = find_skills(line)
-            if not line_skills:
-                continue
-
-            if current_section == "desirable" or any(
-                word in lower for word in DESIRABLE_WORDS
-            ):
-                desirable.update(line_skills)
-            elif current_section == "required" or any(
-                word in lower for word in HIGH_PRIORITY_WORDS
-            ):
-                required.update(line_skills)
-            else:
-                neutral.update(line_skills)
-
-        # When the job does not explicitly separate requirements, treat general
-        # skills as required so that the comparison remains meaningful.
-        if not required:
-            required.update(neutral)
-            neutral.clear()
-
-        return (
-            unique_sorted(required),
-            unique_sorted(desirable),
-            unique_sorted(neutral),
-        )
+    @staticmethod
+    def _priority(unit: str) -> str:
+        normalized = normalize_text(unit)
+        if any(marker in normalized for marker in DESIRABLE_MARKERS):
+            return "desirable"
+        if any(marker in normalized for marker in REQUIRED_MARKERS):
+            return "required"
+        return "neutral"
 
     def run(self, job_text: str) -> AgentResult:
-        required, desirable, neutral = self._classify_skills(job_text)
-        all_skills = unique_sorted(required + desirable + neutral)
+        started = time.perf_counter()
+        units = split_content_units(job_text)
+        detected = detect_skills(job_text)
+        requirements: List[Dict[str, object]] = []
 
-        lower_text = job_text.lower()
-        seniority = (
-            "internship/entry level"
-            if any(
-                term in lower_text
-                for term in ["internship", "intern", "trainee", "junior", "entry level"]
-            )
-            else "not identified"
-        )
+        for canonical, details in detected.items():
+            evidence_lines = list(details.get("evidence", []))
+            source = evidence_lines[0] if evidence_lines else canonical
+            requirements.append({
+                "id": f"skill:{canonical}",
+                "label": canonical,
+                "type": "skill",
+                "category": details.get("category", "general"),
+                "priority": self._priority(source),
+                "source_line": source,
+                "aliases": details.get("aliases", []),
+            })
+
+        responsibilities = []
+        for unit in units:
+            normalized = normalize_text(unit)
+            if any(marker in normalized for marker in RESPONSIBILITY_MARKERS):
+                responsibilities.append(unit)
+
+        for index, responsibility in enumerate(responsibilities[:6], 1):
+            requirements.append({
+                "id": f"responsibility:{index}",
+                "label": responsibility,
+                "type": "responsibility",
+                "category": "experience",
+                "priority": self._priority(responsibility),
+                "source_line": responsibility,
+                "aliases": [],
+            })
+
+        education_lines = [
+            unit for unit in units
+            if any(marker in normalize_text(unit) for marker in ["degree", "bachelor", "university", "student", "graduation"])
+        ]
+        for index, line in enumerate(education_lines[:3], 1):
+            requirements.append({
+                "id": f"education:{index}",
+                "label": line,
+                "type": "education",
+                "category": "education",
+                "priority": self._priority(line),
+                "source_line": line,
+                "aliases": [],
+            })
 
         warnings = []
-        if not all_skills:
-            warnings.append("No known skills were identified in the job description.")
+        if not requirements:
+            warnings.append("No structured requirements were identified.")
+        if requirements and not any(item["priority"] == "required" for item in requirements):
+            warnings.append("No explicit mandatory marker was found; requirements were treated as neutral.")
 
+        confidence = min(.98, .50 + min(len(requirements), 15) * .03)
         return AgentResult(
             agent_name=self.name,
-            summary=(
-                f"The position appears to be {seniority} and contains "
-                f"{len(all_skills)} mapped skills."
-            ),
+            summary=f"Structured {len(requirements)} requirements for '{extract_job_title(job_text)}'.",
             data={
-                "required_skills": required,
-                "desirable_skills": desirable,
-                "neutral_skills": neutral,
-                "all_skills": all_skills,
-                "seniority": seniority,
+                "job_title": extract_job_title(job_text),
+                "requirements": requirements,
+                "responsibilities": responsibilities[:8],
+                "content_units": units,
             },
             warnings=warnings,
+            confidence=round(confidence, 2),
+            elapsed_ms=round((time.perf_counter() - started) * 1000, 2),
         )
