@@ -1,9 +1,13 @@
 [project]
-name = "professional-multi-agent-resume-ai"
-version = "3.0.0"
-description = "Local explainable multi-agent resume and job matching system"
+name = "resume-agent-system-v4"
+version = "4.0.0"
+description = "Sistema multiagente local e explicável para análise de currículos e vagas"
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
 pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"

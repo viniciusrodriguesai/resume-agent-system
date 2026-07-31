@@ -1,411 +1,146 @@
 from __future__ import annotations
-
 import json
-from pathlib import Path
-
 import pandas as pd
 import streamlit as st
+from resume_v4.config import Config
+from resume_v4.services.documentos import LeitorDocumentos
+from resume_v4.workflow import SistemaV4
 
-from resume_ai.analyzer import MultiAgentAnalyzer
-from resume_ai.config import Settings
-from resume_ai.documents import DocumentParser
+st.set_page_config(page_title='Analisador Multiagente V4',page_icon='🧠',layout='wide')
 
-
-st.set_page_config(
-    page_title="Professional Multi-Agent Resume AI",
-    page_icon="🧠",
-    layout="wide",
-)
-
-@st.cache_resource(show_spinner="Loading local AI resources...")
-def get_analyzer(full_ai: bool) -> MultiAgentAnalyzer:
-    return MultiAgentAnalyzer(
-        settings=Settings(),
-        full_ai=full_ai,
-        persist_history=True,
-    )
+@st.cache_resource(show_spinner='Carregando o sistema multiagente...')
+def carregar_sistema() -> SistemaV4:
+    return SistemaV4(Config())
 
 @st.cache_resource
-def get_parser() -> DocumentParser:
-    return DocumentParser(Settings())
+def carregar_leitor() -> LeitorDocumentos:
+    return LeitorDocumentos(Config())
 
+sistema=carregar_sistema(); leitor=carregar_leitor()
 
-def read_upload(uploaded_file) -> tuple[str, dict]:
-    return get_parser().parse_bytes(
-        uploaded_file.getvalue(),
-        uploaded_file.name,
-    )
-
-
-st.title("🧠 Professional Multi-Agent Resume AI")
-st.caption(
-    "Local, multilingual, explainable resume-to-job matching with privacy "
-    "redaction, LangGraph orchestration, semantic retrieval, reranking, "
-    "self-review, SQLite history, and evaluation support."
-)
+st.title('🧠 Analisador Multiagente de Currículos e Vagas — V4')
+st.caption('Sistema local, multilíngue e explicável com LangGraph, ESCO, BGE-M3, reranqueamento, privacidade e auditoria.')
 
 with st.sidebar:
-    st.header("Execution")
-    full_ai = st.toggle(
-        "Full local AI",
-        value=True,
-        help=(
-            "Uses Sentence Transformers and CrossEncoder when installed. "
-            "If unavailable, the app automatically falls back to lexical similarity."
-        ),
-    )
-    strictness = st.select_slider(
-        "Matching strictness",
-        options=["Flexible", "Balanced", "Conservative"],
-        value="Balanced",
-    )
-    input_mode = st.radio(
-        "Input method",
-        ["Paste text", "Upload files"],
-    )
-    st.divider()
-    st.markdown(
-        "**Privacy:** direct identifiers are removed before matching. "
-        "The original resume remains visible only in the current app session."
-    )
+    st.header('Configuração')
+    modo=st.radio('Forma de entrada',['Colar textos','Enviar arquivos'],index=0)
+    rigor=st.select_slider('Rigor da comparação',options=['Flexível','Equilibrado','Conservador'],value='Equilibrado')
+    st.info('No modo completo, os modelos são baixados na primeira execução. Sem eles, o sistema usa TF-IDF + RapidFuzz automaticamente.')
+    if st.button('Limpar análise atual',use_container_width=True):
+        st.session_state.pop('resultado_v4',None); st.rerun()
 
-resume_text = ""
-job_text = ""
-parser_details = {}
-
-if input_mode == "Paste text":
-    left, right = st.columns(2)
-    with left:
-        resume_text = st.text_area(
-            "Resume",
-            height=360,
-            placeholder="Paste the resume text here...",
-        )
-    with right:
-        job_text = st.text_area(
-            "Job description",
-            height=360,
-            placeholder="Paste the job description here...",
-        )
+curriculo=''; vaga=''
+if modo=='Colar textos':
+    c1,c2=st.columns(2)
+    with c1:
+        curriculo=st.text_area('Currículo',height=360,key='curriculo_texto',placeholder='Cole o currículo em português ou inglês...')
+    with c2:
+        vaga=st.text_area('Descrição da vaga',height=360,key='vaga_texto',placeholder='Cole a vaga em português ou inglês...')
 else:
-    left, right = st.columns(2)
-    with left:
-        resume_file = st.file_uploader(
-            "Resume",
-            type=["pdf", "docx", "txt", "md"],
-            key="resume_file",
-        )
-        if resume_file:
+    c1,c2=st.columns(2)
+    with c1:
+        arq_curriculo=st.file_uploader('Currículo (PDF, DOCX, TXT ou MD)',type=['pdf','docx','txt','md'])
+        if arq_curriculo:
             try:
-                resume_text, resume_parser = read_upload(resume_file)
-                parser_details["resume"] = resume_parser
-                st.success(
-                    f"Resume parsed with {resume_parser.get('engine')}."
-                )
-            except Exception as exc:
-                st.error(f"Resume parsing failed: {exc}")
-    with right:
-        job_file = st.file_uploader(
-            "Job description",
-            type=["pdf", "docx", "txt", "md"],
-            key="job_file",
-        )
-        if job_file:
+                leitura=leitor.ler_upload(arq_curriculo,arq_curriculo.name); curriculo=leitura['texto']
+                st.success(f"Currículo lido com {leitura['metodo']}.")
+                with st.expander('Pré-visualizar currículo extraído'): st.text(curriculo[:5000])
+            except Exception as erro: st.error(f'Não foi possível ler o currículo: {erro}')
+    with c2:
+        arq_vaga=st.file_uploader('Vaga (PDF, DOCX, TXT ou MD)',type=['pdf','docx','txt','md'])
+        if arq_vaga:
             try:
-                job_text, job_parser = read_upload(job_file)
-                parser_details["job"] = job_parser
-                st.success(
-                    f"Job parsed with {job_parser.get('engine')}."
-                )
-            except Exception as exc:
-                st.error(f"Job parsing failed: {exc}")
+                leitura=leitor.ler_upload(arq_vaga,arq_vaga.name); vaga=leitura['texto']
+                st.success(f"Vaga lida com {leitura['metodo']}.")
+                with st.expander('Pré-visualizar vaga extraída'): st.text(vaga[:5000])
+            except Exception as erro: st.error(f'Não foi possível ler a vaga: {erro}')
 
-run_analysis = st.button(
-    "Run professional multi-agent analysis",
-    type="primary",
-    use_container_width=True,
-)
-
-if run_analysis:
-    if not resume_text.strip() or not job_text.strip():
-        st.error("Provide both the resume and the job description.")
+if st.button('Executar análise multiagente',type='primary',use_container_width=True):
+    if not curriculo.strip() or not vaga.strip():
+        st.error('Informe o currículo e a descrição da vaga.')
     else:
-        try:
-            with st.spinner(
-                "Running privacy, structuring, retrieval, reranking, scoring, "
-                "review, recommendation, and reporting agents..."
-            ):
-                analyzer = get_analyzer(full_ai)
-                result = analyzer.run(
-                    resume_text,
-                    job_text,
-                    strictness=strictness,
-                )
-                result["parser_details"] = parser_details
-                st.session_state["analysis_result"] = result
-        except Exception as exc:
-            st.exception(exc)
+        with st.spinner('Os agentes estão analisando, recuperando evidências e auditando o resultado...'):
+            try:
+                st.session_state['resultado_v4']=sistema.analisar(curriculo,vaga,rigor=rigor)
+            except Exception as erro:
+                st.exception(erro)
 
-result = st.session_state.get("analysis_result")
+resultado=st.session_state.get('resultado_v4')
+if resultado:
+    pontuacao=resultado['pontuacao']; score=int(pontuacao.get('score_geral',0)); categorias=pontuacao.get('scores_categoria',{})
+    m=st.columns(5)
+    m[0].metric('Compatibilidade geral',f'{score}%',pontuacao.get('nivel','Baixa'))
+    itens=list(categorias.items())[:3]
+    for i in range(1,4):
+        if i-1<len(itens): m[i].metric(itens[i-1][0],f'{itens[i-1][1]}%')
+        else: m[i].metric('Categoria','—')
+    m[4].metric('Ciclo de revisão','Executado' if resultado.get('revisoes',0)>0 else 'Não necessário')
+    st.progress(score/100)
 
-if result:
-    scoring = result["scoring"]
-    status = result.get("engine_status", {})
-    review = result.get("review", {})
+    abas=st.tabs(['Visão geral','Requisitos e evidências','Currículo','Vaga','Recomendações','Privacidade','Auditoria','Rastreio','Histórico','Downloads'])
+    with abas[0]:
+        st.subheader('Pontuação por categoria')
+        if categorias:
+            quadro=pd.DataFrame({'Categoria':list(categorias.keys()),'Pontuação':list(categorias.values())}).set_index('Categoria')
+            st.bar_chart(quadro)
+        cont=pontuacao.get('contagens',{}); c=st.columns(3)
+        c[0].metric('Atendidos',cont.get('atendido',0)); c[1].metric('Parciais',cont.get('parcial',0)); c[2].metric('Ausentes',cont.get('ausente',0))
+        st.write(resultado['revisao'].get('texto_final',''))
+        status=resultado.get('status_motor',{})
+        st.caption(f"Recuperação: {status.get('modelo_embeddings','fallback')} | Reranker: {status.get('modelo_reranker','fallback')}")
 
-    top = st.columns(6)
-    top[0].metric(
-        "Overall",
-        f"{scoring['overall_score']}%",
-        scoring["level"].title(),
-    )
-    top[1].metric("Matched", scoring["matched_count"])
-    top[2].metric("Partial", scoring["partial_count"])
-    top[3].metric("Missing", scoring["missing_count"])
-    top[4].metric(
-        "Graph",
-        "LangGraph" if status.get("langgraph_available") else "Fallback",
-    )
-    top[5].metric(
-        "AI engine",
-        (
-            "Embeddings + reranker"
-            if status.get("reranker_available")
-            else "Embeddings"
-            if status.get("embedding_available")
-            else "Lexical fallback"
-        ),
-    )
-    st.progress(scoring["overall_score"] / 100)
+    with abas[1]:
+        linhas=[]
+        for item in pontuacao.get('resultados',[]):
+            linhas.append({'Requisito':item.get('texto'),'Prioridade':item.get('prioridade'),'Categoria':item.get('categoria'),'Status':item.get('status'),'Pontuação':item.get('score_final'),'Evidência do currículo':item.get('evidencia') or 'Nenhuma evidência','Método':f"{item.get('metodo')} / {item.get('metodo_reranker')}"})
+        df=pd.DataFrame(linhas)
+        if not df.empty:
+            filtros=st.multiselect('Filtrar status',['atendido','parcial','ausente'],default=['atendido','parcial','ausente'])
+            st.dataframe(df[df['Status'].isin(filtros)],use_container_width=True,hide_index=True)
+        else: st.warning('Nenhum requisito foi estruturado.')
 
-    tabs = st.tabs(
-        [
-            "Dashboard",
-            "Evidence",
-            "Profiles",
-            "Privacy",
-            "Recommendations",
-            "Review",
-            "Agent graph",
-            "Reports",
-            "History",
-        ]
-    )
+    with abas[2]:
+        perfil=resultado['perfil_curriculo']
+        st.subheader(perfil.get('candidato','Candidato'))
+        st.write('**Competências detectadas:**',', '.join(i['rotulo'] for i in perfil.get('competencias',[])) or 'Nenhuma')
+        st.json({'formacao':perfil.get('formacao',[]),'experiencia':perfil.get('experiencia',[]),'projetos':perfil.get('projetos',[]),'anos_mencionados':perfil.get('anos_mencionados',[])})
 
-    with tabs[0]:
-        st.subheader("Scores by requirement type")
-        category_scores = scoring.get("category_scores", {})
-        if category_scores:
-            chart = pd.DataFrame(
-                {
-                    "Category": list(category_scores.keys()),
-                    "Score": list(category_scores.values()),
-                }
-            ).set_index("Category")
-            st.bar_chart(chart)
+    with abas[3]:
+        perfil=resultado['perfil_vaga']; st.subheader(perfil.get('titulo','Vaga'))
+        req=pd.DataFrame(perfil.get('requisitos',[]))
+        if not req.empty:
+            cols=[c for c in ['texto','prioridade','categoria','tipo','origem'] if c in req.columns]
+            st.dataframe(req[cols],use_container_width=True,hide_index=True)
 
-        st.subheader("System diagnostics")
-        diagnostic_rows = [
-            {"Component": "Embedding model", "Active": status.get("embedding_available"), "Detail": status.get("embedding_model")},
-            {"Component": "CrossEncoder reranker", "Active": status.get("reranker_available"), "Detail": status.get("reranker_model")},
-            {"Component": "LangGraph", "Active": status.get("langgraph_available"), "Detail": "Stateful conditional workflow"},
-            {"Component": "Skill catalog", "Active": True, "Detail": f"{status.get('catalog_size', 0)} local skills"},
-        ]
-        st.dataframe(
-            pd.DataFrame(diagnostic_rows),
-            hide_index=True,
-            use_container_width=True,
-        )
-        if status.get("embedding_error") and full_ai:
-            st.warning(
-                "Embedding model unavailable; lexical fallback was used. "
-                f"Technical detail: {status['embedding_error']}"
-            )
-        if status.get("reranker_error") and full_ai:
-            st.warning(
-                "Reranker unavailable; first-stage retrieval was used. "
-                f"Technical detail: {status['reranker_error']}"
-            )
+    with abas[4]:
+        rec=pd.DataFrame(resultado.get('recomendacoes',[]))
+        if not rec.empty: st.dataframe(rec,use_container_width=True,hide_index=True)
 
-    with tabs[1]:
-        rows = []
-        for item in scoring.get("evidence", []):
-            rows.append(
-                {
-                    "Requirement": item.get("label"),
-                    "Type": item.get("type"),
-                    "Priority": item.get("priority"),
-                    "Status": item.get("status"),
-                    "Score": item.get("final_score"),
-                    "Best resume evidence": item.get("best_evidence") or "No evidence identified",
-                    "Engine": item.get("engine"),
-                }
-            )
-        frame = pd.DataFrame(rows)
-        if not frame.empty:
-            selected_statuses = st.multiselect(
-                "Status filter",
-                ["matched", "partial", "missing"],
-                default=["matched", "partial", "missing"],
-            )
-            filtered = frame[frame["Status"].isin(selected_statuses)]
-            st.dataframe(
-                filtered,
-                hide_index=True,
-                use_container_width=True,
-            )
-            st.download_button(
-                "Download evidence CSV",
-                filtered.to_csv(index=False).encode("utf-8"),
-                file_name="requirement_evidence.csv",
-                mime="text/csv",
-            )
+    with abas[5]:
+        priv=resultado.get('privacidade',{})
+        st.metric('Entidades pessoais removidas',len(priv.get('entidades',[])))
+        st.write('**Método:**',priv.get('metodo'))
+        st.dataframe(pd.DataFrame(priv.get('entidades',[])),use_container_width=True,hide_index=True)
+        with st.expander('Texto anonimizado utilizado na comparação'): st.text(resultado.get('curriculo_anonimizado',''))
 
-        with st.expander("Top candidates for each requirement"):
-            for item in scoring.get("evidence", []):
-                st.markdown(f"### {item.get('label')}")
-                candidates = pd.DataFrame(item.get("top_candidates", []))
-                if not candidates.empty:
-                    columns = [
-                        col for col in [
-                            "text", "retrieval_score", "reranker_score",
-                            "final_score", "engine", "exact_alias_match",
-                        ] if col in candidates.columns
-                    ]
-                    st.dataframe(
-                        candidates[columns],
-                        hide_index=True,
-                        use_container_width=True,
-                    )
+    with abas[6]:
+        revisao=resultado.get('revisao',{})
+        if revisao.get('decisao')=='aprovado': st.success(revisao.get('texto_final'))
+        else: st.warning(revisao.get('texto_final'))
+        for problema in revisao.get('problemas',[]): st.write(f'- {problema}')
+        st.caption('A ferramenta não substitui recrutadores, entrevistas ou avaliação humana.')
 
-    with tabs[2]:
-        left, right = st.columns(2)
-        with left:
-            st.subheader("Resume profile")
-            st.json(
-                {
-                    "skills": result["resume_profile"].get("skill_labels"),
-                    "education": result["resume_profile"].get("education"),
-                    "experience": result["resume_profile"].get("experience"),
-                    "quantified_evidence": result["resume_profile"].get("quantified_evidence"),
-                }
-            )
-        with right:
-            st.subheader("Job profile")
-            requirements = pd.DataFrame(
-                result["job_profile"].get("requirements", [])
-            )
-            if not requirements.empty:
-                columns = [
-                    col for col in [
-                        "label", "type", "priority", "source", "uri",
-                    ] if col in requirements.columns
-                ]
-                st.dataframe(
-                    requirements[columns],
-                    hide_index=True,
-                    use_container_width=True,
-                )
+    with abas[7]:
+        st.dataframe(pd.DataFrame(resultado.get('rastreio',[])),use_container_width=True,hide_index=True)
 
-    with tabs[3]:
-        st.subheader("Privacy and fairness preprocessing")
-        st.json(result.get("privacy_report", {}))
-        st.caption(
-            "Names, direct contact details, selected personal URLs, and selected "
-            "sensitive personal lines are excluded from matching."
-        )
-        with st.expander("View anonymized resume used by the agents"):
-            st.code(result.get("anonymized_resume_text", ""))
+    with abas[8]:
+        hist=pd.DataFrame(sistema.historico.listar())
+        if not hist.empty: st.dataframe(hist,use_container_width=True,hide_index=True)
+        else: st.info('Nenhuma análise salva ainda.')
 
-    with tabs[4]:
-        st.subheader("Truthful, prioritized recommendations")
-        recommendations = pd.DataFrame(
-            result.get("recommendations", [])
-        )
-        if not recommendations.empty:
-            st.dataframe(
-                recommendations,
-                hide_index=True,
-                use_container_width=True,
-            )
-
-    with tabs[5]:
-        decision = review.get("decision")
-        if decision == "approved":
-            st.success(review.get("summary"))
-        else:
-            st.warning(review.get("summary"))
-        st.write(
-            f"Revision passes performed: {result.get('revision_count', 0)}"
-        )
-        st.info(
-            "The score is decision support only. A human should review the "
-            "candidate, evidence, accommodations, and context."
-        )
-
-    with tabs[6]:
-        st.subheader("Agent execution trace")
-        trace = pd.DataFrame(result.get("trace", []))
-        if not trace.empty:
-            st.dataframe(
-                trace,
-                hide_index=True,
-                use_container_width=True,
-            )
-        st.code(
-            """START
-  ↓
-Privacy and Fairness Agent
-  ↓
-Resume Structurer Agent
-  ↓
-Job Structurer Agent
-  ↓
-Semantic Retriever + CrossEncoder Reranker
-  ↓
-Explainable Scoring Agent
-  ↓
-Review Agent ── revise ──┐
-  │                       │
-  └── approve             └── back to retrieval
-          ↓
-Recommendation Agent
-          ↓
-Report Agent
-          ↓
-END"""
-        )
-
-    with tabs[7]:
-        markdown_report = result.get("report_markdown", "")
-        json_report = result.get("report_json", json.dumps({}, indent=2))
-        left, right = st.columns(2)
-        with left:
-            st.download_button(
-                "Download Markdown report",
-                markdown_report,
-                file_name="resume_analysis_report.md",
-                mime="text/markdown",
-                use_container_width=True,
-            )
-        with right:
-            st.download_button(
-                "Download JSON report",
-                json_report,
-                file_name="resume_analysis_report.json",
-                mime="application/json",
-                use_container_width=True,
-            )
-        st.markdown(markdown_report)
-
-    with tabs[8]:
-        analyzer = get_analyzer(full_ai)
-        history = pd.DataFrame(analyzer.history.list_recent(30))
-        if not history.empty:
-            st.dataframe(
-                history,
-                hide_index=True,
-                use_container_width=True,
-            )
-        else:
-            st.info("No saved analyses yet.")
+    with abas[9]:
+        st.download_button('Baixar relatório Markdown',resultado.get('relatorio_markdown',''),'relatorio_curriculo_vaga.md','text/markdown',use_container_width=True)
+        st.download_button('Baixar dados JSON',resultado.get('relatorio_json',json.dumps({},indent=2)),'analise_curriculo_vaga.json','application/json',use_container_width=True)
+        csv=pd.DataFrame(pontuacao.get('resultados',[])).to_csv(index=False).encode('utf-8-sig')
+        st.download_button('Baixar requisitos em CSV',csv,'requisitos_evidencias.csv','text/csv',use_container_width=True)
+        st.subheader('Prévia do relatório'); st.markdown(resultado.get('relatorio_markdown',''))
