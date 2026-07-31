@@ -6,6 +6,7 @@ from typing import Any
 
 import pandas as pd
 import streamlit as st
+from pydantic import ValidationError
 
 from resume_ai.application.analyze_resume import ResumeAnalysisService
 from resume_ai.domain.models import AnalysisRequest, AnalysisResult
@@ -16,6 +17,7 @@ from resume_ai.settings import Settings
 
 ROOT = Path(__file__).resolve().parent
 EXAMPLES = ROOT / "examples"
+APP_VERSION = "5.2.1"
 
 STATUS_LABELS = {
     "matched": "Correspondido",
@@ -39,7 +41,7 @@ ENTITY_LABELS = {
 }
 
 st.set_page_config(
-    page_title="Resume Match AI V5.2",
+    page_title="Resume Match AI V5.2.1",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -406,12 +408,19 @@ def render_result(result: AnalysisResult, service: ResumeAnalysisService) -> Non
 
 
 def main() -> None:
+    # Resultados guardados na sessão podem ter sido gerados por uma versão
+    # anterior do esquema Pydantic. Ao publicar uma atualização, descartamos
+    # somente o resultado incompatível e preservamos o restante da interface.
+    if st.session_state.get("_app_version") != APP_VERSION:
+        st.session_state.pop("last_result", None)
+        st.session_state["_app_version"] = APP_VERSION
+
     inject_css()
     enforce_optional_oidc(Settings())
     st.markdown(
         """
         <div class="hero">
-          <div><span class="eyebrow">V5.2 · LOCAL · CÓDIGO ABERTO</span><h1>IA de Correspondência de Currículos</h1><p>Plataforma multiagente para comparar currículos e vagas com evidências, privacidade e explicabilidade.</p></div>
+          <div><span class="eyebrow">V5.2.1 · LOCAL · CÓDIGO ABERTO</span><h1>IA de Correspondência de Currículos</h1><p>Plataforma multiagente para comparar currículos e vagas com evidências, privacidade e explicabilidade.</p></div>
           <div class="hero-badges"><span>Otimizado para CPU</span><span>API local com FastAPI</span><span>Fallback totalmente offline</span></div>
         </div>
         """,
@@ -519,8 +528,16 @@ def main() -> None:
             st.session_state["last_result"] = result.model_dump(mode="json")
 
     if "last_result" in st.session_state:
-        result = AnalysisResult.model_validate(st.session_state["last_result"])
-        render_result(result, get_service(result.profile))
+        try:
+            result = AnalysisResult.model_validate(st.session_state["last_result"])
+        except (ValidationError, TypeError, ValueError):
+            st.session_state.pop("last_result", None)
+            st.warning(
+                "A análise anterior foi criada por uma versão incompatível e foi removida. "
+                "Execute uma nova análise."
+            )
+        else:
+            render_result(result, get_service(result.profile))
 
 
 if __name__ == "__main__":

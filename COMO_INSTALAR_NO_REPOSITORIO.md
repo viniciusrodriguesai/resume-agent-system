@@ -1,4 +1,4 @@
-# Como instalar a V5.2 no seu repositório
+# Como instalar a V5.2.1 no seu repositório
 
 ## 1. Pare o Streamlit
 
@@ -10,7 +10,7 @@ Copie a pasta atual `C:\Users\vinic\resume-agent-system` para outro local.
 
 ## 3. Substitua os arquivos
 
-Extraia o ZIP da V5.2 e copie **todo o conteúdo interno** para:
+Extraia o ZIP da V5.2.1 e copie **todo o conteúdo interno** para:
 
 ```text
 C:\Users\vinic\resume-agent-system
@@ -20,7 +20,7 @@ Escolha **Substituir os arquivos no destino**. Não apague a pasta oculta `.git`
 
 ## 4. Reinicie usando o ambiente atual
 
-A V5.2 não adiciona dependências obrigatórias. Use o ambiente que já funcionava:
+A V5.2.1 não adiciona dependências obrigatórias. Use o ambiente que já funcionava:
 
 ```powershell
 cd C:\Users\vinic\resume-agent-system
@@ -42,6 +42,6 @@ python -m pytest
 
 ```powershell
 git add .
-git commit -m "Improve result summary and interface in V5.2"
+git commit -m "Fix incompatible session results in V5.2.1"
 git push origin main
 ```

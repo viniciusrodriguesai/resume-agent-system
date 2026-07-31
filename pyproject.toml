@@ -1,6 +1,6 @@
 [project]
 name = "resume-match-ai"
-version = "5.2.0"
+version = "5.2.1"
 description = "Analisador local, explicável e multiagente de currículos e vagas"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"

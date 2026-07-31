@@ -17,3 +17,9 @@ Atualização pequena e compatível com a arquitetura da V5.1.
 ## Compatibilidade
 
 Não adiciona dependências obrigatórias. A mesma `.venv` da V5.1 pode ser reutilizada.
+
+## V5.2.1 — correção de compatibilidade de sessão
+
+- remove automaticamente resultados antigos incompatíveis com o esquema atual;
+- trata `ValidationError` sem derrubar a aplicação;
+- atualiza a versão interna e a chave de cache para `5.2.1`.
