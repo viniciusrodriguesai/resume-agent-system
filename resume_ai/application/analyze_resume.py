@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import csv
 import io
-import json
 import uuid
-from dataclasses import dataclass
-from typing import Any
 
+from resume_ai import __version__
 from resume_ai.agents import (
     CandidateAgent,
     EvidenceAgent,
@@ -48,7 +46,7 @@ class ResumeAnalysisService:
 
     def analyze(self, request: AnalysisRequest) -> AnalysisResult:
         timings: dict[str, float] = {}
-        key = content_hash(request.profile, request.strictness, request.resume_text, request.job_text)
+        key = content_hash(__version__, request.profile, request.strictness, request.resume_text, request.job_text)
         cached = self.cache.get(key)
         if cached:
             return AnalysisResult.model_validate(cached)
@@ -119,13 +117,15 @@ class ResumeAnalysisService:
     def to_csv(result: AnalysisResult) -> str:
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["requisito", "prioridade", "categoria", "status", "score", "evidencia"])
+        writer.writerow(["requisito", "prioridade", "categoria", "status", "pontuacao", "evidencia"])
+        priority_labels = {"required": "obrigatorio", "desired": "desejavel", "neutral": "neutro"}
+        status_labels = {"matched": "correspondido", "partial": "parcial", "missing": "ausente"}
         for match in result.matches:
             writer.writerow([
                 match.requirement.text,
-                match.requirement.priority,
+                priority_labels.get(match.requirement.priority, match.requirement.priority),
                 match.requirement.category,
-                match.status,
+                status_labels.get(match.status, match.status),
                 f"{match.final_score:.4f}",
                 match.evidence or "",
             ])

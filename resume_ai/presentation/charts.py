@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+import math
 
 import plotly.graph_objects as go
 
@@ -34,17 +34,47 @@ def status_chart(result: AnalysisResult) -> go.Figure:
         hole=0.62,
         textinfo="label+value",
     ))
-    figure.update_layout(title="Distribuição dos requisitos", height=340, margin=dict(l=10, r=10, t=45, b=10))
+    figure.update_layout(
+        title="Distribuição dos requisitos",
+        height=340,
+        margin=dict(l=10, r=10, t=45, b=10),
+    )
     return figure
 
 
+def _duration_label(duration_ms: float) -> str:
+    if duration_ms >= 1000:
+        return f"{duration_ms / 1000:.2f} s".replace(".", ",")
+    if duration_ms >= 10:
+        return f"{duration_ms:.0f} ms"
+    return f"{duration_ms:.2f} ms".replace(".", ",")
+
+
 def agent_timing_chart(result: AnalysisResult) -> go.Figure:
+    durations = [max(trace.duration_ms, 0.01) for trace in result.traces]
+    positive = [value for value in durations if value > 0]
+    ratio = max(positive) / max(min(positive), 0.01) if positive else 1
+    use_log = ratio > 100
+
+    x_values = [math.log10(value + 1) for value in durations] if use_log else durations
+    title = "Tempo por agente — escala visual logarítmica" if use_log else "Tempo por agente"
+    xaxis_title = "Escala logarítmica; valores reais aparecem nas barras" if use_log else "Milissegundos"
+
     figure = go.Figure(go.Bar(
-        x=[trace.duration_ms for trace in result.traces],
+        x=x_values,
         y=[trace.agent for trace in result.traces],
         orientation="h",
-        text=[f"{trace.duration_ms:.0f} ms" for trace in result.traces],
+        text=[_duration_label(trace.duration_ms) for trace in result.traces],
         textposition="auto",
+        customdata=durations,
+        hovertemplate="%{y}<br>%{customdata:.2f} ms<extra></extra>",
     ))
-    figure.update_layout(title="Tempo por agente", xaxis_title="Milissegundos", height=max(340, 45 * len(result.traces)), margin=dict(l=10, r=10, t=45, b=20))
+    figure.update_layout(
+        title=title,
+        xaxis_title=xaxis_title,
+        height=max(340, 45 * len(result.traces)),
+        margin=dict(l=10, r=10, t=45, b=20),
+    )
+    if use_log:
+        figure.update_xaxes(showticklabels=False)
     return figure
