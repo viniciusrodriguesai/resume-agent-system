@@ -1,0 +1,21 @@
+Vinicius Mangueira
+vinicius@example.com
+João Pessoa, Paraíba
+
+RESUMO
+Estudante de Ciência de Dados e Inteligência Artificial da Universidade Federal da Paraíba, com experiência em Python, SQL, análise de dados, aprendizado de máquina e projetos de tecnologia em saúde.
+
+FORMAÇÃO
+Bacharelado em Ciência de Dados e Inteligência Artificial — UFPB — conclusão prevista para 2028.
+
+COMPETÊNCIAS
+Python, SQL, Pandas, NumPy, Scikit-learn, aprendizado de máquina, estatística, análise de dados, Power BI, Git, GitHub, PyTorch, comunicação e trabalho em equipe.
+
+EXPERIÊNCIA
+Atuei em projeto de pesquisa em saúde com equipe multidisciplinar, organizando dados e comunicando resultados.
+Desenvolvi um sistema de gestão de clínica usando Python e SQL.
+Criei painéis no Power BI para apoiar decisões orientadas por dados.
+
+PROJETOS
+Construí modelos de classificação e regressão com Scikit-learn.
+Implementei limpeza, preparação e visualização de dados com Pandas, NumPy e Matplotlib.
