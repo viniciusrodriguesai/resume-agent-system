@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import html
-import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -17,8 +17,29 @@ from resume_ai.settings import Settings
 ROOT = Path(__file__).resolve().parent
 EXAMPLES = ROOT / "examples"
 
+STATUS_LABELS = {
+    "matched": "Correspondido",
+    "partial": "Parcial",
+    "missing": "Ausente",
+}
+STATUS_VALUES = {label: value for value, label in STATUS_LABELS.items()}
+PRIORITY_LABELS = {
+    "required": "Obrigatório",
+    "desired": "Desejável",
+    "neutral": "Neutro",
+}
+ENTITY_LABELS = {
+    "EMAIL": "E-mail",
+    "TELEFONE": "Telefone",
+    "NOME_CANDIDATO": "Nome",
+    "CPF": "CPF",
+    "CNPJ": "CNPJ",
+    "CEP": "CEP",
+    "URL": "URL",
+}
+
 st.set_page_config(
-    page_title="Resume Match AI V5",
+    page_title="Resume Match AI V5.1",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -46,30 +67,160 @@ def load_example() -> None:
     st.session_state["job_text"] = (EXAMPLES / "vaga_exemplo.txt").read_text(encoding="utf-8")
 
 
+def format_duration(duration_ms: float) -> str:
+    if duration_ms >= 1000:
+        return f"{duration_ms / 1000:.2f} s".replace(".", ",")
+    if duration_ms >= 10:
+        return f"{duration_ms:.0f} ms"
+    return f"{duration_ms:.2f} ms".replace(".", ",")
+
+
 def score_ring(score: int, level: str) -> None:
     degrees = score * 3.6
-    st.markdown(f"""
-    <div class="score-panel">
-      <div class="score-ring" style="background:conic-gradient(#5b5bd6 {degrees}deg,#e7e8ef 0deg)">
-        <div class="score-inner"><strong>{score}%</strong><span>compatibilidade</span></div>
-      </div>
-      <div><span class="chip">Nível {html.escape(level)}</span><h2>Análise explicável e local</h2><p>A nota combina prioridade, evidência lexical, semântica e revisão determinística.</p></div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="score-panel">
+          <div class="score-ring" style="background:conic-gradient(#5b5bd6 {degrees}deg,#e7e8ef 0deg)">
+            <div class="score-inner"><strong>{score}%</strong><span>compatibilidade</span></div>
+          </div>
+          <div><span class="chip">Nível {html.escape(level)}</span><h2>Análise explicável e local</h2><p>A nota considera prioridade, evidência lexical, similaridade semântica e cobertura das competências exigidas.</p></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def candidate_frame(match: Any) -> pd.DataFrame:
+    rows = []
+    for item in match.top_candidates:
+        rows.append({
+            "Evidência": item.text,
+            "Lexical": item.lexical_score,
+            "Aproximada": item.fuzzy_score,
+            "Semântica": item.semantic_score,
+            "Reranker": item.reranker_score,
+            "Final": item.final_score,
+            "Método": item.retrieval_method,
+        })
+    return pd.DataFrame(rows)
+
+
+def render_privacy(result: AnalysisResult) -> None:
+    st.success(
+        f"{result.privacy.total_removed} identificador(es) pessoal(is) foram removidos antes dos embeddings."
+    )
+    columns = st.columns(4)
+    columns[0].metric("Identificadores removidos", result.privacy.total_removed)
+    columns[1].metric("Currículo bruto armazenado", "Não" if not result.privacy.raw_document_stored else "Sim")
+    columns[2].metric(
+        "Texto anonimizado armazenado",
+        "Não" if not result.privacy.anonymized_document_stored else "Sim",
+    )
+    columns[3].metric("Método", "Local")
+
+    if result.privacy.entities:
+        rows = [
+            {
+                "Tipo": ENTITY_LABELS.get(entity.entity_type, entity.entity_type.replace("_", " ").title()),
+                "Quantidade": entity.count,
+                "Ação": "Removido antes da análise",
+            }
+            for entity in result.privacy.entities
+        ]
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    else:
+        st.info("Nenhum identificador pessoal foi detectado no texto enviado.")
+
+    st.caption(
+        "O histórico local guarda somente metadados, pontuação e tempos; não guarda currículo nem vaga."
+    )
+    with st.expander("Detalhes técnicos de privacidade"):
+        st.write(f"**Método:** {result.privacy.method}")
+        st.json({
+            "total_removido": result.privacy.total_removed,
+            "documento_bruto_armazenado": result.privacy.raw_document_stored,
+            "documento_anonimizado_armazenado": result.privacy.anonymized_document_stored,
+            "entidades": [
+                {
+                    "tipo": ENTITY_LABELS.get(entity.entity_type, entity.entity_type),
+                    "quantidade": entity.count,
+                }
+                for entity in result.privacy.entities
+            ],
+        })
+
+
+def render_agents(result: AnalysisResult) -> None:
+    st.plotly_chart(agent_timing_chart(result), use_container_width=True)
+
+    rows = []
+    for trace in result.traces:
+        rows.append({
+            "Agente": trace.agent,
+            "Resumo": trace.summary,
+            "Tempo": format_duration(trace.duration_ms),
+            "Confiança": f"{trace.confidence:.0%}",
+            "Alertas": ", ".join(trace.alerts) if trace.alerts else "Nenhum",
+        })
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+    engine = result.engine_status
+    st.subheader("Motor de análise")
+    active_embeddings = bool(engine.get("embedding_enabled"))
+    loaded_embeddings = bool(engine.get("embedding_loaded"))
+    active_reranker = bool(engine.get("reranker_enabled"))
+    loaded_reranker = bool(engine.get("reranker_loaded"))
+
+    cols = st.columns(4)
+    cols[0].metric("Embeddings", "Ativos" if active_embeddings else "Desativados")
+    cols[1].metric("Modelo carregado", "Sim" if loaded_embeddings else "Fallback")
+    cols[2].metric("Reranker", "Ativo" if active_reranker else "Desativado")
+    cols[3].metric("Cache de trechos", engine.get("chunk_embedding_cache_entries", 0))
+
+    st.markdown(f"**Modelo semântico:** `{engine.get('embedding_model', 'não configurado')}`")
+    st.markdown(f"**Backend:** `{engine.get('embedding_backend', 'não informado')}`")
+    if active_reranker:
+        st.markdown(f"**Modelo de reranqueamento:** `{engine.get('reranker_model', 'não configurado')}`")
+        st.caption("Carregado nesta execução." if loaded_reranker else "Ainda não carregado ou indisponível.")
+    if engine.get("embedding_error"):
+        st.warning(f"O modelo semântico não pôde ser usado; o fallback local foi acionado. Detalhe: {engine['embedding_error']}")
+    if engine.get("reranker_error"):
+        st.warning(f"O reranker não pôde ser usado. Detalhe: {engine['reranker_error']}")
+
+    with st.expander("Detalhes técnicos avançados"):
+        st.json(engine)
 
 
 def render_result(result: AnalysisResult, service: ResumeAnalysisService) -> None:
     score_ring(result.score.overall_score, result.score.level)
+    total_ms = result.timings_ms.get("total", 0.0)
+    main_stage = max(
+        ((name, value) for name, value in result.timings_ms.items() if name != "total"),
+        key=lambda item: item[1],
+        default=("não identificado", 0.0),
+    )[0]
+    stage_labels = {
+        "privacy": "privacidade",
+        "candidate": "estruturação do currículo",
+        "job": "estruturação da vaga",
+        "evidence": "busca de evidências",
+        "scoring": "pontuação",
+        "review": "revisão",
+        "recommendations": "recomendações",
+        "report": "relatório",
+    }
+
     cols = st.columns(5)
     values = [
         ("Atendidos", result.score.matched),
         ("Parciais", result.score.partial),
         ("Ausentes", result.score.missing),
         ("Obrigatórios ausentes", result.score.required_missing),
-        ("Tempo total", f"{result.timings_ms.get('total', 0)/1000:.2f}s"),
+        ("Tempo total", format_duration(total_ms)),
     ]
     for column, (label, value) in zip(cols, values):
         column.metric(label, value)
+    st.caption(f"Principal etapa nesta execução: {stage_labels.get(main_stage, main_stage)}.")
 
     tabs = st.tabs(["Visão geral", "Evidências", "Recomendações", "Privacidade", "Agentes", "Exportar"])
     with tabs[0]:
@@ -81,14 +232,38 @@ def render_result(result: AnalysisResult, service: ResumeAnalysisService) -> Non
             st.markdown(f"- {explanation}")
 
     with tabs[1]:
-        status_filter = st.multiselect("Filtrar status", ["matched", "partial", "missing"], default=["matched", "partial", "missing"])
+        selected_labels = st.multiselect(
+            "Status do filtro",
+            list(STATUS_VALUES),
+            default=list(STATUS_VALUES),
+        )
+        selected_statuses = {STATUS_VALUES[label] for label in selected_labels}
         for match in result.matches:
-            if match.status not in status_filter:
+            if match.status not in selected_statuses:
                 continue
-            with st.expander(f"{match.status.upper()} · {match.requirement.text} · {match.final_score:.2f}"):
-                st.write(match.evidence or "Nenhuma evidência encontrada.")
+            status_label = STATUS_LABELS[match.status]
+            priority_label = PRIORITY_LABELS[match.requirement.priority]
+            title = f"{status_label} · {match.requirement.text} · {match.final_score:.2f}".replace(".", ",")
+            with st.expander(title):
+                st.markdown(f"**Prioridade:** {priority_label}")
+                st.markdown("**Melhor evidência encontrada**")
+                st.info(match.evidence or "Nenhuma evidência suficiente foi localizada.")
                 st.caption(match.explanation)
-                st.dataframe(pd.DataFrame([item.model_dump() for item in match.top_candidates]), use_container_width=True, hide_index=True)
+                frame = candidate_frame(match)
+                if not frame.empty:
+                    st.markdown("**Trechos candidatos**")
+                    st.dataframe(
+                        frame,
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "Lexical": st.column_config.NumberColumn(format="%.3f"),
+                            "Aproximada": st.column_config.NumberColumn(format="%.3f"),
+                            "Semântica": st.column_config.NumberColumn(format="%.3f"),
+                            "Reranker": st.column_config.NumberColumn(format="%.3f"),
+                            "Final": st.column_config.NumberColumn(format="%.3f"),
+                        },
+                    )
 
     with tabs[2]:
         for item in result.recommendations:
@@ -96,68 +271,126 @@ def render_result(result: AnalysisResult, service: ResumeAnalysisService) -> Non
             st.write(item.action)
 
     with tabs[3]:
-        st.success(f"{result.privacy.total_removed} dado(s) pessoal(is) removido(s) antes do processamento semântico.")
-        st.json(result.privacy.model_dump())
-        st.caption("O histórico local guarda somente metadados, pontuação e tempos; não guarda currículo ou vaga.")
+        render_privacy(result)
 
     with tabs[4]:
-        st.plotly_chart(agent_timing_chart(result), use_container_width=True)
-        st.dataframe(pd.DataFrame([trace.model_dump() for trace in result.traces]), use_container_width=True, hide_index=True)
-        st.json(result.engine_status)
+        render_agents(result)
 
     with tabs[5]:
-        st.download_button("Baixar Markdown", result.markdown_report, file_name=f"analise-{result.analysis_id}.md", mime="text/markdown")
-        st.download_button("Baixar JSON", service.to_json(result), file_name=f"analise-{result.analysis_id}.json", mime="application/json")
-        st.download_button("Baixar CSV", service.to_csv(result), file_name=f"analise-{result.analysis_id}.csv", mime="text/csv")
+        left, middle, right = st.columns(3)
+        left.download_button(
+            "Baixar Markdown",
+            result.markdown_report,
+            file_name=f"analise-{result.analysis_id}.md",
+            mime="text/markdown",
+            use_container_width=True,
+        )
+        middle.download_button(
+            "Baixar JSON",
+            service.to_json(result),
+            file_name=f"analise-{result.analysis_id}.json",
+            mime="application/json",
+            use_container_width=True,
+        )
+        right.download_button(
+            "Baixar CSV",
+            service.to_csv(result),
+            file_name=f"analise-{result.analysis_id}.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
 
 
 def main() -> None:
     inject_css()
     enforce_optional_oidc(Settings())
-    st.markdown("""
-    <div class="hero">
-      <div><span class="eyebrow">V5 · LOCAL · OPEN SOURCE</span><h1>Resume Match AI</h1><p>Plataforma multiagente para comparar currículos e vagas com evidências, privacidade e explicabilidade.</p></div>
-      <div class="hero-badges"><span>CPU friendly</span><span>API FastAPI</span><span>Fallback offline</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="hero">
+          <div><span class="eyebrow">V5.1 · LOCAL · CÓDIGO ABERTO</span><h1>IA de Correspondência de Currículos</h1><p>Plataforma multiagente para comparar currículos e vagas com evidências, privacidade e explicabilidade.</p></div>
+          <div class="hero-badges"><span>Otimizado para CPU</span><span>API local com FastAPI</span><span>Fallback totalmente offline</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if st.session_state.pop("session_cleared", False):
+        st.success("Sessão limpa com sucesso.")
 
     with st.sidebar:
         st.header("Configuração")
-        profile_label = st.radio("Perfil de execução", ["⚡ Demonstração", "⚖️ Equilibrado", "🧠 Completo"], index=0)
-        profile = {"⚡ Demonstração": "demo", "⚖️ Equilibrado": "balanced", "🧠 Completo": "complete"}[profile_label]
-        strictness = st.select_slider("Rigor", options=["flexível", "equilibrado", "conservador"], value="equilibrado")
-        st.caption("Para seu notebook, use Demonstração ao vivo. O modo Completo exige mais RAM.")
+        profile_label = st.radio(
+            "Perfil de execução",
+            ["⚡ Demonstração", "⚖️ Equilibrado", "🧠 Completo"],
+            index=0,
+        )
+        profile = {
+            "⚡ Demonstração": "demo",
+            "⚖️ Equilibrado": "balanced",
+            "🧠 Completo": "complete",
+        }[profile_label]
+        strictness_label = st.select_slider(
+            "Rigor",
+            options=["Flexível", "Equilibrado", "Conservador"],
+            value="Equilibrado",
+        )
+        strictness = strictness_label.lower()
+        st.caption("Para apresentar em notebook, use Demonstração. O modo Completo exige mais memória RAM.")
         if st.button("Carregar exemplo", use_container_width=True):
             load_example()
             st.rerun()
         if st.button("Limpar sessão", use_container_width=True):
             st.session_state.clear()
+            st.session_state["session_cleared"] = True
             st.cache_data.clear()
             st.rerun()
 
-    input_mode = st.segmented_control("Forma de entrada", ["Colar textos", "Enviar arquivos"], default="Colar textos")
+    input_mode = st.radio(
+        "Forma de entrada",
+        ["Colar textos", "Enviar arquivos"],
+        horizontal=True,
+    )
     resume_text = st.session_state.get("resume_text", "")
     job_text = st.session_state.get("job_text", "")
 
     with st.form("analysis_form"):
         if input_mode == "Colar textos":
             left, right = st.columns(2)
-            resume_text = left.text_area("Currículo", value=resume_text, height=390, key="resume_text_input")
-            job_text = right.text_area("Descrição da vaga", value=job_text, height=390, key="job_text_input")
+            resume_text = left.text_area(
+                "Currículo",
+                value=resume_text,
+                height=390,
+                key="resume_text_input",
+                placeholder="Cole aqui o currículo...",
+            )
+            job_text = right.text_area(
+                "Descrição da vaga",
+                value=job_text,
+                height=390,
+                key="job_text_input",
+                placeholder="Cole aqui a descrição da vaga...",
+            )
         else:
+            st.caption("Formatos aceitos: PDF, DOCX e TXT. Limite padrão: 10 MB por arquivo.")
             left, right = st.columns(2)
-            resume_file = left.file_uploader("Currículo", type=["pdf", "docx", "txt"])
-            job_file = right.file_uploader("Vaga", type=["pdf", "docx", "txt"])
+            resume_file = left.file_uploader("Arquivo do currículo", type=["pdf", "docx", "txt"])
+            job_file = right.file_uploader("Arquivo da vaga", type=["pdf", "docx", "txt"])
             if resume_file and job_file:
                 reader = get_reader(profile)
                 try:
                     resume_text = reader.read_upload(resume_file.name, resume_file.getvalue())
                     job_text = reader.read_upload(job_file.name, job_file.getvalue())
-                    st.success("Arquivos validados e texto extraído.")
+                    st.success("Arquivos validados e textos extraídos.")
                 except Exception as exc:
                     st.error(str(exc))
-        consent = st.checkbox("Entendo que o resultado apoia revisão humana e não toma decisão de contratação.")
-        submitted = st.form_submit_button("Executar análise multiagente", use_container_width=True, type="primary")
+        consent = st.checkbox(
+            "Entendo que o resultado apoia revisão humana e não toma decisão de contratação."
+        )
+        submitted = st.form_submit_button(
+            "Executar análise multiagente",
+            use_container_width=True,
+            type="primary",
+        )
 
     if submitted:
         if not consent:
@@ -166,11 +399,16 @@ def main() -> None:
             st.error("Informe currículo e vaga com conteúdo suficiente.")
         else:
             service = get_service(profile)
-            request = AnalysisRequest(resume_text=resume_text, job_text=job_text, profile=profile, strictness=strictness)
+            request = AnalysisRequest(
+                resume_text=resume_text,
+                job_text=job_text,
+                profile=profile,
+                strictness=strictness,
+            )
             with st.status("Executando pipeline local...", expanded=True) as status:
                 st.write("1. Removendo dados pessoais")
                 st.write("2. Estruturando currículo e vaga")
-                st.write("3. Recuperando evidências")
+                st.write("3. Recuperando evidências em lote")
                 st.write("4. Calculando pontuação e revisão")
                 result = service.analyze(request)
                 status.update(label="Análise concluída", state="complete", expanded=False)

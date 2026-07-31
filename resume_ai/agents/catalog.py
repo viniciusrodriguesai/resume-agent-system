@@ -50,15 +50,30 @@ def aliases_for(text: str) -> list[str]:
     normalized = normalize(text)
     result: list[str] = []
     for name, (_, aliases) in SKILLS.items():
-        if normalize(name) in normalized or any(normalize(alias) in normalized for alias in aliases):
+        if exact_phrase(normalized, name) or any(exact_phrase(normalized, alias) for alias in aliases):
             result.extend([name, *aliases])
     return list(dict.fromkeys(result))
+
+
+def concept_alias_groups(text: str) -> list[list[str]]:
+    """Retorna um grupo de sinônimos por competência citada no requisito.
+
+    Isso impede que um requisito com Pandas, NumPy e Scikit-learn seja considerado
+    totalmente atendido só porque um dos três termos apareceu no currículo.
+    """
+    normalized = normalize(text)
+    groups: list[list[str]] = []
+    for name, (_, aliases) in SKILLS.items():
+        values = [name, *aliases]
+        if any(exact_phrase(normalized, value) for value in values):
+            groups.append(list(dict.fromkeys(values)))
+    return groups
 
 
 def category_for(text: str) -> str:
     normalized = normalize(text)
     for name, (category, aliases) in SKILLS.items():
-        if normalize(name) in normalized or any(normalize(alias) in normalized for alias in aliases):
+        if exact_phrase(normalized, name) or any(exact_phrase(normalized, alias) for alias in aliases):
             return category
     if any(word in normalized for word in ("experiencia", "anos", "estagio")):
         return "experiência"

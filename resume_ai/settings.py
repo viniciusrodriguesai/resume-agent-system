@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     embedding_backend: Literal["onnx", "torch", "openvino"] = "onnx"
     embedding_device: str = "cpu"
-    embedding_batch_size: int = 8
+    embedding_batch_size: int = 16
     normalize_embeddings: bool = True
 
     reranker_enabled: bool = False
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     top_k: int = 3
     max_requirements: int = 30
-    max_chunk_chars: int = 900
+    max_chunk_chars: int = 420
     max_document_chars: int = 30_000
     max_revisions: int = 1
 
@@ -87,6 +87,7 @@ class Settings(BaseSettings):
                 "docling_enabled": False,
                 "presidio_enabled": False,
                 "top_k": 3,
+                "embedding_batch_size": 32,
                 "max_revisions": 0,
             })
         if profile == "balanced":
@@ -99,6 +100,7 @@ class Settings(BaseSettings):
                 "docling_enabled": False,
                 "presidio_enabled": False,
                 "top_k": 4,
+                "embedding_batch_size": 16,
                 "max_revisions": 1,
             })
         return base.model_copy(update={
@@ -111,5 +113,6 @@ class Settings(BaseSettings):
             "docling_enabled": True,
             "presidio_enabled": True,
             "top_k": 5,
+            "embedding_batch_size": 8,
             "max_revisions": 1,
         })

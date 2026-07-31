@@ -12,6 +12,12 @@ STOPWORDS = {
     "the", "and", "of", "to", "in", "for", "with", "is", "are",
 }
 
+PRIVACY_PLACEHOLDER_RE = re.compile(r"<[A-ZÀ-Ú0-9_ -]+>")
+CONTACT_LABEL_RE = re.compile(
+    r"\b(?:e-?mail|telefone|celular|whatsapp|cpf|cnpj|cep|linkedin|github)\s*:\s*",
+    flags=re.IGNORECASE,
+)
+
 
 def normalize(text: str) -> str:
     value = unicodedata.normalize("NFKD", text or "")
@@ -24,26 +30,95 @@ def tokenize(text: str) -> list[str]:
     return [t for t in re.findall(r"[a-z0-9+#]+", normalize(text)) if len(t) > 1 and t not in STOPWORDS]
 
 
-def split_chunks(text: str, max_chars: int = 900) -> list[str]:
+def remove_privacy_placeholders(text: str) -> str:
+    """Remove marcadores técnicos sem destruir as quebras de linha do documento."""
+    value = PRIVACY_PLACEHOLDER_RE.sub("", text or "")
+    value = CONTACT_LABEL_RE.sub("", value)
+    value = re.sub(r"[ \t]+([,.;:])", r"\1", value)
+    value = re.sub(r"[ \t]+", " ", value)
+    value = re.sub(r" *\n *", "\n", value)
+    return value.strip(" \t\r\n-–—|,;:")
+
+
+def _is_heading(text: str) -> bool:
+    letters = [char for char in text if char.isalpha()]
+    if not letters:
+        return False
+    return len(text.split()) <= 8 and sum(char.isupper() for char in letters) / len(letters) >= 0.88
+
+
+def split_chunks(text: str, max_chars: int = 420) -> list[str]:
+    """Cria trechos curtos e específicos, preservando uma linha/bullet por evidência.
+
+    A versão anterior acumulava quase o currículo inteiro em poucos blocos. Isso
+    aumentava o tempo de embeddings e fazia uma evidência genérica receber nota alta.
+    """
     chunks: list[str] = []
-    current = ""
+    seen: set[str] = set()
+
     for raw_line in (text or "").splitlines():
         line = re.sub(r"^[\s•*\-–—\d.)]+", "", raw_line).strip()
-        if not line:
+        line = remove_privacy_placeholders(line)
+        if len(line) < 3 or _is_heading(line):
             continue
-        parts = re.split(r"(?<=[.!?;:])\s+", line)
-        for part in parts:
-            part = part.strip()
-            if len(part) < 3:
-                continue
-            if current and len(current) + len(part) + 1 > max_chars:
-                chunks.append(current)
+
+        sentence_parts = [line]
+        if len(line) > max_chars:
+            sentence_parts = [
+                part.strip()
+                for part in re.split(r"(?<=[.!?;:])\s+", line)
+                if part.strip()
+            ]
+
+        fragments: list[str] = []
+        current = ""
+        for part in sentence_parts:
+            if len(part) > max_chars:
+                words = part.split()
+                for word in words:
+                    if current and len(current) + len(word) + 1 > max_chars:
+                        fragments.append(current)
+                        current = word
+                    else:
+                        current = f"{current} {word}".strip()
+                if current:
+                    fragments.append(current)
+                    current = ""
+            elif current and len(current) + len(part) + 1 > max_chars:
+                fragments.append(current)
                 current = part
             else:
                 current = f"{current} {part}".strip()
-    if current:
-        chunks.append(current)
+        if current:
+            fragments.append(current)
+
+        for fragment in fragments:
+            key = normalize(fragment)
+            if key and key not in seen:
+                chunks.append(fragment)
+                seen.add(key)
+
     return chunks
+
+
+def best_snippet(text: str, query: str, max_chars: int = 360) -> str:
+    """Seleciona o trecho mais relacionado ao requisito e limita o tamanho visual."""
+    clean = remove_privacy_placeholders(text)
+    if len(clean) <= max_chars:
+        return clean
+
+    query_tokens = set(tokenize(query))
+    parts = [part.strip() for part in re.split(r"(?<=[.!?;:])\s+|\s+[|•]\s+", clean) if part.strip()]
+    if not parts:
+        return clean[: max_chars - 1].rstrip() + "…"
+
+    def score(part: str) -> tuple[float, int]:
+        tokens = set(tokenize(part))
+        overlap = len(tokens & query_tokens) / max(len(query_tokens), 1)
+        return overlap, -len(part)
+
+    selected = max(parts, key=score)
+    return selected if len(selected) <= max_chars else selected[: max_chars - 1].rstrip() + "…"
 
 
 def tfidf_similarity(a: str, b: str) -> float:
@@ -67,8 +142,12 @@ def tfidf_similarity(a: str, b: str) -> float:
 
 
 def exact_phrase(text: str, phrase: str) -> bool:
-    normalized = normalize(phrase)
-    return bool(normalized and f" {normalized} " in f" {normalize(text)} ")
+    normalized_phrase = normalize(phrase)
+    normalized_text = normalize(text)
+    if not normalized_phrase or not normalized_text:
+        return False
+    pattern = rf"(?<![a-z0-9+#]){re.escape(normalized_phrase)}(?![a-z0-9+#])"
+    return re.search(pattern, normalized_text) is not None
 
 
 def content_hash(*parts: str) -> str:

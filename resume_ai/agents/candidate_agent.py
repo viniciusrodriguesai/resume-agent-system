@@ -4,7 +4,7 @@ import re
 
 from resume_ai.domain.models import AgentTrace, CandidateProfile
 from resume_ai.settings import Settings
-from resume_ai.utils.text import normalize, split_chunks
+from resume_ai.utils.text import normalize, remove_privacy_placeholders, split_chunks
 
 from .base import run_agent
 from .catalog import detect_skills
@@ -22,14 +22,15 @@ class CandidateAgent:
 
     def run(self, original: str, anonymized: str) -> tuple[CandidateProfile, AgentTrace]:
         def action() -> CandidateProfile:
-            chunks = split_chunks(anonymized, self.settings.max_chunk_chars)
-            skills = detect_skills(anonymized)
+            public_text = remove_privacy_placeholders(anonymized)
+            chunks = split_chunks(public_text, self.settings.max_chunk_chars)
+            skills = detect_skills(public_text)
             education = [chunk for chunk in chunks if any(marker in normalize(chunk) for marker in EDUCATION_MARKERS)][:8]
             experience = [chunk for chunk in chunks if any(marker in normalize(chunk) for marker in EXPERIENCE_MARKERS)][:15]
             projects = [chunk for chunk in chunks if any(marker in normalize(chunk) for marker in PROJECT_MARKERS)][:12]
             years = [
                 int(match.group(1))
-                for match in re.finditer(r"\b(\d{1,2})\s*(?:anos?|years?)\b", normalize(anonymized))
+                for match in re.finditer(r"\b(\d{1,2})\s*(?:anos?|years?)\b", normalize(public_text))
             ]
             return CandidateProfile(
                 skills=skills,
@@ -43,6 +44,6 @@ class CandidateAgent:
         return run_agent(
             self.name,
             action,
-            lambda result: f"{len(result.skills)} competências e {len(result.chunks)} trechos estruturados.",
+            lambda result: f"{len(result.skills)} competências e {len(result.chunks)} trechos específicos estruturados.",
             lambda result: min(0.98, 0.45 + 0.03 * min(len(result.skills), 10) + 0.01 * min(len(result.chunks), 20)),
         )

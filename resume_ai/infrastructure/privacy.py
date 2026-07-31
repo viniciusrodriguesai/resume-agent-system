@@ -45,7 +45,7 @@ class PrivacyService:
                 break
         output = "\n".join(lines)
         entities = [
-            PrivacyEntity(entity_type=kind, replacement=f"<{kind}>", count=count)
+            PrivacyEntity(entity_type=kind, replacement="REMOVIDO", count=count)
             for kind, count in counts.items()
         ]
         return output, PrivacyReport(
@@ -76,7 +76,7 @@ class PrivacyService:
             anonymized = AnonymizerEngine().anonymize(text=text, analyzer_results=results).text
             counts = Counter(item.entity_type for item in results)
             entities = [
-                PrivacyEntity(entity_type=kind, replacement=f"<{kind}>", count=count)
+                PrivacyEntity(entity_type=kind, replacement="REMOVIDO", count=count)
                 for kind, count in counts.items()
             ]
             return anonymized, PrivacyReport(
