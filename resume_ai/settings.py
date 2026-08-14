@@ -44,9 +44,12 @@ class Settings(BaseSettings):
     max_requirements: int = 30
     max_chunk_chars: int = 420
     max_document_chars: int = 30_000
+    max_job_chars: int = 30_000
     max_revisions: int = 1
 
     cache_enabled: bool = True
+    cache_backend: Literal["memory", "disk"] = "memory"
+    cache_max_entries: int = 128
     cache_ttl_seconds: int = 86_400
     store_raw_documents: bool = False
     store_anonymized_documents: bool = False
@@ -56,6 +59,10 @@ class Settings(BaseSettings):
     log_pii: bool = False
     log_level: str = "INFO"
     api_key: str | None = None
+    environment: Literal["development", "test", "production"] = "development"
+    allowed_profiles: tuple[ProfileName, ...] = ("demo", "balanced", "complete")
+    api_max_body_mb: int = 1
+    api_rate_limit_per_minute: int = 60
     require_login: bool = False
     cors_origins: str = "http://localhost:8501,http://127.0.0.1:8501"
 
@@ -70,6 +77,12 @@ class Settings(BaseSettings):
             self.cache_dir = root / self.cache_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        if self.cache_backend == "disk" and not self.store_anonymized_documents:
+            raise ValueError(
+                "RESUME_CACHE_BACKEND=disk requires RESUME_STORE_ANONYMIZED_DOCUMENTS=true"
+            )
+        if not self.allowed_profiles:
+            raise ValueError("RESUME_ALLOWED_PROFILES must contain at least one profile")
 
     @property
     def history_db(self) -> Path:
@@ -78,8 +91,9 @@ class Settings(BaseSettings):
     @classmethod
     def for_profile(cls, profile: ProfileName) -> "Settings":
         base = cls(profile=profile)
+        explicit_fields = base.model_fields_set
         if profile == "demo":
-            return base.model_copy(update={
+            defaults = {
                 "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
                 "embedding_backend": "onnx",
                 "embedding_enabled": True,
@@ -89,9 +103,9 @@ class Settings(BaseSettings):
                 "top_k": 3,
                 "embedding_batch_size": 32,
                 "max_revisions": 0,
-            })
-        if profile == "balanced":
-            return base.model_copy(update={
+            }
+        elif profile == "balanced":
+            defaults = {
                 "embedding_model": "intfloat/multilingual-e5-small",
                 "embedding_backend": "onnx",
                 "embedding_enabled": True,
@@ -102,17 +116,21 @@ class Settings(BaseSettings):
                 "top_k": 4,
                 "embedding_batch_size": 16,
                 "max_revisions": 1,
-            })
-        return base.model_copy(update={
-            "embedding_model": "BAAI/bge-m3",
-            "embedding_backend": "torch",
-            "embedding_enabled": True,
-            "reranker_enabled": True,
-            "reranker_model": "BAAI/bge-reranker-v2-m3",
-            "reranker_top_n": 5,
-            "docling_enabled": True,
-            "presidio_enabled": True,
-            "top_k": 5,
-            "embedding_batch_size": 8,
-            "max_revisions": 1,
-        })
+            }
+        else:
+            defaults = {
+                "embedding_model": "BAAI/bge-m3",
+                "embedding_backend": "torch",
+                "embedding_enabled": True,
+                "reranker_enabled": True,
+                "reranker_model": "BAAI/bge-reranker-v2-m3",
+                "reranker_top_n": 5,
+                "docling_enabled": True,
+                "presidio_enabled": True,
+                "top_k": 5,
+                "embedding_batch_size": 8,
+                "max_revisions": 1,
+            }
+        return base.model_copy(
+            update={key: value for key, value in defaults.items() if key not in explicit_fields}
+        )

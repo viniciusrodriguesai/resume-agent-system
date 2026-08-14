@@ -13,6 +13,10 @@ PATTERNS = {
     "CEP": r"\b\d{5}-?\d{3}\b",
     "TELEFONE": r"(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?\d{4,5}[-\s]?\d{4}",
     "URL": r"https?://\S+|www\.\S+",
+    "RG": r"\b(?:RG\s*[:#-]?\s*)?\d{1,2}\.?\d{3}\.?\d{3}-?[\dX]\b",
+    "NASCIMENTO": r"(?im)^(?:data\s+de\s+nascimento|nascimento|date\s+of\s+birth|dob)\s*:?\s*[^\n]+$",
+    "ENDERECO": r"(?im)^(?:(?:endere[cç]o)\s*:?\s*)?(?:rua|avenida|av\.?|alameda|travessa|rodovia|estrada)\s+[^\n]+$",
+    "SOCIAL_HANDLE": r"(?im)^(?:linkedin|github|telegram|instagram)\s*:\s*[^\n]+$",
 }
 
 
@@ -63,6 +67,7 @@ class PrivacyService:
         except Exception:
             return None
         try:
+            baseline_text, baseline_report = self._regex(text)
             analyzer = AnalyzerEngine()
             for entity_type in ("BR_CPF", "BR_CNPJ", "BR_CEP"):
                 key = entity_type.replace("BR_", "")
@@ -72,15 +77,16 @@ class PrivacyService:
                         patterns=[Pattern(name=key.lower(), regex=PATTERNS[key], score=0.85)],
                     )
                 )
-            results = analyzer.analyze(text=text, language="en")
-            anonymized = AnonymizerEngine().anonymize(text=text, analyzer_results=results).text
-            counts = Counter(item.entity_type for item in results)
+            results = analyzer.analyze(text=baseline_text, language="en")
+            anonymized = AnonymizerEngine().anonymize(text=baseline_text, analyzer_results=results).text
+            counts = Counter({item.entity_type: item.count for item in baseline_report.entities})
+            counts.update(item.entity_type for item in results)
             entities = [
                 PrivacyEntity(entity_type=kind, replacement="REMOVIDO", count=count)
                 for kind, count in counts.items()
             ]
             return anonymized, PrivacyReport(
-                method="Microsoft Presidio + reconhecedores pt-BR",
+                method="expressoes regulares pt-BR + Microsoft Presidio",
                 entities=entities,
                 total_removed=sum(counts.values()),
                 raw_document_stored=self.settings.store_raw_documents,
