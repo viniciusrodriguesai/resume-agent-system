@@ -4,6 +4,7 @@ import argparse
 import time
 
 import psutil
+from sentence_transformers import SentenceTransformer
 
 MODELS = [
     ("MiniLM ONNX", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "onnx"),
@@ -14,8 +15,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--runs", type=int, default=3)
 args = parser.parse_args()
 texts = ["Python, SQL e machine learning em projetos de análise de dados."] * 16
-
-from sentence_transformers import SentenceTransformer
 
 for label, name, backend in MODELS:
     start_load = time.perf_counter()

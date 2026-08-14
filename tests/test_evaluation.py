@@ -1,5 +1,6 @@
 from resume_ai.evaluation import classification_metrics
 
+
 def test_metrics_are_computed():
     metrics = classification_metrics(
         ["matched", "partial", "missing"],
