@@ -323,7 +323,7 @@ def render_result(result: AnalysisResult, service: ResumeAnalysisService) -> Non
         ("Obrigatórios ausentes", result.score.required_missing),
         ("Tempo de análise", format_duration(total_ms)),
     ]
-    for column, (label, value) in zip(cols, values):
+    for column, (label, value) in zip(cols, values, strict=True):
         column.metric(label, value)
     st.caption(f"Principal etapa nesta execução: {stage_labels.get(main_stage, main_stage)}.")
     render_result_summary(result)

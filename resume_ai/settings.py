@@ -89,7 +89,7 @@ class Settings(BaseSettings):
         return self.data_dir / "history.sqlite3"
 
     @classmethod
-    def for_profile(cls, profile: ProfileName) -> "Settings":
+    def for_profile(cls, profile: ProfileName) -> Settings:
         base = cls(profile=profile)
         explicit_fields = base.model_fields_set
         if profile == "demo":
