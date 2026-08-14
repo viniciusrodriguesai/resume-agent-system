@@ -1,0 +1,20 @@
+Alex Example
+alex@example.invalid
+Recife, Brazil
+
+Data Science and Artificial Intelligence student at Example University.
+
+SKILLS
+Python, SQL, Pandas, Machine Learning, Git, GitHub, Power BI, Data Analysis,
+Communication, Teamwork.
+
+EXPERIENCE
+Analyzed healthcare datasets and built predictive machine learning models.
+Communicated findings and collaborated with a multidisciplinary team.
+Developed a clinic management system using Python and SQL.
+Created Power BI dashboards to support healthcare data analysis.
+
+PROJECTS
+Built classification models with scikit-learn.
+Implemented relational database queries and data preprocessing pipelines.
+Processed more than 10,000 records in a data quality project.
