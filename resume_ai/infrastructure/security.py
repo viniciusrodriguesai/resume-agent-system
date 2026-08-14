@@ -24,9 +24,24 @@ class SafeUpload:
 def _looks_like_docx(content: bytes) -> bool:
     try:
         with zipfile.ZipFile(io.BytesIO(content)) as archive:
-            names = set(archive.namelist())
+            entries = archive.infolist()
+            if len(entries) > 2_048:
+                return False
+            names = {entry.filename for entry in entries}
+            if len(names) != len(entries):
+                return False
+            total_uncompressed = 0
+            for entry in entries:
+                if entry.flag_bits & 0x1:
+                    return False
+                total_uncompressed += entry.file_size
+                if entry.file_size > 50 * 1024 * 1024 or total_uncompressed > 50 * 1024 * 1024:
+                    return False
+                compression_ratio = entry.file_size / max(entry.compress_size, 1)
+                if entry.file_size > 1024 * 1024 and compression_ratio > 200:
+                    return False
             return "word/document.xml" in names and "[Content_Types].xml" in names
-    except zipfile.BadZipFile:
+    except (OSError, RuntimeError, zipfile.BadZipFile):
         return False
 
 

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import uuid
+from datetime import datetime, timezone
 
 from resume_ai import __version__
 from resume_ai.agents import (
@@ -45,11 +47,46 @@ class ResumeAnalysisService:
         self.report_agent = ReportAgent()
 
     def analyze(self, request: AnalysisRequest) -> AnalysisResult:
+        if len(request.resume_text) > self.settings.max_document_chars:
+            raise ValueError(
+                f"Curriculo excede o limite de {self.settings.max_document_chars} caracteres"
+            )
+        if len(request.job_text) > self.settings.max_job_chars:
+            raise ValueError(f"Vaga excede o limite de {self.settings.max_job_chars} caracteres")
+
         timings: dict[str, float] = {}
-        key = content_hash(__version__, request.profile, request.strictness, request.resume_text, request.job_text)
+        cache_settings = self.settings.model_dump(
+            mode="json",
+            exclude={"api_key", "project_root", "data_dir", "cache_dir"},
+        )
+        key = content_hash(
+            __version__,
+            json.dumps(cache_settings, sort_keys=True, ensure_ascii=False),
+            request.profile,
+            request.strictness,
+            request.resume_text,
+            request.job_text,
+        )
         cached = self.cache.get(key)
         if cached:
-            return AnalysisResult.model_validate(cached)
+            result = AnalysisResult.model_validate(cached)
+            result.analysis_id = str(uuid.uuid4())
+            result.created_at = datetime.now(timezone.utc)
+            result.engine_status = {**result.engine_status, "cache_hit": True}
+            result.timings_ms = {"cache_lookup": 0.0}
+            self.history.save(result)
+            METRICS.record_cache(request.profile, hit=True)
+            METRICS.record_success(request.profile, 0.0, result.score.overall_score)
+            self.telemetry.info(
+                "analysis_completed",
+                analysis_id=result.analysis_id,
+                profile=request.profile,
+                score=result.score.overall_score,
+                duration_ms=0.0,
+                cache_hit=True,
+            )
+            return result
+        METRICS.record_cache(request.profile, hit=False)
 
         traces = []
         with self.telemetry.timer("total", timings):
@@ -87,7 +124,11 @@ class ResumeAnalysisService:
                 recommendations=recommendations,
                 review_summary=review,
                 traces=traces,
-                engine_status={**self.engine.status, "memory_mb": self.telemetry.process_memory_mb()},
+                engine_status={
+                    **self.engine.status,
+                    "memory_mb": self.telemetry.process_memory_mb(),
+                    "cache_hit": False,
+                },
                 timings_ms=timings,
             )
             with self.telemetry.timer("report", timings):
@@ -106,6 +147,7 @@ class ResumeAnalysisService:
             profile=request.profile,
             score=result.score.overall_score,
             duration_ms=result.timings_ms.get("total"),
+            cache_hit=False,
         )
         return result
 

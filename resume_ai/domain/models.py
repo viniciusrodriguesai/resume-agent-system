@@ -115,8 +115,9 @@ class Recommendation(BaseModel):
 
 
 class AnalysisRequest(BaseModel):
-    resume_text: str = Field(min_length=10)
-    job_text: str = Field(min_length=10)
+    # Absolute API guard; deployment-specific limits are enforced by the service.
+    resume_text: str = Field(min_length=10, max_length=100_000)
+    job_text: str = Field(min_length=10, max_length=100_000)
     profile: Literal["demo", "balanced", "complete"] = "demo"
     strictness: Literal["flexível", "equilibrado", "conservador"] = "equilibrado"
 
