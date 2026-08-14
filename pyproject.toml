@@ -47,4 +47,4 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --disable-warnings --maxfail=1 --import-mode=importlib --ignore=tests/test_pipeline.py --ignore=tests/test_privacy_legacy_api.py --ignore=tests/test_privacidade.py --ignore=tests/test_workflow.py"
+addopts = "-q --disable-warnings --maxfail=1 --import-mode=importlib"

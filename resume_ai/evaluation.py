@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, List
+from collections.abc import Iterable
 
 LABELS = ["matched", "partial", "missing"]
 
 def classification_metrics(
     expected: Iterable[str],
     predicted: Iterable[str],
-) -> Dict[str, object]:
+) -> dict[str, object]:
     expected_values = list(expected)
     predicted_values = list(predicted)
     if len(expected_values) != len(predicted_values):
@@ -18,15 +18,15 @@ def classification_metrics(
     for label in LABELS:
         true_positive = sum(
             e == label and p == label
-            for e, p in zip(expected_values, predicted_values)
+            for e, p in zip(expected_values, predicted_values, strict=True)
         )
         false_positive = sum(
             e != label and p == label
-            for e, p in zip(expected_values, predicted_values)
+            for e, p in zip(expected_values, predicted_values, strict=True)
         )
         false_negative = sum(
             e == label and p != label
-            for e, p in zip(expected_values, predicted_values)
+            for e, p in zip(expected_values, predicted_values, strict=True)
         )
         precision = (
             true_positive / (true_positive + false_positive)

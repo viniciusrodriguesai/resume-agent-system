@@ -3,10 +3,16 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 from pathlib import Path
 
-from resume_ai.evaluation import classification_metrics
-from resume_ai.semantic import SemanticEngine
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from resume_ai.evaluation import classification_metrics  # noqa: E402
+from resume_ai.infrastructure.embeddings import EmbeddingEngine  # noqa: E402
+from resume_ai.settings import Settings  # noqa: E402
 
 
 def classify(score: float) -> str:
@@ -32,27 +38,21 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    engine = SemanticEngine()
-    if args.full_ai:
-        engine.load()
+    settings = Settings.for_profile("demo").model_copy(
+        update={"embedding_enabled": args.full_ai, "reranker_enabled": args.full_ai}
+    )
+    engine = EmbeddingEngine(settings)
 
     expected = []
     predicted = []
     with args.labels.open("r", encoding="utf-8-sig", newline="") as handle:
         for row in csv.DictReader(handle):
-            ranked = engine.retrieve(
-                row["requirement"],
-                [row["evidence"]],
-                top_k=1,
-            )
+            ranked = engine.retrieve(row["requirement"], [row["evidence"]], top_k=1)
             score = float(ranked[0]["final_score"]) if ranked else 0.0
             expected.append(row["expected"])
             predicted.append(classify(score))
 
-    print(json.dumps(
-        classification_metrics(expected, predicted),
-        indent=2,
-    ))
+    print(json.dumps(classification_metrics(expected, predicted), indent=2))
 
 
 if __name__ == "__main__":
