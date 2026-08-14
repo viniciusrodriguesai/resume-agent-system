@@ -65,7 +65,7 @@ def get_reader(profile: str) -> DocumentReader:
 
 
 def load_example() -> None:
-    st.session_state["resume_text"] = (EXAMPLES / "curriculo_exemplo.txt").read_text(encoding="utf-8")
+    st.session_state["resume_text"] = (EXAMPLES / "sample_resume.txt").read_text(encoding="utf-8")
     st.session_state["job_text"] = (EXAMPLES / "vaga_exemplo.txt").read_text(encoding="utf-8")
 
 

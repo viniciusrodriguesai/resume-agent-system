@@ -7,7 +7,7 @@ from resume_ai.settings import Settings
 
 def main() -> None:
     base = Path(__file__).resolve().parent
-    resume = (base / "examples" / "curriculo_exemplo.txt").read_text(encoding="utf-8")
+    resume = (base / "examples" / "sample_resume.txt").read_text(encoding="utf-8")
     job = (base / "examples" / "vaga_exemplo.txt").read_text(encoding="utf-8")
     settings = Settings.for_profile("demo").model_copy(
         update={"embedding_enabled": False, "history_enabled": False}
