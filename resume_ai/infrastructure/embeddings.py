@@ -7,7 +7,7 @@ import numpy as np
 from rapidfuzz.fuzz import WRatio
 
 from resume_ai.settings import Settings
-from resume_ai.utils.text import content_hash, exact_phrase, normalize, tfidf_similarity
+from resume_ai.utils.text import content_hash, exact_phrase, negated_phrase, normalize, tfidf_similarity
 
 
 class EmbeddingEngine:
@@ -115,6 +115,14 @@ class EmbeddingEngine:
 
         for index, chunk in enumerate(chunks):
             exact_requirement = exact_phrase(chunk, requirement_text)
+            explicitly_negated = len(concept_groups) <= 1 and (
+                negated_phrase(chunk, requirement_text)
+                or any(
+                    negated_phrase(chunk, alias)
+                    for group in concept_groups
+                    for alias in group
+                )
+            )
             lexical = max(0.0, min(tfidf_similarity(requirement_text, chunk), 1.0))
             fuzzy = WRatio(normalize(requirement_text), normalize(chunk)) / 100
             semantic = float(semantic_scores[index]) if index < len(semantic_scores) else 0.0
@@ -139,12 +147,16 @@ class EmbeddingEngine:
             elif concept_groups and coverage == 1.0:
                 floor = 0.78 if len(concept_groups) > 1 else 0.74
                 final = max(final, floor + 0.16 * final)
+            if explicitly_negated:
+                final = min(final, 0.15)
 
             method_parts = [semantic_method if model_available else "TF-IDF + RapidFuzz"]
             if concept_groups:
                 method_parts.append(f"cobertura de conceitos {coverage:.0%}")
             if exact_requirement:
                 method_parts.append("frase exata")
+            if explicitly_negated:
+                method_parts.append("menção negada")
 
             candidates.append({
                 "text": chunk,

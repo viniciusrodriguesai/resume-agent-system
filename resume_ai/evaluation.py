@@ -1,8 +1,30 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import Any, Protocol
+
+from resume_ai.agents.catalog import concept_alias_groups
 
 LABELS = ["matched", "partial", "missing"]
+
+
+class RetrievalEngine(Protocol):
+    def retrieve(
+        self,
+        query: str,
+        chunks: list[str],
+        top_k: int | None = None,
+        concept_groups: list[list[str]] | None = None,
+    ) -> list[dict[str, Any]]: ...
+
+
+def classify_score(score: float) -> str:
+    if score >= 0.57:
+        return "matched"
+    if score >= 0.32:
+        return "partial"
+    return "missing"
+
 
 def classification_metrics(
     expected: Iterable[str],
@@ -12,6 +34,9 @@ def classification_metrics(
     predicted_values = list(predicted)
     if len(expected_values) != len(predicted_values):
         raise ValueError("Expected and predicted lists must have the same length.")
+    unknown = (set(expected_values) | set(predicted_values)) - set(LABELS)
+    if unknown:
+        raise ValueError(f"Unknown labels: {', '.join(sorted(unknown))}")
 
     per_label = {}
     total_correct = 0
@@ -64,3 +89,41 @@ def classification_metrics(
         "macro_f1": round(macro_f1, 4),
         "per_label": per_label,
     }
+
+
+def evaluate_evidence_rows(
+    rows: Iterable[dict[str, str]],
+    engine: RetrievalEngine,
+) -> dict[str, object]:
+    expected: list[str] = []
+    predicted: list[str] = []
+    cases: list[dict[str, object]] = []
+
+    for index, row in enumerate(rows, start=1):
+        missing_columns = {"requirement", "evidence", "expected"} - set(row)
+        if missing_columns:
+            raise ValueError(
+                f"Row {index} is missing columns: {', '.join(sorted(missing_columns))}"
+            )
+        ranked = engine.retrieve(
+            row["requirement"],
+            [row["evidence"]],
+            top_k=1,
+            concept_groups=concept_alias_groups(row["requirement"]),
+        )
+        score = float(ranked[0]["final_score"]) if ranked else 0.0
+        prediction = classify_score(score)
+        expected.append(row["expected"])
+        predicted.append(prediction)
+        cases.append(
+            {
+                "requirement": row["requirement"],
+                "expected": row["expected"],
+                "predicted": prediction,
+                "score": round(score, 4),
+                "correct": prediction == row["expected"],
+            }
+        )
+
+    metrics = classification_metrics(expected, predicted)
+    return {**metrics, "total": len(cases), "cases": cases}

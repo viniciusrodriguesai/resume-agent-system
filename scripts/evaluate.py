@@ -10,17 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from resume_ai.evaluation import classification_metrics  # noqa: E402
+from resume_ai.evaluation import evaluate_evidence_rows  # noqa: E402
 from resume_ai.infrastructure.embeddings import EmbeddingEngine  # noqa: E402
 from resume_ai.settings import Settings  # noqa: E402
-
-
-def classify(score: float) -> str:
-    if score >= 0.57:
-        return "matched"
-    if score >= 0.32:
-        return "partial"
-    return "missing"
 
 
 def main() -> None:
@@ -36,6 +28,8 @@ def main() -> None:
         action="store_true",
         help="Load local embedding and reranker models.",
     )
+    parser.add_argument("--min-accuracy", type=float, default=0.75)
+    parser.add_argument("--min-macro-f1", type=float, default=0.70)
     args = parser.parse_args()
 
     settings = Settings.for_profile("demo").model_copy(
@@ -43,16 +37,12 @@ def main() -> None:
     )
     engine = EmbeddingEngine(settings)
 
-    expected = []
-    predicted = []
     with args.labels.open("r", encoding="utf-8-sig", newline="") as handle:
-        for row in csv.DictReader(handle):
-            ranked = engine.retrieve(row["requirement"], [row["evidence"]], top_k=1)
-            score = float(ranked[0]["final_score"]) if ranked else 0.0
-            expected.append(row["expected"])
-            predicted.append(classify(score))
+        result = evaluate_evidence_rows(csv.DictReader(handle), engine)
 
-    print(json.dumps(classification_metrics(expected, predicted), indent=2))
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    if result["accuracy"] < args.min_accuracy or result["macro_f1"] < args.min_macro_f1:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

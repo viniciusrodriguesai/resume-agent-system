@@ -1,7 +1,25 @@
 requirement,evidence,expected
 Python,Developed a clinic management system using Python and SQL.,matched
 AWS,Developed a clinic management system using Python and SQL.,missing
-data analysis,Analyzed healthcare datasets and built predictive machine learning models.,matched
-communication,Communicated findings and collaborated with a multidisciplinary team.,matched
+data analysis,Performed data analysis on healthcare datasets and built predictive machine learning models.,matched
+communication,Demonstrated communication by presenting findings to a multidisciplinary team.,matched
 Docker,Implemented relational database queries and data preprocessing pipelines.,missing
 predictive models,Built classification models with scikit-learn.,partial
+SQL,Escrevi consultas SQL complexas e otimizei indices no PostgreSQL.,matched
+Docker,Empacotei a API em containers Docker e automatizei o build.,matched
+Power BI,Criei dashboards executivos no Power BI com indicadores de vendas.,matched
+English,Advanced English used daily with international stakeholders.,matched
+machine learning,Atuei em atendimento ao cliente e rotinas administrativas.,missing
+FastAPI,Desenvolvi interfaces web com React e TypeScript.,missing
+PostgreSQL,Modelei documentos em MongoDB para uma aplicacao web.,missing
+TensorFlow,Criei modelos de classificacao usando PyTorch.,missing
+AWS,Implantei uma aplicacao em nuvem e acompanhei metricas de infraestrutura.,missing
+leadership,Facilitei reunioes semanais e apoiei a organizacao das tarefas da equipe.,missing
+statistics,Analisei distribuicoes e acompanhei indicadores de negocio.,missing
+REST API,Integrei sistemas internos por endpoints HTTP documentados.,missing
+Python and SQL,Automatizei relatorios com Python e consultei dados usando SQL.,matched
+Docker and Linux,Administrei servidores Linux e executei servicos em Docker.,matched
+Pandas and NumPy,Limpei dados tabulares com Pandas sem utilizar NumPy.,partial
+AWS and Azure,Publiquei pipelines de dados exclusivamente na AWS.,partial
+Docker,No experience with Docker.,missing
+NumPy,Trabalhei com Pandas sem utilizar NumPy.,missing

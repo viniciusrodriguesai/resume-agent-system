@@ -141,13 +141,34 @@ def tfidf_similarity(a: str, b: str) -> float:
     return product / (na * nb) if na and nb else 0.0
 
 
-def exact_phrase(text: str, phrase: str) -> bool:
+def _phrase_contexts(text: str, phrase: str) -> list[str]:
     normalized_phrase = normalize(phrase)
     normalized_text = normalize(text)
     if not normalized_phrase or not normalized_text:
-        return False
+        return []
     pattern = rf"(?<![a-z0-9+#]){re.escape(normalized_phrase)}(?![a-z0-9+#])"
-    return re.search(pattern, normalized_text) is not None
+    return [
+        normalized_text[max(0, match.start() - 60) : match.start()]
+        for match in re.finditer(pattern, normalized_text)
+    ]
+
+
+def _is_negated_context(context: str) -> bool:
+    negation = re.compile(
+        r"(?:\bsem|\bnao|\bnot|\bwithout|\bnever|\bnenhum(?:a)?|"
+        r"\bno experience (?:with|in))\s+(?:[a-z0-9+#./-]+\s+){0,3}$"
+    )
+    return negation.search(context) is not None
+
+
+def exact_phrase(text: str, phrase: str) -> bool:
+    return any(not _is_negated_context(context) for context in _phrase_contexts(text, phrase))
+
+
+def negated_phrase(text: str, phrase: str) -> bool:
+    """Return true when every occurrence of a phrase is explicitly negated."""
+    contexts = _phrase_contexts(text, phrase)
+    return bool(contexts) and all(_is_negated_context(context) for context in contexts)
 
 
 def content_hash(*parts: str) -> str:
