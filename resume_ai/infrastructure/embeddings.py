@@ -239,7 +239,7 @@ class EmbeddingEngine:
         top = candidates[: self.settings.reranker_top_n]
         try:
             scores = reranker.predict([[query, item["text"]] for item in top], show_progress_bar=False)
-            for item, raw in zip(top, scores):
+            for item, raw in zip(top, scores, strict=True):
                 value = float(raw)
                 normalized = value if 0 <= value <= 1 else 1 / (1 + math.exp(-value))
                 item["reranker_score"] = round(normalized, 4)

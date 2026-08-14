@@ -4,7 +4,7 @@ import csv
 import io
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from resume_ai import __version__
 from resume_ai.agents import (
@@ -71,7 +71,7 @@ class ResumeAnalysisService:
         if cached:
             result = AnalysisResult.model_validate(cached)
             result.analysis_id = str(uuid.uuid4())
-            result.created_at = datetime.now(timezone.utc)
+            result.created_at = datetime.now(UTC)
             result.engine_status = {**result.engine_status, "cache_hit": True}
             result.timings_ms = {"cache_lookup": 0.0}
             self.history.save(result)

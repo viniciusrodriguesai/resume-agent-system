@@ -45,7 +45,7 @@ class JobAgent:
             responsibilities: list[str] = []
             seen: set[str] = set()
 
-            for raw_line, line in zip(raw_lines, clean_lines):
+            for raw_line, line in zip(raw_lines, clean_lines, strict=True):
                 normalized = normalize(line)
                 if len(line) < 2:
                     continue

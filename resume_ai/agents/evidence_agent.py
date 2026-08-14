@@ -26,7 +26,7 @@ class EvidenceAgent:
             )
 
             output: list[EvidenceMatch] = []
-            for requirement, query, candidates in zip(job.requirements, queries, retrieved):
+            for requirement, query, candidates in zip(job.requirements, queries, retrieved, strict=True):
                 candidates = self.engine.rerank(query, candidates)
                 for item in candidates:
                     item["text"] = best_snippet(item["text"], requirement.text)

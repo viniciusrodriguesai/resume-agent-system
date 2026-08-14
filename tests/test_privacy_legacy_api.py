@@ -1,5 +1,6 @@
 from resume_ai.privacy import anonymize_resume
 
+
 def test_privacy_removes_direct_identifiers():
     text = """
     Alex Example

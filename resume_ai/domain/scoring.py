@@ -86,7 +86,7 @@ def calculate_score(matches: list[EvidenceMatch], strictness: str) -> ScoreSumma
         level = "baixa"
 
     explanation = [
-        f"A nota usa pesos diferentes: obrigatório 1,00; desejável 0,45; neutro 0,20.",
+        "A nota usa pesos diferentes: obrigatório 1,00; desejável 0,45; neutro 0,20.",
         f"Foram encontrados {matched} requisitos atendidos, {partial} parciais e {missing} ausentes.",
     ]
     if required_missing:

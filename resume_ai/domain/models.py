@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -126,7 +126,7 @@ class AnalysisResult(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     analysis_id: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     profile: str
     strictness: str
     candidate: CandidateProfile
