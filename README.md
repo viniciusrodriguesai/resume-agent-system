@@ -133,7 +133,7 @@ O fluxo é dividido em agentes especializados:
 - embeddings locais opcionais;
 - modelos ONNX para execução eficiente em CPU;
 - reranker opcional;
-- cache de embeddings e resultados;
+- cache de embeddings e resultados em memória por padrão;
 - histórico local mínimo em SQLite.
 
 ### Documentos
@@ -150,7 +150,7 @@ O fluxo é dividido em agentes especializados:
 - dashboard em Streamlit;
 - gráficos com Plotly;
 - exemplo de currículo e vaga carregado com um clique;
-- API local com FastAPI;
+- API local com FastAPI, limites de entrada e rate limiting;
 - documentação OpenAPI automática;
 - Dockerfile para execução isolada.
 
@@ -402,7 +402,7 @@ Endpoints disponíveis no projeto:
 | `POST` | `/v1/analyze` | executa uma análise |
 | `GET` | `/metrics` | expõe métricas quando habilitadas |
 
-A API pode ser protegida com:
+A API pode ser protegida com uma chave. Em `RESUME_ENVIRONMENT=production`, a chave é obrigatória:
 
 ```powershell
 $env:RESUME_API_KEY="uma-chave-segura"
@@ -431,13 +431,19 @@ Outras configurações relevantes:
 |---|---:|---|
 | `RESUME_MAX_UPLOAD_MB` | `10` | tamanho máximo do arquivo |
 | `RESUME_MAX_DOCUMENT_CHARS` | `30000` | limite de caracteres processados |
+| `RESUME_MAX_JOB_CHARS` | `30000` | limite de caracteres da vaga |
 | `RESUME_MAX_REQUIREMENTS` | `30` | quantidade máxima de requisitos |
 | `RESUME_CACHE_ENABLED` | `true` | ativa o cache local |
+| `RESUME_CACHE_BACKEND` | `memory` | usa memória; disco exige consentimento explícito |
+| `RESUME_CACHE_MAX_ENTRIES` | `128` | limita o crescimento do cache em memória |
 | `RESUME_HISTORY_ENABLED` | `true` | ativa o histórico mínimo |
 | `RESUME_STORE_RAW_DOCUMENTS` | `false` | impede armazenamento do documento bruto |
 | `RESUME_STORE_ANONYMIZED_DOCUMENTS` | `false` | impede armazenamento do texto anonimizado |
 | `RESUME_LOG_PII` | `false` | impede dados pessoais nos logs |
 | `RESUME_REQUIRE_LOGIN` | `false` | ativa autenticação quando configurada |
+| `RESUME_ALLOWED_PROFILES` | todos | perfis que a API pode executar |
+| `RESUME_API_MAX_BODY_MB` | `1` | limite do corpo recebido pela API |
+| `RESUME_API_RATE_LIMIT_PER_MINUTE` | `60` | limite por IP e por instância |
 | `RESUME_VECTOR_STORE` | `memory` | usa memória ou LanceDB |
 
 ## Arquitetura
@@ -499,9 +505,10 @@ O projeto aplica privacidade antes da análise semântica:
 - documentos brutos não são armazenados por padrão;
 - arquivos aceitos são limitados a PDF, DOCX e TXT;
 - uploads possuem limite de tamanho;
-- PDF e DOCX passam por validação básica;
+- PDF e DOCX passam por validação de assinatura e proteção contra ZIP bombs;
 - segredos, bancos, caches e arquivos `.env` são ignorados pelo Git;
-- a API possui chave opcional;
+- a API exige chave em produção e limita corpo, texto, perfis e taxa de requisições;
+- o cache permanece em memória, salvo consentimento explícito para persistência anonimizada;
 - o CI executa auditoria de dependências.
 
 > [!WARNING]
@@ -536,6 +543,12 @@ Gere cobertura:
 python -m pytest --cov=resume_ai --cov-report=term-missing
 ```
 
+Execute o baseline sintético de qualidade:
+
+```powershell
+python scripts/evaluate.py --min-accuracy 0.95 --min-macro-f1 0.90
+```
+
 Audite dependências:
 
 ```powershell
@@ -546,9 +559,10 @@ python -m pip_audit -r requirements.txt
 
 O workflow de CI é executado em pushes e pull requests e inclui:
 
-- instalação em Python 3.11;
+- matriz de testes em Python 3.11, 3.12 e 3.13;
 - Ruff;
 - pytest com cobertura;
+- baseline de accuracy e macro-F1;
 - pip-audit.
 
 O status atual aparece no badge no início deste README.

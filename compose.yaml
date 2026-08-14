@@ -5,7 +5,9 @@ services:
       - "8501:8501"
     environment:
       RESUME_PROFILE: demo
+      RESUME_ALLOWED_PROFILES: '["demo"]'
       RESUME_EMBEDDING_ENABLED: "false"
+      RESUME_CACHE_BACKEND: memory
       RESUME_HISTORY_ENABLED: "true"
     volumes:
       - ./data:/app/data
@@ -16,6 +18,9 @@ services:
       - "8000:8000"
     environment:
       RESUME_PROFILE: demo
+      RESUME_ALLOWED_PROFILES: '["demo"]'
       RESUME_EMBEDDING_ENABLED: "false"
+      RESUME_CACHE_BACKEND: memory
+      RESUME_API_RATE_LIMIT_PER_MINUTE: "60"
     volumes:
       - ./data:/app/data

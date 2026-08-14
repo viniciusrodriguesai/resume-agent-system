@@ -7,6 +7,8 @@ __pycache__/
 .coverage
 htmlcov/
 .env
+.env.*
+!.env.example
 .streamlit/secrets.toml
 .cache/
 data/*.sqlite*
@@ -14,6 +16,17 @@ data/lancedb/
 uploads/
 reports/private/
 *.db
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.wal
+*.shm
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets/
 *.log
 .DS_Store
 Thumbs.db
