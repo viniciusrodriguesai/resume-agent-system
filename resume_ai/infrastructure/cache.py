@@ -47,10 +47,13 @@ class SafeResultCache:
             return None
         try:
             payload = json.loads(file.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                return None
             if time.time() - float(payload.get("saved_at", 0)) > self.settings.cache_ttl_seconds:
                 file.unlink(missing_ok=True)
                 return None
-            return payload.get("value")
+            disk_value = payload.get("value")
+            return disk_value if isinstance(disk_value, dict) else None
         except Exception:
             return None
 
