@@ -495,8 +495,16 @@ def main() -> None:
             if resume_file and job_file:
                 reader = get_reader(profile)
                 try:
-                    resume_text = reader.read_upload(resume_file.name, resume_file.getvalue())
-                    job_text = reader.read_upload(job_file.name, job_file.getvalue())
+                    resume_text = reader.read_upload(
+                        resume_file.name,
+                        resume_file.getvalue(),
+                        reported_type=resume_file.type,
+                    )
+                    job_text = reader.read_upload(
+                        job_file.name,
+                        job_file.getvalue(),
+                        reported_type=job_file.type,
+                    )
                     st.success("Arquivos validados e textos extraídos.")
                 except Exception as exc:
                     st.error(str(exc))
