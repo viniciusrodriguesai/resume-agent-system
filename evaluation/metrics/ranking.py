@@ -20,3 +20,17 @@ def precision_at_k(
     relevant = set(relevant_ids)
     hits = sum(candidate_id in relevant for candidate_id in ranked_ids[:k])
     return hits / k
+
+
+def recall_at_k(
+    ranked_ids: Sequence[str],
+    relevant_ids: Collection[str],
+    k: int,
+) -> float:
+    """Measure the fraction of all relevant items retrieved in the first k slots."""
+    _validate_ranking(ranked_ids, k)
+    relevant = set(relevant_ids)
+    if not relevant:
+        return 0.0
+    hits = sum(candidate_id in relevant for candidate_id in ranked_ids[:k])
+    return hits / len(relevant)
