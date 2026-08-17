@@ -14,6 +14,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from resume_ai import __version__
 from resume_ai.application.analyze_resume import ResumeAnalysisService
 from resume_ai.domain.models import AnalysisRequest, AnalysisResult, HealthResponse
+from resume_ai.infrastructure.correlation import correlation_scope
 from resume_ai.infrastructure.observability import METRICS
 from resume_ai.settings import Settings
 
@@ -63,6 +64,17 @@ async def guard_analysis_requests(
                 return JSONResponse(status_code=429, content={"detail": "Limite de requisicoes excedido"})
             recent.append(now)
     return await call_next(request)
+
+
+@app.middleware("http")
+async def attach_request_id(
+    request: Request,
+    call_next: RequestResponseEndpoint,
+) -> Response:
+    with correlation_scope(request.headers.get("X-Request-ID")) as request_id:
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
 
 
 app.add_middleware(
