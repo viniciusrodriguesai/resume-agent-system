@@ -9,6 +9,10 @@ from resume_ai.settings import Settings
 from .security import SafeUpload, validate_upload
 
 
+class DocumentReadError(ValueError):
+    """Public parser error that never includes library or filesystem details."""
+
+
 class DocumentReader:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -20,10 +24,15 @@ class DocumentReader:
         reported_type: str | None = None,
     ) -> str:
         upload = validate_upload(filename, content, self.settings, reported_type)
-        text = self._read(upload)
+        try:
+            text = self._read(upload)
+        except DocumentReadError:
+            raise
+        except Exception as exc:
+            raise DocumentReadError("Não foi possível processar o documento enviado") from exc
         text = text.strip()
         if not text:
-            raise ValueError("Não foi possível extrair texto do arquivo")
+            raise DocumentReadError("Não foi possível extrair texto do arquivo")
         return text[: self.settings.max_document_chars]
 
     def _read(self, upload: SafeUpload) -> str:
@@ -37,7 +46,7 @@ class DocumentReader:
             return self._read_pdf(upload.content)
         if upload.extension == ".docx":
             return self._read_docx(upload.content)
-        raise ValueError("Formato não suportado")
+        raise DocumentReadError("Formato não suportado")
 
     @staticmethod
     def _read_pdf(content: bytes) -> str:
@@ -45,7 +54,7 @@ class DocumentReader:
 
         reader = PdfReader(io.BytesIO(content), strict=False)
         if len(reader.pages) > 40:
-            raise ValueError("PDF com mais de 40 páginas não é aceito")
+            raise DocumentReadError("PDF com mais de 40 páginas não é aceito")
         return "\n".join((page.extract_text() or "") for page in reader.pages)
 
     @staticmethod
