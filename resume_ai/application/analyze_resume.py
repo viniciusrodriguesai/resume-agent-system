@@ -17,6 +17,7 @@ from resume_ai.agents import (
     ReviewAgent,
     ScoringAgent,
 )
+from resume_ai.agents.base import AgentExecutionError
 from resume_ai.domain.models import AgentResult, AnalysisRequest, AnalysisResult
 from resume_ai.infrastructure.cache import SafeResultCache
 from resume_ai.infrastructure.correlation import correlation_scope, current_correlation_id
@@ -27,6 +28,17 @@ from resume_ai.infrastructure.privacy import PrivacyService
 from resume_ai.infrastructure.telemetry import Telemetry
 from resume_ai.settings import Settings
 from resume_ai.utils.text import content_hash
+
+_AGENT_STAGE_BY_NAME = {
+    PrivacyAgent.name: "privacy",
+    CandidateAgent.name: "candidate",
+    JobAgent.name: "job",
+    EvidenceAgent.name: "evidence",
+    ScoringAgent.name: "scoring",
+    ReviewAgent.name: "review",
+    RecommendationAgent.name: "recommendations",
+    ReportAgent.name: "report",
+}
 
 
 class ResumeAnalysisService:
@@ -49,9 +61,22 @@ class ResumeAnalysisService:
 
     def analyze(self, request: AnalysisRequest) -> AnalysisResult:
         if current_correlation_id() is not None:
-            return self._analyze(request)
+            return self._analyze_observed(request)
         with correlation_scope():
+            return self._analyze_observed(request)
+
+    def _analyze_observed(self, request: AnalysisRequest) -> AnalysisResult:
+        try:
             return self._analyze(request)
+        except AgentExecutionError as exc:
+            stage = _AGENT_STAGE_BY_NAME.get(exc.result.agent_name, "pipeline")
+            self._record_agent_result(stage, exc.result)
+            self._record_failure(request.profile, stage, exc.__cause__ or exc)
+            raise
+        except Exception as exc:
+            stage = "input_validation" if isinstance(exc, ValueError) else "pipeline"
+            self._record_failure(request.profile, stage, exc)
+            raise
 
     def _analyze(self, request: AnalysisRequest) -> AnalysisResult:
         if len(request.resume_text) > self.settings.max_document_chars:
@@ -168,7 +193,7 @@ class ResumeAnalysisService:
 
     def _record_agent_result(self, stage: str, result: AgentResult) -> None:
         self.telemetry.info(
-            "agent_completed",
+            "agent_failed" if result.status == "error" else "agent_completed",
             stage=stage,
             agent=result.agent_name,
             status=result.status,
@@ -176,6 +201,16 @@ class ResumeAnalysisService:
             confidence=result.confidence,
             warning_count=len(result.warnings),
             evidence_count=len(result.evidence),
+        )
+
+    def _record_failure(self, profile: str, stage: str, error: BaseException) -> None:
+        METRICS.record_failure(profile)
+        self.telemetry.info(
+            "analysis_failed",
+            profile=profile,
+            stage=stage,
+            status="error",
+            error_type=type(error).__name__,
         )
 
     @staticmethod
