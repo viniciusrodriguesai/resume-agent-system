@@ -1,0 +1,44 @@
+[
+  {
+    "case_id": "exact-and-missing",
+    "resume_text": "PERFIL TÉCNICO\nDesenvolvi APIs em Python e escrevi consultas SQL em projetos de dados.",
+    "job_text": "Analista de Dados\nREQUISITOS OBRIGATÓRIOS\n- Python\n- SQL\nREQUISITOS DESEJÁVEIS\n- Docker",
+    "expected_status_by_requirement": {
+      "Python": "matched",
+      "SQL": "matched",
+      "Docker": "missing"
+    },
+    "strictness": "equilibrado",
+    "data_origin": "synthetic"
+  },
+  {
+    "case_id": "cumulative-partial",
+    "resume_text": "PROJETO DE DADOS\nUsei Pandas para limpeza e transformação de tabelas.",
+    "job_text": "Pessoa Cientista de Dados\nREQUISITOS OBRIGATÓRIOS\n- Experiência com Pandas, NumPy e Scikit-learn",
+    "expected_status_by_requirement": {
+      "Experiência com Pandas, NumPy e Scikit-learn": "partial"
+    },
+    "strictness": "equilibrado",
+    "data_origin": "synthetic"
+  },
+  {
+    "case_id": "explicit-negation",
+    "resume_text": "EXPERIÊNCIA\nTrabalhei com Pandas sem utilizar NumPy.",
+    "job_text": "Analista de Dados\nREQUISITOS OBRIGATÓRIOS\n- NumPy",
+    "expected_status_by_requirement": {
+      "NumPy": "missing"
+    },
+    "strictness": "equilibrado",
+    "data_origin": "synthetic"
+  },
+  {
+    "case_id": "alternative-skill",
+    "resume_text": "PORTFÓLIO\nDesenvolvi dashboards executivos no Power BI.",
+    "job_text": "Analista de BI\nREQUISITOS DESEJÁVEIS\n- Power BI ou Tableau",
+    "expected_status_by_requirement": {
+      "Power BI ou Tableau": "matched"
+    },
+    "strictness": "equilibrado",
+    "data_origin": "synthetic"
+  }
+]
