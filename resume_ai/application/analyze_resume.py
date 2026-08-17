@@ -19,6 +19,7 @@ from resume_ai.agents import (
 )
 from resume_ai.domain.models import AnalysisRequest, AnalysisResult
 from resume_ai.infrastructure.cache import SafeResultCache
+from resume_ai.infrastructure.correlation import correlation_scope, current_correlation_id
 from resume_ai.infrastructure.embeddings import EmbeddingEngine
 from resume_ai.infrastructure.history import HistoryRepository
 from resume_ai.infrastructure.observability import METRICS
@@ -47,6 +48,12 @@ class ResumeAnalysisService:
         self.report_agent = ReportAgent()
 
     def analyze(self, request: AnalysisRequest) -> AnalysisResult:
+        if current_correlation_id() is not None:
+            return self._analyze(request)
+        with correlation_scope():
+            return self._analyze(request)
+
+    def _analyze(self, request: AnalysisRequest) -> AnalysisResult:
         if len(request.resume_text) > self.settings.max_document_chars:
             raise ValueError(
                 f"Curriculo excede o limite de {self.settings.max_document_chars} caracteres"
