@@ -1,6 +1,6 @@
 import pytest
 
-from evaluation.metrics.ranking import precision_at_k
+from evaluation.metrics.ranking import precision_at_k, recall_at_k
 
 
 def test_precision_at_k_counts_relevant_slots() -> None:
@@ -20,3 +20,11 @@ def test_precision_at_k_rejects_non_positive_cutoff(k: int) -> None:
 def test_precision_at_k_rejects_duplicate_ranking_ids() -> None:
     with pytest.raises(ValueError, match="duplicates"):
         precision_at_k(["same", "same"], {"same"}, 2)
+
+
+def test_recall_at_k_measures_relevant_item_coverage() -> None:
+    assert recall_at_k(["first", "noise", "second"], {"first", "second"}, 2) == 0.5
+
+
+def test_recall_at_k_is_zero_without_relevance_judgments() -> None:
+    assert recall_at_k(["candidate"], set(), 1) == 0.0
