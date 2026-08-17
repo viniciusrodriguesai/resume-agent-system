@@ -35,3 +35,10 @@ def precision(expected: Iterable[bool], predicted: Iterable[bool]) -> float:
     counts = confusion_counts(expected, predicted)
     denominator = counts.true_positive + counts.false_positive
     return counts.true_positive / denominator if denominator else 0.0
+
+
+def recall(expected: Iterable[bool], predicted: Iterable[bool]) -> float:
+    """Return sensitivity, or zero when the sample has no relevant positives."""
+    counts = confusion_counts(expected, predicted)
+    denominator = counts.true_positive + counts.false_negative
+    return counts.true_positive / denominator if denominator else 0.0
