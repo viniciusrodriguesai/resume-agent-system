@@ -13,8 +13,13 @@ class DocumentReader:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
-    def read_upload(self, filename: str, content: bytes) -> str:
-        upload = validate_upload(filename, content, self.settings)
+    def read_upload(
+        self,
+        filename: str,
+        content: bytes,
+        reported_type: str | None = None,
+    ) -> str:
+        upload = validate_upload(filename, content, self.settings, reported_type)
         text = self._read(upload)
         text = text.strip()
         if not text:
