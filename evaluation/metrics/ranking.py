@@ -34,3 +34,32 @@ def recall_at_k(
         return 0.0
     hits = sum(candidate_id in relevant for candidate_id in ranked_ids[:k])
     return hits / len(relevant)
+
+
+def reciprocal_rank(
+    ranked_ids: Sequence[str],
+    relevant_ids: Collection[str],
+) -> float:
+    """Return the inverse rank of the first relevant item."""
+    _validate_ranking(ranked_ids, 1)
+    relevant = set(relevant_ids)
+    for rank, candidate_id in enumerate(ranked_ids, start=1):
+        if candidate_id in relevant:
+            return 1.0 / rank
+    return 0.0
+
+
+def mean_reciprocal_rank(
+    rankings: Sequence[Sequence[str]],
+    relevance_sets: Sequence[Collection[str]],
+) -> float:
+    """Average reciprocal rank across retrieval cases."""
+    if len(rankings) != len(relevance_sets):
+        raise ValueError("rankings and relevance_sets must have the same length")
+    if not rankings:
+        return 0.0
+    values = [
+        reciprocal_rank(ranking, relevant_ids)
+        for ranking, relevant_ids in zip(rankings, relevance_sets, strict=True)
+    ]
+    return sum(values) / len(values)
