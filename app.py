@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import html
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 import pandas as pd
 import streamlit as st
@@ -316,7 +316,7 @@ def render_result(result: AnalysisResult, service: ResumeAnalysisService) -> Non
     }
 
     cols = st.columns(5)
-    values = [
+    values: list[tuple[str, int | str]] = [
         ("Correspondidos", result.score.matched),
         ("Parcialmente atendidos", result.score.partial),
         ("Desejáveis ausentes", result.score.desired_missing),
@@ -437,17 +437,21 @@ def main() -> None:
             ["⚡ Demonstração", "⚖️ Equilibrado", "🧠 Completo"],
             index=0,
         )
-        profile = {
+        profiles: dict[str, Literal["demo", "balanced", "complete"]] = {
             "⚡ Demonstração": "demo",
             "⚖️ Equilibrado": "balanced",
             "🧠 Completo": "complete",
-        }[profile_label]
+        }
+        profile = profiles[profile_label]
         strictness_label = st.select_slider(
             "Rigor",
             options=["Flexível", "Equilibrado", "Conservador"],
             value="Equilibrado",
         )
-        strictness = strictness_label.lower()
+        strictness = cast(
+            Literal["flexível", "equilibrado", "conservador"],
+            strictness_label.lower(),
+        )
         st.caption("Para apresentar em notebook, use Demonstração. O modo Completo exige mais memória RAM.")
         if st.button("Carregar exemplo", use_container_width=True):
             load_example()
