@@ -40,3 +40,16 @@ def test_guard_rejection_includes_request_id() -> None:
 
     assert response.status_code == 413
     assert response.headers["X-Request-ID"] == "oversized-request"
+
+
+def test_cors_exposes_request_id_to_allowed_origin() -> None:
+    allowed_origin = settings.cors_origins.split(",")[0]
+
+    response = TestClient(app).get(
+        "/health",
+        headers={"Origin": allowed_origin},
+    )
+
+    exposed_headers = response.headers["Access-Control-Expose-Headers"]
+    assert "X-Request-ID" in exposed_headers
+    assert response.headers["Access-Control-Allow-Origin"] == allowed_origin
