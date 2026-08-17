@@ -26,6 +26,7 @@ SAFE_LOG_FIELDS = frozenset(
 
 _EMAIL_PATTERN = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
 _PHONE_PATTERN = re.compile(r"(?<!\w)(?:\+?\d[\d ().-]{7,}\d)(?!\w)")
+_EVENT_PATTERN = re.compile(r"^[a-z][a-z0-9_.-]{0,63}$")
 _MAX_LOG_STRING_LENGTH = 128
 _REDACTED = "[REDACTED]"
 
@@ -50,3 +51,9 @@ def sanitize_log_fields(fields: Mapping[str, object]) -> dict[str, str | int | f
         for key, value in fields.items()
         if key in SAFE_LOG_FIELDS
     }
+
+
+def sanitize_log_event(event: str) -> str:
+    """Accept only bounded technical event names, never user-controlled messages."""
+
+    return event if _EVENT_PATTERN.fullmatch(event) else "invalid_event"
