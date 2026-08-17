@@ -1,15 +1,22 @@
 from __future__ import annotations
 
+import json
 import logging
+import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any
+from datetime import UTC, datetime
 
 import psutil
 
 from resume_ai.settings import Settings
+
+from .log_sanitizer import sanitize_log_event, sanitize_log_fields
+
+_HANDLER_MARKER = "_resume_ai_json_handler"
+_LOGGER_LOCK = threading.Lock()
 
 
 @dataclass
@@ -18,18 +25,34 @@ class Timing:
     duration_ms: float
 
 
+class JsonLogFormatter(logging.Formatter):
+    """Serialize one bounded operational event per line without exception payloads."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        raw_fields = getattr(record, "telemetry_fields", {})
+        fields = sanitize_log_fields(raw_fields) if isinstance(raw_fields, dict) else {}
+        payload = {
+            "timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(timespec="milliseconds"),
+            "level": record.levelname.lower(),
+            "logger": record.name,
+            "event": sanitize_log_event(record.getMessage()),
+            **fields,
+        }
+        return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+
+
 class Telemetry:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
-        self.logger: Any
         self.logger = logging.getLogger("resume_ai")
-        try:
-            import structlog
-
-            self.logger = structlog.get_logger("resume_ai")
-        except Exception:
-            pass
+        self.logger.setLevel(getattr(logging, settings.log_level.upper(), logging.INFO))
+        with _LOGGER_LOCK:
+            if not any(getattr(handler, _HANDLER_MARKER, False) for handler in self.logger.handlers):
+                handler = logging.StreamHandler()
+                handler.setFormatter(JsonLogFormatter())
+                setattr(handler, _HANDLER_MARKER, True)
+                self.logger.addHandler(handler)
+        self.logger.propagate = False
 
     @contextmanager
     def timer(self, name: str, target: dict[str, float]) -> Iterator[None]:
@@ -45,9 +68,7 @@ class Telemetry:
         return float(round(process.memory_info().rss / 1024 / 1024, 2))
 
     def info(self, event: str, **safe_fields: object) -> None:
-        safe_fields.pop("resume_text", None)
-        safe_fields.pop("job_text", None)
-        try:
-            self.logger.info(event, **safe_fields)
-        except TypeError:
-            self.logger.info("%s %s", event, safe_fields)
+        self.logger.info(
+            sanitize_log_event(event),
+            extra={"telemetry_fields": sanitize_log_fields(safe_fields)},
+        )
