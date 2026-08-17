@@ -164,9 +164,14 @@ def validate_upload(
         raise UnsafeUploadError("O arquivo não possui uma estrutura DOCX válida")
     if extension == ".txt":
         try:
-            content.decode("utf-8")
+            decoded_text = content.decode("utf-8-sig")
         except UnicodeDecodeError as exc:
             raise UnsafeUploadError("O TXT deve estar em UTF-8") from exc
+        if "\x00" in decoded_text or any(
+            ord(character) < 32 and character not in "\t\r\n"
+            for character in decoded_text
+        ):
+            raise UnsafeUploadError("O TXT contém caracteres binários não permitidos")
 
     return SafeUpload(
         filename=safe_filename,
