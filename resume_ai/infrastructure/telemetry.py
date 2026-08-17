@@ -13,6 +13,7 @@ import psutil
 
 from resume_ai.settings import Settings
 
+from .correlation import current_correlation_id
 from .log_sanitizer import sanitize_log_event, sanitize_log_fields
 
 _HANDLER_MARKER = "_resume_ai_json_handler"
@@ -68,6 +69,9 @@ class Telemetry:
         return float(round(process.memory_info().rss / 1024 / 1024, 2))
 
     def info(self, event: str, **safe_fields: object) -> None:
+        correlation_id = current_correlation_id()
+        if correlation_id is not None:
+            safe_fields["correlation_id"] = correlation_id
         self.logger.info(
             sanitize_log_event(event),
             extra={"telemetry_fields": sanitize_log_fields(safe_fields)},
