@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import mimetypes
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,6 +29,11 @@ _WINDOWS_RESERVED_NAMES = {
     *(f"LPT{index}" for index in range(1, 10)),
 }
 _RESERVED_FILENAME_CHARACTERS = frozenset('<>:"/\\|?*')
+_CANONICAL_MIME_TYPES = {
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".txt": "text/plain",
+}
 
 
 def _validate_filename(filename: str) -> str:
@@ -68,7 +72,12 @@ def _looks_like_docx(content: bytes) -> bool:
         return False
 
 
-def validate_upload(filename: str, content: bytes, settings: Settings) -> SafeUpload:
+def validate_upload(
+    filename: str,
+    content: bytes,
+    settings: Settings,
+    reported_type: str | None = None,
+) -> SafeUpload:
     safe_filename = _validate_filename(filename)
     extension = Path(safe_filename).suffix.lower()
     if extension not in settings.allowed_extensions:
@@ -77,6 +86,14 @@ def validate_upload(filename: str, content: bytes, settings: Settings) -> SafeUp
         raise UnsafeUploadError(f"Arquivo excede o limite de {settings.max_upload_mb} MB")
     if not content:
         raise UnsafeUploadError("Arquivo vazio")
+
+    canonical_type = _CANONICAL_MIME_TYPES.get(extension)
+    if canonical_type is None:
+        raise UnsafeUploadError("Formato sem validação de conteúdo disponível")
+    if reported_type:
+        normalized_type = reported_type.partition(";")[0].strip().lower()
+        if normalized_type != canonical_type:
+            raise UnsafeUploadError("O tipo MIME declarado não corresponde ao formato do arquivo")
 
     if extension == ".pdf" and not content.startswith(b"%PDF-"):
         raise UnsafeUploadError("A assinatura do arquivo não corresponde a PDF")
@@ -88,5 +105,9 @@ def validate_upload(filename: str, content: bytes, settings: Settings) -> SafeUp
         except UnicodeDecodeError as exc:
             raise UnsafeUploadError("O TXT deve estar em UTF-8") from exc
 
-    guessed = mimetypes.guess_type(safe_filename)[0] or "application/octet-stream"
-    return SafeUpload(filename=safe_filename, extension=extension, content=content, detected_type=guessed)
+    return SafeUpload(
+        filename=safe_filename,
+        extension=extension,
+        content=content,
+        detected_type=canonical_type,
+    )
