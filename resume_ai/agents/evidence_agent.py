@@ -54,4 +54,30 @@ class EvidenceAgent:
             action,
             lambda result: f"Evidências recuperadas em lote para {len(result)} requisitos.",
             lambda result: sum(item.final_score for item in result) / len(result) if result else 0.0,
+            warnings=lambda result: [
+                *(
+                    ["embedding-fallback"]
+                    if self.engine.settings.embedding_enabled
+                    and not self.engine.status["embedding_loaded"]
+                    else []
+                ),
+                *(
+                    ["reranker-fallback"]
+                    if self.engine.settings.reranker_enabled
+                    and not self.engine.status["reranker_loaded"]
+                    else []
+                ),
+                *(["no-evidence-results"] if not result else []),
+            ],
+            evidence=lambda result: [
+                f"requirement-id:{match.requirement.id}"
+                for match in result
+                if match.evidence is not None
+            ],
+            metadata=lambda result: {
+                "requirement_count": len(result),
+                "candidate_count": sum(len(match.top_candidates) for match in result),
+                "embedding_loaded": bool(self.engine.status["embedding_loaded"]),
+                "reranker_loaded": bool(self.engine.status["reranker_loaded"]),
+            },
         )
