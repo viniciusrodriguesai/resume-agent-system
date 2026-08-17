@@ -1,6 +1,6 @@
 import pytest
 
-from evaluation.metrics.ranking import precision_at_k, recall_at_k
+from evaluation.metrics.ranking import mean_reciprocal_rank, precision_at_k, recall_at_k, reciprocal_rank
 
 
 def test_precision_at_k_counts_relevant_slots() -> None:
@@ -28,3 +28,20 @@ def test_recall_at_k_measures_relevant_item_coverage() -> None:
 
 def test_recall_at_k_is_zero_without_relevance_judgments() -> None:
     assert recall_at_k(["candidate"], set(), 1) == 0.0
+
+
+def test_reciprocal_rank_uses_first_relevant_position() -> None:
+    assert reciprocal_rank(["noise", "relevant", "later"], {"relevant", "later"}) == 0.5
+
+
+def test_reciprocal_rank_is_zero_without_hit() -> None:
+    assert reciprocal_rank(["noise"], {"missing"}) == 0.0
+
+
+def test_mean_reciprocal_rank_averages_cases() -> None:
+    assert mean_reciprocal_rank([["noise", "hit"], ["hit"]], [{"hit"}, {"hit"}]) == 0.75
+
+
+def test_mean_reciprocal_rank_rejects_mismatched_case_counts() -> None:
+    with pytest.raises(ValueError, match="same length"):
+        mean_reciprocal_rank([["candidate"]], [])
