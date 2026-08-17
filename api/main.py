@@ -83,6 +83,7 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "X-API-Key"],
+    expose_headers=["X-Request-ID"],
 )
 
 
