@@ -21,6 +21,29 @@ class SafeUpload:
     detected_type: str
 
 
+_WINDOWS_RESERVED_NAMES = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    *(f"COM{index}" for index in range(1, 10)),
+    *(f"LPT{index}" for index in range(1, 10)),
+}
+_RESERVED_FILENAME_CHARACTERS = frozenset('<>:"/\\|?*')
+
+
+def _validate_filename(filename: str) -> str:
+    if not filename or filename != filename.strip() or len(filename) > 255:
+        raise UnsafeUploadError("Nome de arquivo inválido")
+    if any(ord(character) < 32 or ord(character) == 127 for character in filename):
+        raise UnsafeUploadError("Nome de arquivo contém caracteres de controle")
+    if any(character in _RESERVED_FILENAME_CHARACTERS for character in filename):
+        raise UnsafeUploadError("Nome de arquivo contém caracteres não permitidos")
+    if Path(filename).stem.upper() in _WINDOWS_RESERVED_NAMES:
+        raise UnsafeUploadError("Nome de arquivo reservado pelo sistema")
+    return filename
+
+
 def _looks_like_docx(content: bytes) -> bool:
     try:
         with zipfile.ZipFile(io.BytesIO(content)) as archive:
@@ -46,7 +69,8 @@ def _looks_like_docx(content: bytes) -> bool:
 
 
 def validate_upload(filename: str, content: bytes, settings: Settings) -> SafeUpload:
-    extension = Path(filename).suffix.lower()
+    safe_filename = _validate_filename(filename)
+    extension = Path(safe_filename).suffix.lower()
     if extension not in settings.allowed_extensions:
         raise UnsafeUploadError(f"Extensão não permitida: {extension or 'sem extensão'}")
     if len(content) > settings.max_upload_mb * 1024 * 1024:
@@ -64,5 +88,5 @@ def validate_upload(filename: str, content: bytes, settings: Settings) -> SafeUp
         except UnicodeDecodeError as exc:
             raise UnsafeUploadError("O TXT deve estar em UTF-8") from exc
 
-    guessed = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-    return SafeUpload(filename=Path(filename).name, extension=extension, content=content, detected_type=guessed)
+    guessed = mimetypes.guess_type(safe_filename)[0] or "application/octet-stream"
+    return SafeUpload(filename=safe_filename, extension=extension, content=content, detected_type=guessed)
