@@ -1,6 +1,12 @@
 import pytest
 
-from evaluation.metrics.ranking import mean_reciprocal_rank, precision_at_k, recall_at_k, reciprocal_rank
+from evaluation.metrics.ranking import (
+    mean_reciprocal_rank,
+    ndcg_at_k,
+    precision_at_k,
+    recall_at_k,
+    reciprocal_rank,
+)
 
 
 def test_precision_at_k_counts_relevant_slots() -> None:
@@ -45,3 +51,15 @@ def test_mean_reciprocal_rank_averages_cases() -> None:
 def test_mean_reciprocal_rank_rejects_mismatched_case_counts() -> None:
     with pytest.raises(ValueError, match="same length"):
         mean_reciprocal_rank([["candidate"]], [])
+
+
+def test_ndcg_at_k_is_one_for_ideal_order() -> None:
+    assert ndcg_at_k(["first", "second", "noise"], {"first", "second"}, 3) == 1.0
+
+
+def test_ndcg_at_k_discounts_late_relevant_items() -> None:
+    assert ndcg_at_k(["noise", "relevant"], {"relevant"}, 2) == pytest.approx(0.63093)
+
+
+def test_ndcg_at_k_is_zero_without_relevance_judgments() -> None:
+    assert ndcg_at_k(["candidate"], set(), 1) == 0.0
