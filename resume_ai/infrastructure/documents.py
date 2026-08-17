@@ -28,7 +28,7 @@ class DocumentReader:
 
     def _read(self, upload: SafeUpload) -> str:
         if upload.extension == ".txt":
-            return upload.content.decode("utf-8")
+            return upload.content.decode("utf-8-sig")
         if self.settings.docling_enabled:
             docling_text = self._read_docling(upload)
             if docling_text:
