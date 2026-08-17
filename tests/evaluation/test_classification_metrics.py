@@ -1,6 +1,6 @@
 import pytest
 
-from evaluation.metrics.classification import precision, recall
+from evaluation.metrics.classification import f1_score, precision, recall
 
 
 def test_precision_measures_predicted_positive_quality() -> None:
@@ -22,3 +22,14 @@ def test_recall_measures_relevant_positive_coverage() -> None:
 
 def test_recall_is_zero_without_relevant_positives() -> None:
     assert recall([False, False], [True, False]) == 0.0
+
+
+def test_f1_balances_precision_and_recall() -> None:
+    assert f1_score([True, True, False], [True, False, True]) == 0.5
+
+
+def test_f1_accepts_single_pass_iterables() -> None:
+    expected = (value for value in [True, False])
+    predicted = (value for value in [True, False])
+
+    assert f1_score(expected, predicted) == 1.0
