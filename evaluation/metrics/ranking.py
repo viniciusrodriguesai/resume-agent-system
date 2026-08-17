@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Collection, Sequence
 
 
@@ -63,3 +64,24 @@ def mean_reciprocal_rank(
         for ranking, relevant_ids in zip(rankings, relevance_sets, strict=True)
     ]
     return sum(values) / len(values)
+
+
+def ndcg_at_k(
+    ranked_ids: Sequence[str],
+    relevant_ids: Collection[str],
+    k: int,
+) -> float:
+    """Measure position-discounted binary relevance normalized by the ideal order."""
+    _validate_ranking(ranked_ids, k)
+    relevant = set(relevant_ids)
+    ideal_hits = min(len(relevant), k)
+    if ideal_hits == 0:
+        return 0.0
+
+    discounted_gain = sum(
+        1.0 / math.log2(rank + 1)
+        for rank, candidate_id in enumerate(ranked_ids[:k], start=1)
+        if candidate_id in relevant
+    )
+    ideal_gain = sum(1.0 / math.log2(rank + 1) for rank in range(1, ideal_hits + 1))
+    return discounted_gain / ideal_gain
