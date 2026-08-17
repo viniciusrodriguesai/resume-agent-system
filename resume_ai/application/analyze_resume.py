@@ -17,7 +17,7 @@ from resume_ai.agents import (
     ReviewAgent,
     ScoringAgent,
 )
-from resume_ai.domain.models import AnalysisRequest, AnalysisResult
+from resume_ai.domain.models import AgentResult, AnalysisRequest, AnalysisResult
 from resume_ai.infrastructure.cache import SafeResultCache
 from resume_ai.infrastructure.correlation import correlation_scope, current_correlation_id
 from resume_ai.infrastructure.embeddings import EmbeddingEngine
@@ -100,24 +100,31 @@ class ResumeAnalysisService:
             with self.telemetry.timer("privacy", timings):
                 (anonymized, privacy), trace = self.privacy_agent.run(request.resume_text)
                 traces.append(trace)
+                self._record_agent_result("privacy", trace)
             with self.telemetry.timer("candidate", timings):
                 candidate, trace = self.candidate_agent.run(request.resume_text, anonymized)
                 traces.append(trace)
+                self._record_agent_result("candidate", trace)
             with self.telemetry.timer("job", timings):
                 job, trace = self.job_agent.run(request.job_text)
                 traces.append(trace)
+                self._record_agent_result("job", trace)
             with self.telemetry.timer("evidence", timings):
                 matches, trace = self.evidence_agent.run(candidate, job, self.settings.top_k)
                 traces.append(trace)
+                self._record_agent_result("evidence", trace)
             with self.telemetry.timer("scoring", timings):
                 score, trace = self.scoring_agent.run(matches, request.strictness)
                 traces.append(trace)
+                self._record_agent_result("scoring", trace)
             with self.telemetry.timer("review", timings):
                 review, trace = self.review_agent.run(score, matches)
                 traces.append(trace)
+                self._record_agent_result("review", trace)
             with self.telemetry.timer("recommendations", timings):
                 recommendations, trace = self.recommendation_agent.run(candidate, matches)
                 traces.append(trace)
+                self._record_agent_result("recommendations", trace)
 
             result = AnalysisResult(
                 analysis_id=str(uuid.uuid4()),
@@ -142,6 +149,7 @@ class ResumeAnalysisService:
                 markdown, trace = self.report_agent.run(result)
                 result.markdown_report = markdown
                 result.traces.append(trace)
+                self._record_agent_result("report", trace)
 
         result.timings_ms = dict(timings)
         payload = result.model_dump(mode="json")
@@ -157,6 +165,18 @@ class ResumeAnalysisService:
             cache_hit=False,
         )
         return result
+
+    def _record_agent_result(self, stage: str, result: AgentResult) -> None:
+        self.telemetry.info(
+            "agent_completed",
+            stage=stage,
+            agent=result.agent_name,
+            status=result.status,
+            duration_ms=result.duration_ms,
+            confidence=result.confidence,
+            warning_count=len(result.warnings),
+            evidence_count=len(result.evidence),
+        )
 
     @staticmethod
     def to_json(result: AnalysisResult) -> str:
