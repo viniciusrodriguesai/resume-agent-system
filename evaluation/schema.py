@@ -41,3 +41,19 @@ class RetrievalCase(BaseModel):
                 + ", ".join(sorted(unknown_ids))
             )
         return self
+
+
+class AnalysisCase(BaseModel):
+    """A privacy-safe end-to-end pipeline case with requirement-level labels."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    case_id: str = Field(min_length=1, max_length=80)
+    resume_text: str = Field(min_length=10, max_length=30_000)
+    job_text: str = Field(min_length=10, max_length=30_000)
+    expected_status_by_requirement: dict[
+        str,
+        Literal["matched", "partial", "missing"],
+    ] = Field(min_length=1, max_length=30)
+    strictness: Literal["flexível", "equilibrado", "conservador"] = "equilibrado"
+    data_origin: Literal["synthetic", "anonymized"] = "synthetic"
