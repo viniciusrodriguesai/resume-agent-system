@@ -15,7 +15,12 @@ from resume_ai.settings import Settings
 def _docx_with_entry(entry: zipfile.ZipInfo | str, content: str = "payload") -> bytes:
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("[Content_Types].xml", "<Types />")
+        archive.writestr(
+            "[Content_Types].xml",
+            '<Types><Override PartName="/word/document.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            "</Types>",
+        )
         archive.writestr("word/document.xml", "<document />")
         archive.writestr(entry, content)
     return output.getvalue()
