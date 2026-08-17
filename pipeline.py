@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from typing import Literal, cast
+
 from resume_ai.application.analyze_resume import ResumeAnalysisService
 from resume_ai.domain.models import AnalysisRequest, AnalysisResult
 from resume_ai.settings import Settings
+
+Strictness = Literal["flexível", "equilibrado", "conservador"]
 
 STRICTNESS = {
     "flexible": "flexível",
@@ -16,7 +20,10 @@ def run_pipeline(
     job_text: str,
     strictness: str = "Balanced",
 ) -> AnalysisResult:
-    normalized_strictness = STRICTNESS.get(strictness.lower(), strictness.lower())
+    normalized_strictness = cast(
+        Strictness,
+        STRICTNESS.get(strictness.lower(), strictness.lower()),
+    )
     request = AnalysisRequest(
         resume_text=resume_text,
         job_text=job_text,
