@@ -5,6 +5,7 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import Any
 
 import psutil
 
@@ -21,6 +22,7 @@ class Telemetry:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
+        self.logger: Any
         self.logger = logging.getLogger("resume_ai")
         try:
             import structlog
@@ -40,7 +42,7 @@ class Telemetry:
     @staticmethod
     def process_memory_mb() -> float:
         process = psutil.Process()
-        return round(process.memory_info().rss / 1024 / 1024, 2)
+        return float(round(process.memory_info().rss / 1024 / 1024, 2))
 
     def info(self, event: str, **safe_fields: object) -> None:
         safe_fields.pop("resume_text", None)
