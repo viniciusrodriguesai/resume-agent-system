@@ -12,10 +12,25 @@ MatchStatus = Literal["matched", "partial", "missing"]
 class AgentTrace(BaseModel):
     agent: str
     summary: str
+    status: Literal["success", "warning", "error"] = "success"
     duration_ms: float = 0.0
     confidence: float = 0.0
     alerts: list[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @property
+    def agent_name(self) -> str:
+        """Compatibility-safe descriptive alias for new integrations."""
+        return self.agent
+
+    @property
+    def warnings(self) -> list[str]:
+        """Compatibility-safe alias for the existing alerts field."""
+        return self.alerts
+
+
+AgentResult = AgentTrace
 
 
 class PrivacyEntity(BaseModel):
