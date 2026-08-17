@@ -1,0 +1,80 @@
+[
+  {
+    "case_id": "python-api-pt",
+    "query": "Experiência com Python para desenvolvimento de APIs",
+    "candidates": [
+      {"candidate_id": "python-api", "text": "Desenvolvi APIs REST em Python com testes automatizados."},
+      {"candidate_id": "python-course", "text": "Concluí um curso introdutório de Python."},
+      {"candidate_id": "figma", "text": "Criei protótipos de interface no Figma."},
+      {"candidate_id": "sql", "text": "Otimizei consultas SQL em relatórios operacionais."}
+    ],
+    "relevant_candidate_ids": ["python-api"],
+    "data_origin": "synthetic",
+    "language": "pt-BR"
+  },
+  {
+    "case_id": "docker-linux-cumulative",
+    "query": "Experiência com Docker e Linux",
+    "candidates": [
+      {"candidate_id": "docker-linux", "text": "Administrei serviços Linux empacotados em containers Docker."},
+      {"candidate_id": "docker-only", "text": "Usei Docker Desktop para executar uma aplicação local."},
+      {"candidate_id": "linux-only", "text": "Automatizei tarefas de sistema em servidores Linux."},
+      {"candidate_id": "windows", "text": "Prestei suporte a estações Windows."}
+    ],
+    "relevant_candidate_ids": ["docker-linux"],
+    "data_origin": "synthetic",
+    "language": "pt-BR"
+  },
+  {
+    "case_id": "bi-alternatives",
+    "query": "Power BI ou Tableau",
+    "candidates": [
+      {"candidate_id": "power-bi", "text": "Criei dashboards de vendas no Power BI."},
+      {"candidate_id": "tableau", "text": "Publiquei painéis analíticos no Tableau."},
+      {"candidate_id": "matplotlib", "text": "Gerei gráficos exploratórios com Matplotlib."},
+      {"candidate_id": "excel", "text": "Mantive planilhas financeiras no Excel."}
+    ],
+    "relevant_candidate_ids": ["power-bi", "tableau"],
+    "data_origin": "synthetic",
+    "language": "pt-BR"
+  },
+  {
+    "case_id": "machine-learning-en",
+    "query": "machine learning model evaluation",
+    "candidates": [
+      {"candidate_id": "ml-evaluation", "text": "Evaluated classification models with precision, recall, and F1."},
+      {"candidate_id": "ml-training", "text": "Trained a basic regression model in a tutorial."},
+      {"candidate_id": "customer-service", "text": "Handled customer service requests and scheduling."},
+      {"candidate_id": "networking", "text": "Configured office network equipment."}
+    ],
+    "relevant_candidate_ids": ["ml-evaluation"],
+    "data_origin": "synthetic",
+    "language": "en"
+  },
+  {
+    "case_id": "numpy-negation",
+    "query": "NumPy",
+    "candidates": [
+      {"candidate_id": "numpy-used", "text": "Implementei operações vetorizadas com NumPy."},
+      {"candidate_id": "numpy-negated", "text": "Analisei tabelas com Pandas sem utilizar NumPy."},
+      {"candidate_id": "pandas", "text": "Limpei dados tabulares com Pandas."},
+      {"candidate_id": "java", "text": "Implementei serviços em Java."}
+    ],
+    "relevant_candidate_ids": ["numpy-used"],
+    "data_origin": "synthetic",
+    "language": "pt-BR"
+  },
+  {
+    "case_id": "communication-evidence",
+    "query": "comunicação com stakeholders",
+    "candidates": [
+      {"candidate_id": "presentation", "text": "Apresentei resultados técnicos para áreas de negócio e produto."},
+      {"candidate_id": "documentation", "text": "Documentei decisões de arquitetura para a equipe."},
+      {"candidate_id": "solo-coding", "text": "Implementei um algoritmo individualmente."},
+      {"candidate_id": "database", "text": "Modelei tabelas relacionais."}
+    ],
+    "relevant_candidate_ids": ["presentation"],
+    "data_origin": "synthetic",
+    "language": "pt-BR"
+  }
+]
