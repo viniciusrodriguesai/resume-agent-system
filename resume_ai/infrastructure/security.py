@@ -72,6 +72,22 @@ def _looks_like_docx(content: bytes) -> bool:
         return False
 
 
+def _looks_like_pdf(content: bytes) -> bool:
+    header = content[:8]
+    if (
+        len(header) != 8
+        or not header.startswith(b"%PDF-")
+        or header[5:6] not in {b"1", b"2"}
+        or header[6:7] != b"."
+        or not header[7:8].isdigit()
+    ):
+        return False
+    eof_position = content.rfind(b"%%EOF")
+    if eof_position < max(8, len(content) - 2_048):
+        return False
+    return not content[eof_position + len(b"%%EOF"):].strip(b" \t\r\n\f")
+
+
 def validate_upload(
     filename: str,
     content: bytes,
@@ -95,8 +111,8 @@ def validate_upload(
         if normalized_type != canonical_type:
             raise UnsafeUploadError("O tipo MIME declarado não corresponde ao formato do arquivo")
 
-    if extension == ".pdf" and not content.startswith(b"%PDF-"):
-        raise UnsafeUploadError("A assinatura do arquivo não corresponde a PDF")
+    if extension == ".pdf" and not _looks_like_pdf(content):
+        raise UnsafeUploadError("A assinatura ou estrutura final do arquivo não corresponde a PDF")
     if extension == ".docx" and not _looks_like_docx(content):
         raise UnsafeUploadError("O arquivo não possui uma estrutura DOCX válida")
     if extension == ".txt":
