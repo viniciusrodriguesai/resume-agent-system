@@ -35,6 +35,10 @@ _CANONICAL_MIME_TYPES = {
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ".txt": "text/plain",
 }
+_DOCX_MAIN_CONTENT_TYPE = (
+    b"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"
+)
+_UNSAFE_XML_MARKERS = (b"<!DOCTYPE", b"<!ENTITY")
 
 
 def _validate_filename(filename: str) -> str:
@@ -66,6 +70,17 @@ def _is_safe_docx_entry(entry: zipfile.ZipInfo) -> bool:
     return entry.compress_type in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
 
 
+def _contains_unsafe_xml(archive: zipfile.ZipFile, entry: zipfile.ZipInfo) -> bool:
+    tail = b""
+    with archive.open(entry) as source:
+        while chunk := source.read(64 * 1024):
+            probe = (tail + chunk).upper()
+            if any(marker in probe for marker in _UNSAFE_XML_MARKERS):
+                return True
+            tail = probe[-16:]
+    return False
+
+
 def _looks_like_docx(content: bytes) -> bool:
     try:
         with zipfile.ZipFile(io.BytesIO(content)) as archive:
@@ -87,8 +102,20 @@ def _looks_like_docx(content: bytes) -> bool:
                 compression_ratio = entry.file_size / max(entry.compress_size, 1)
                 if entry.file_size > 1024 * 1024 and compression_ratio > 200:
                     return False
-            return "word/document.xml" in names and "[Content_Types].xml" in names
-    except (OSError, RuntimeError, zipfile.BadZipFile):
+            required_entries = {"word/document.xml", "[Content_Types].xml"}
+            if not required_entries.issubset(names):
+                return False
+            content_types_info = archive.getinfo("[Content_Types].xml")
+            if content_types_info.file_size > 256 * 1024:
+                return False
+            if _DOCX_MAIN_CONTENT_TYPE not in archive.read(content_types_info).lower():
+                return False
+            return not any(
+                _contains_unsafe_xml(archive, entry)
+                for entry in entries
+                if entry.filename.lower().endswith((".xml", ".rels"))
+            )
+    except (EOFError, OSError, RuntimeError, ValueError, zipfile.BadZipFile):
         return False
 
 
