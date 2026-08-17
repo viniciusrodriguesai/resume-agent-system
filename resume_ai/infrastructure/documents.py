@@ -48,14 +48,27 @@ class DocumentReader:
             return self._read_docx(upload.content)
         raise DocumentReadError("Formato não suportado")
 
-    @staticmethod
-    def _read_pdf(content: bytes) -> str:
+    def _read_pdf(self, content: bytes) -> str:
         from pypdf import PdfReader
 
         reader = PdfReader(io.BytesIO(content), strict=False)
         if len(reader.pages) > 40:
             raise DocumentReadError("PDF com mais de 40 páginas não é aceito")
-        return "\n".join((page.extract_text() or "") for page in reader.pages)
+        parts: list[str] = []
+        remaining = self.settings.max_document_chars
+        for page in reader.pages:
+            page_text = page.extract_text() or ""
+            if not page_text:
+                continue
+            separator = "\n" if parts else ""
+            if len(separator) >= remaining:
+                break
+            chunk = separator + page_text[: remaining - len(separator)]
+            parts.append(chunk)
+            remaining -= len(chunk)
+            if remaining <= 0:
+                break
+        return "".join(parts)
 
     @staticmethod
     def _read_docx(content: bytes) -> str:
