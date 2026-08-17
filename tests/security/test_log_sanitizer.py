@@ -1,4 +1,4 @@
-from resume_ai.infrastructure.log_sanitizer import sanitize_log_fields
+from resume_ai.infrastructure.log_sanitizer import sanitize_log_event, sanitize_log_fields
 
 
 def test_sanitizer_drops_sensitive_and_unknown_fields() -> None:
@@ -47,3 +47,11 @@ def test_sanitizer_bounds_values_and_prevents_log_injection() -> None:
         "cache_hit": True,
         "duration_ms": 12.5,
     }
+
+
+def test_event_sanitizer_accepts_only_technical_identifiers() -> None:
+    assert sanitize_log_event("analysis.completed") == "analysis.completed"
+    assert sanitize_log_event("cache_miss") == "cache_miss"
+    assert sanitize_log_event("Private Candidate") == "invalid_event"
+    assert sanitize_log_event("analysis_completed\nforged=true") == "invalid_event"
+    assert sanitize_log_event("x" * 65) == "invalid_event"
