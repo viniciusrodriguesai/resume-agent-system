@@ -20,7 +20,7 @@ class CandidateAgent:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
-    def run(self, original: str, anonymized: str) -> tuple[CandidateProfile, AgentTrace]:
+    def run(self, _original: str, anonymized: str) -> tuple[CandidateProfile, AgentTrace]:
         def action() -> CandidateProfile:
             public_text = remove_privacy_placeholders(anonymized)
             chunks = split_chunks(public_text, self.settings.max_chunk_chars)
@@ -46,4 +46,13 @@ class CandidateAgent:
             action,
             lambda result: f"{len(result.skills)} competências e {len(result.chunks)} trechos específicos estruturados.",
             lambda result: min(0.98, 0.45 + 0.03 * min(len(result.skills), 10) + 0.01 * min(len(result.chunks), 20)),
+            warnings=lambda result: ["no-resume-chunks"] if not result.chunks else [],
+            evidence=lambda result: [f"skill:{normalize(skill.name)}" for skill in result.skills],
+            metadata=lambda result: {
+                "skill_count": len(result.skills),
+                "chunk_count": len(result.chunks),
+                "education_count": len(result.education),
+                "experience_count": len(result.experience),
+                "project_count": len(result.projects),
+            },
         )
