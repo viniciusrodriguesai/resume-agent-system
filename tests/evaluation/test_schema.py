@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from evaluation.schema import RetrievalCase
+from evaluation.schema import AnalysisCase, RetrievalCase
 
 
 def valid_case() -> dict[str, object]:
@@ -50,3 +50,25 @@ def test_rejects_unexpected_fields() -> None:
 
     with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
         RetrievalCase.model_validate(payload)
+
+
+def test_accepts_synthetic_full_pipeline_case() -> None:
+    case = AnalysisCase(
+        case_id="pipeline-python",
+        resume_text="Python usado em projetos de APIs.",
+        job_text="REQUISITOS OBRIGATÓRIOS\n- Python",
+        expected_status_by_requirement={"Python": "matched"},
+    )
+
+    assert case.strictness == "equilibrado"
+    assert case.data_origin == "synthetic"
+
+
+def test_rejects_unknown_pipeline_status_label() -> None:
+    with pytest.raises(ValidationError):
+        AnalysisCase(
+            case_id="invalid-label",
+            resume_text="Python usado em projetos de APIs.",
+            job_text="REQUISITOS OBRIGATÓRIOS\n- Python",
+            expected_status_by_requirement={"Python": "excellent"},  # type: ignore[dict-item]
+        )
