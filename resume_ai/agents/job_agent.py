@@ -104,4 +104,25 @@ class JobAgent:
             action,
             lambda result: f"{len(result.requirements)} requisitos estruturados para “{result.title}”.",
             lambda result: min(0.96, 0.55 + 0.02 * min(len(result.requirements), 15)),
+            warnings=lambda result: ["no-job-requirements"] if not result.requirements else [],
+            evidence=lambda result: [
+                f"requirement-id:{requirement.id}"
+                for requirement in result.requirements
+            ],
+            metadata=lambda result: {
+                "requirement_count": len(result.requirements),
+                "required_count": sum(
+                    requirement.priority == "required"
+                    for requirement in result.requirements
+                ),
+                "desired_count": sum(
+                    requirement.priority == "desired"
+                    for requirement in result.requirements
+                ),
+                "neutral_count": sum(
+                    requirement.priority == "neutral"
+                    for requirement in result.requirements
+                ),
+                "responsibility_count": len(result.responsibilities),
+            },
         )
