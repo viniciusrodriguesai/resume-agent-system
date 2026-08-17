@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import stat
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -48,11 +49,30 @@ def _validate_filename(filename: str) -> str:
     return filename
 
 
+def _is_safe_docx_entry(entry: zipfile.ZipInfo) -> bool:
+    name = entry.filename
+    if not name or len(name) > 512 or chr(92) in name or "\x00" in name or name.startswith("/"):
+        return False
+    parts = name.split("/")
+    if entry.is_dir():
+        parts = parts[:-1]
+    if not parts or any(part in {"", ".", ".."} for part in parts):
+        return False
+    if ":" in parts[0]:
+        return False
+    unix_mode = (entry.external_attr >> 16) & 0xFFFF
+    if stat.S_ISLNK(unix_mode):
+        return False
+    return entry.compress_type in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
+
+
 def _looks_like_docx(content: bytes) -> bool:
     try:
         with zipfile.ZipFile(io.BytesIO(content)) as archive:
             entries = archive.infolist()
             if len(entries) > 2_048:
+                return False
+            if any(not _is_safe_docx_entry(entry) for entry in entries):
                 return False
             names = {entry.filename for entry in entries}
             if len(names) != len(entries):
