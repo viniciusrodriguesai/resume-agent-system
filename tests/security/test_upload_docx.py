@@ -11,18 +11,30 @@ from resume_ai.infrastructure.security import (
 )
 from resume_ai.settings import Settings
 
+_CONTENT_TYPES_XML = (
+    '<Types><Override PartName="/word/document.xml" '
+    'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+    "</Types>"
+)
+
 
 def _docx_with_entry(entry: zipfile.ZipInfo | str, content: str = "payload") -> bytes:
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(
             "[Content_Types].xml",
-            '<Types><Override PartName="/word/document.xml" '
-            'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
-            "</Types>",
+            _CONTENT_TYPES_XML,
         )
         archive.writestr("word/document.xml", "<document />")
         archive.writestr(entry, content)
+    return output.getvalue()
+
+
+def _docx_with_xml(document_xml: str, content_types: str = _CONTENT_TYPES_XML) -> bytes:
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", content_types)
+        archive.writestr("word/document.xml", document_xml)
     return output.getvalue()
 
 
@@ -96,3 +108,54 @@ def test_accepts_bounded_docx_entries(tmp_path) -> None:
     )
 
     assert upload.extension == ".docx"
+
+
+@pytest.mark.parametrize(
+    "document_xml",
+    [
+        '<!DOCTYPE document [<!ENTITY xxe SYSTEM "file:///private">]><document>&xxe;</document>',
+        "<document><!entity expanded 'unsafe'></document>",
+        " " * (64 * 1024 - 4) + "<!DOCTYPE document><document />",
+    ],
+    ids=["doctype", "entity", "chunk-boundary"],
+)
+def test_rejects_docx_with_unsafe_xml_declaration(tmp_path, document_xml: str) -> None:
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+    )
+
+    with pytest.raises(UnsafeUploadError, match="DOCX"):
+        validate_upload("resume.docx", _docx_with_xml(document_xml), settings)
+
+
+def test_rejects_docx_without_wordprocessing_content_type(tmp_path) -> None:
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+    )
+
+    with pytest.raises(UnsafeUploadError, match="DOCX"):
+        validate_upload(
+            "resume.docx",
+            _docx_with_xml("<document />", "<Types />"),
+            settings,
+        )
+
+
+def test_rejects_oversized_docx_content_types(tmp_path) -> None:
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+    )
+    oversized_content_types = _CONTENT_TYPES_XML + " " * (256 * 1024)
+
+    with pytest.raises(UnsafeUploadError, match="DOCX"):
+        validate_upload(
+            "resume.docx",
+            _docx_with_xml("<document />", oversized_content_types),
+            settings,
+        )
