@@ -9,21 +9,37 @@ class RecommendationAgent:
     name = "Agente de Recomendações"
 
     def run(self, candidate: CandidateProfile, matches: list[EvidenceMatch]) -> tuple[list[Recommendation], AgentTrace]:
+        required_missing = [
+            match
+            for match in matches
+            if match.requirement.priority == "required" and match.status == "missing"
+        ][:6]
+        required_partial = [
+            match
+            for match in matches
+            if match.requirement.priority == "required" and match.status == "partial"
+        ][:6]
+        desired_missing = [
+            match
+            for match in matches
+            if match.requirement.priority == "desired" and match.status == "missing"
+        ][:5]
+
         def action() -> list[Recommendation]:
             recommendations: list[Recommendation] = []
-            for item in [m for m in matches if m.requirement.priority == "required" and m.status == "missing"][:6]:
+            for item in required_missing:
                 recommendations.append(Recommendation(
                     priority="alta",
                     category="lacuna obrigatória",
                     action=f"Desenvolva evidência real para “{item.requirement.text}”. Não declare domínio antes de estudar ou aplicar a competência.",
                 ))
-            for item in [m for m in matches if m.requirement.priority == "required" and m.status == "partial"][:6]:
+            for item in required_partial:
                 recommendations.append(Recommendation(
                     priority="alta",
                     category="evidência insuficiente",
                     action=f"Reescreva a experiência ligada a “{item.requirement.text}” indicando ação, tecnologia e resultado mensurável.",
                 ))
-            for item in [m for m in matches if m.requirement.priority == "desired" and m.status == "missing"][:5]:
+            for item in desired_missing:
                 recommendations.append(Recommendation(
                     priority="média",
                     category="desenvolvimento",
@@ -41,4 +57,20 @@ class RecommendationAgent:
                 ))
             return recommendations
 
-        return run_agent(self.name, action, lambda result: f"{len(result)} recomendações priorizadas.", lambda _: 0.90)
+        relevant_matches = [*required_missing, *required_partial, *desired_missing]
+        return run_agent(
+            self.name,
+            action,
+            lambda result: f"{len(result)} recomendações priorizadas.",
+            lambda _: 0.90,
+            evidence=lambda _: [
+                f"requirement-id:{match.requirement.id}"
+                for match in relevant_matches
+            ],
+            metadata=lambda result: {
+                "recommendation_count": len(result),
+                "required_missing_count": len(required_missing),
+                "required_partial_count": len(required_partial),
+                "desired_missing_count": len(desired_missing),
+            },
+        )
