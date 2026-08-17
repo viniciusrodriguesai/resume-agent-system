@@ -39,6 +39,26 @@ def test_direct_analysis_generates_and_cleans_correlation_context(tmp_path) -> N
 
     completed = next(record for record in records if record.getMessage() == "analysis_completed")
     payload = json.loads(JsonLogFormatter().format(completed))
+    agent_payloads = [
+        json.loads(JsonLogFormatter().format(record))
+        for record in records
+        if record.getMessage() == "agent_completed"
+    ]
 
     assert re.fullmatch(r"[0-9a-f]{32}", payload["correlation_id"])
+    assert len(agent_payloads) == 8
+    assert {item["stage"] for item in agent_payloads} == {
+        "privacy",
+        "candidate",
+        "job",
+        "evidence",
+        "scoring",
+        "review",
+        "recommendations",
+        "report",
+    }
+    assert all(item["correlation_id"] == payload["correlation_id"] for item in agent_payloads)
+    serialized_logs = json.dumps(agent_payloads)
+    assert "Candidate with Python" not in serialized_logs
+    assert "Data role requiring" not in serialized_logs
     assert current_correlation_id() is None
