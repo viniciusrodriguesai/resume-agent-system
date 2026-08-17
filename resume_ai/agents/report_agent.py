@@ -55,4 +55,13 @@ class ReportAgent:
             action,
             lambda _: "Relatórios Markdown, JSON e CSV preparados.",
             lambda _: 0.98,
+            evidence=lambda _: [
+                f"requirement-id:{match.requirement.id}"
+                for match in result.matches
+            ],
+            metadata=lambda _: {
+                "match_count": len(result.matches),
+                "recommendation_count": len(result.recommendations),
+                "output_format_count": 3,
+            },
         )
