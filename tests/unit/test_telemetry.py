@@ -1,6 +1,7 @@
 import json
 import logging
 
+from resume_ai.infrastructure.correlation import correlation_scope
 from resume_ai.infrastructure.telemetry import JsonLogFormatter, Telemetry
 from resume_ai.settings import Settings
 
@@ -69,3 +70,36 @@ def test_telemetry_installs_one_json_handler(tmp_path) -> None:
 
     assert first.logger is second.logger
     assert len(json_handlers) == 1
+
+
+def test_telemetry_attaches_active_correlation_id(tmp_path) -> None:
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+    )
+    telemetry = Telemetry(settings)
+    records: list[logging.LogRecord] = []
+
+    class CaptureHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            records.append(record)
+
+    handler = CaptureHandler()
+    telemetry.logger.addHandler(handler)
+    try:
+        with correlation_scope("request-123"):
+            telemetry.info(
+                "analysis_started",
+                correlation_id="spoofed",
+                profile="demo",
+                resume_text="Private Candidate",
+            )
+    finally:
+        telemetry.logger.removeHandler(handler)
+
+    payload = json.loads(JsonLogFormatter().format(records[-1]))
+    assert payload["correlation_id"] == "request-123"
+    assert payload["profile"] == "demo"
+    assert "resume_text" not in payload
+    assert "Private Candidate" not in json.dumps(payload)
