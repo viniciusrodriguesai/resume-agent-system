@@ -42,3 +42,10 @@ def recall(expected: Iterable[bool], predicted: Iterable[bool]) -> float:
     counts = confusion_counts(expected, predicted)
     denominator = counts.true_positive + counts.false_negative
     return counts.true_positive / denominator if denominator else 0.0
+
+
+def f1_score(expected: Iterable[bool], predicted: Iterable[bool]) -> float:
+    """Return the harmonic balance of binary precision and recall."""
+    counts = confusion_counts(expected, predicted)
+    denominator = 2 * counts.true_positive + counts.false_positive + counts.false_negative
+    return 2 * counts.true_positive / denominator if denominator else 0.0
