@@ -66,7 +66,8 @@ class DocumentReader:
                 temp.write(upload.content)
                 path = Path(temp.name)
             result = DocumentConverter().convert(path)
-            return result.document.export_to_markdown()
+            markdown = result.document.export_to_markdown()
+            return markdown if isinstance(markdown, str) else None
         except Exception:
             return None
         finally:
