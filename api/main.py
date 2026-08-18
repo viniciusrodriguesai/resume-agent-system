@@ -181,6 +181,20 @@ def health() -> HealthResponse:
     )
 
 
+@app.get("/ready", response_model=HealthResponse)
+def readiness() -> HealthResponse:
+    try:
+        service = service_for(settings.profile)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="analysis service unavailable") from exc
+    return HealthResponse(
+        status="ready",
+        profile=settings.profile,
+        model_loaded=bool(service.engine.status["embedding_loaded"]),
+        memory_mb=service.telemetry.process_memory_mb(),
+    )
+
+
 @app.get("/v1/profiles")
 def profiles() -> dict[str, object]:
     descriptions = {
