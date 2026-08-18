@@ -70,16 +70,37 @@ class DocumentReader:
                 break
         return "".join(parts)
 
-    @staticmethod
-    def _read_docx(content: bytes) -> str:
+    def _read_docx(self, content: bytes) -> str:
         from docx import Document
 
         document = Document(io.BytesIO(content))
-        paragraphs = [paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()]
-        for table in document.tables:
-            for row in table.rows:
-                paragraphs.append(" | ".join(cell.text.strip() for cell in row.cells if cell.text.strip()))
-        return "\n".join(paragraphs)
+        parts: list[str] = []
+        remaining = self.settings.max_document_chars
+
+        def append(value: str) -> bool:
+            nonlocal remaining
+            if not value.strip():
+                return True
+            separator = "\n" if parts else ""
+            if len(separator) >= remaining:
+                return False
+            chunk = separator + value[: remaining - len(separator)]
+            parts.append(chunk)
+            remaining -= len(chunk)
+            return remaining > 0
+
+        for paragraph in document.paragraphs:
+            if not append(paragraph.text):
+                break
+        if remaining > 0:
+            for table in document.tables:
+                for row in table.rows:
+                    row_text = " | ".join(cell.text.strip() for cell in row.cells if cell.text.strip())
+                    if not append(row_text):
+                        break
+                if remaining <= 0:
+                    break
+        return "".join(parts)
 
     @staticmethod
     def _read_docling(upload: SafeUpload) -> str | None:
