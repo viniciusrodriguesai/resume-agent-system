@@ -8,7 +8,7 @@ from resume_ai.domain.models import AnalysisResult
 from resume_ai.settings import Settings
 
 
-class HistoryRepository:
+class SQLiteHistoryRepository:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.path = settings.history_db
@@ -74,3 +74,6 @@ class HistoryRepository:
             return
         with self._connect() as connection:
             connection.execute("DELETE FROM analyses")
+
+
+HistoryRepository = SQLiteHistoryRepository
