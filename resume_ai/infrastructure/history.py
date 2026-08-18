@@ -12,7 +12,8 @@ class HistoryRepository:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.path = settings.history_db
-        self._initialize()
+        if settings.history_enabled:
+            self._initialize()
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path)
@@ -56,6 +57,8 @@ class HistoryRepository:
             )
 
     def list_recent(self, limit: int = 20) -> list[dict[str, Any]]:
+        if not self.settings.history_enabled:
+            return []
         with self._connect() as connection:
             rows = connection.execute(
                 "SELECT id, created_at, job_title, profile, score, level FROM analyses ORDER BY created_at DESC LIMIT ?",
@@ -67,5 +70,7 @@ class HistoryRepository:
         ]
 
     def clear(self) -> None:
+        if not self.settings.history_enabled:
+            return
         with self._connect() as connection:
             connection.execute("DELETE FROM analyses")
