@@ -87,9 +87,17 @@ async def guard_analysis_requests(
         try:
             content_length = int(raw_length)
         except ValueError:
-            return JSONResponse(status_code=400, content={"detail": "Content-Length invalido"})
+            return api_error_response(
+                400,
+                "invalid_content_length",
+                "Cabeçalho Content-Length inválido.",
+            )
         if content_length > max_bytes:
-            return JSONResponse(status_code=413, content={"detail": "Corpo da requisicao muito grande"})
+            return api_error_response(
+                413,
+                "payload_too_large",
+                "Payload acima do limite permitido.",
+            )
 
     limit = settings.api_rate_limit_per_minute
     if limit > 0:
@@ -100,7 +108,11 @@ async def guard_analysis_requests(
             while recent and now - recent[0] >= 60:
                 recent.popleft()
             if len(recent) >= limit:
-                return JSONResponse(status_code=429, content={"detail": "Limite de requisicoes excedido"})
+                return api_error_response(
+                    429,
+                    "rate_limit_exceeded",
+                    "Limite de requisições excedido.",
+                )
             recent.append(now)
     return await call_next(request)
 
