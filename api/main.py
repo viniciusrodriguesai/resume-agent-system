@@ -36,6 +36,30 @@ app = FastAPI(
     version=__version__,
 )
 
+_HTTP_ERROR_MESSAGES: dict[int, tuple[str, str]] = {
+    400: ("bad_request", "Requisição inválida."),
+    401: ("authentication_required", "Autenticação necessária."),
+    403: ("forbidden", "Operação não permitida."),
+    404: ("not_found", "Recurso não encontrado."),
+    405: ("method_not_allowed", "Método HTTP não permitido."),
+    413: ("payload_too_large", "Payload acima do limite permitido."),
+    422: ("unprocessable_request", "Não foi possível processar o payload."),
+    429: ("rate_limit_exceeded", "Limite de requisições excedido."),
+    503: ("service_unavailable", "Serviço temporariamente indisponível."),
+}
+
+
+@app.exception_handler(HTTPException)
+async def handle_http_exception(
+    _request: Request,
+    exc: HTTPException,
+) -> JSONResponse:
+    code, message = _HTTP_ERROR_MESSAGES.get(
+        exc.status_code,
+        ("request_error", "Não foi possível concluir a requisição."),
+    )
+    return api_error_response(exc.status_code, code, message)
+
 
 @app.exception_handler(RequestValidationError)
 async def handle_request_validation_error(
