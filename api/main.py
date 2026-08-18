@@ -53,15 +53,18 @@ _HTTP_ERROR_MESSAGES: dict[int, tuple[str, str]] = {
 
 @app.exception_handler(Exception)
 async def handle_unexpected_exception(
-    _request: Request,
+    request: Request,
     exc: Exception,
 ) -> JSONResponse:
-    api_telemetry.error("api_unhandled_error", error_type=type(exc).__name__)
-    return api_error_response(
-        500,
-        "internal_error",
-        "Erro interno ao processar a requisição.",
-    )
+    with correlation_scope(request.headers.get("X-Request-ID")) as request_id:
+        api_telemetry.error("api_unhandled_error", error_type=type(exc).__name__)
+        response = api_error_response(
+            500,
+            "internal_error",
+            "Erro interno ao processar a requisição.",
+        )
+        response.headers["X-Request-ID"] = request_id
+        return response
 
 
 @app.exception_handler(HTTPException)
