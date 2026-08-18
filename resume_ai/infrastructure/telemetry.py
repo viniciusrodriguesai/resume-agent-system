@@ -76,3 +76,12 @@ class Telemetry:
             sanitize_log_event(event),
             extra={"telemetry_fields": sanitize_log_fields(safe_fields)},
         )
+
+    def error(self, event: str, **safe_fields: object) -> None:
+        correlation_id = current_correlation_id()
+        if correlation_id is not None:
+            safe_fields["correlation_id"] = correlation_id
+        self.logger.error(
+            sanitize_log_event(event),
+            extra={"telemetry_fields": sanitize_log_fields(safe_fields)},
+        )
