@@ -30,6 +30,32 @@ REQUISITOS DESEJÁVEIS
     assert len(result.matches) >= 2
 
 
+def test_analysis_uses_injected_history_without_creating_sqlite(tmp_path):
+    saved_analysis_ids: list[str] = []
+
+    class RecordingHistory:
+        def save(self, result) -> None:
+            saved_analysis_ids.append(result.analysis_id)
+
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+        embedding_enabled=False,
+        history_enabled=True,
+    )
+    service = ResumeAnalysisService(settings, history=RecordingHistory())
+    result = service.analyze(
+        AnalysisRequest(
+            resume_text="Candidato com Python, SQL e Git em produção.",
+            job_text="Vaga de engenharia com requisitos Python e SQL.",
+        )
+    )
+
+    assert saved_analysis_ids == [result.analysis_id]
+    assert not settings.history_db.exists()
+
+
 def test_cache_hit_gets_new_identity_and_is_not_persisted_by_default(tmp_path):
     settings = Settings(
         project_root=tmp_path,
