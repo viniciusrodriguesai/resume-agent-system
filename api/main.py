@@ -7,6 +7,7 @@ from functools import lru_cache
 from threading import Lock
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from starlette.middleware.base import RequestResponseEndpoint
@@ -17,6 +18,8 @@ from resume_ai.domain.models import AnalysisRequest, AnalysisResult, HealthRespo
 from resume_ai.infrastructure.correlation import correlation_scope
 from resume_ai.infrastructure.observability import METRICS
 from resume_ai.settings import Settings
+
+from .errors import api_error_response
 
 
 @lru_cache(maxsize=3)
@@ -32,6 +35,18 @@ app = FastAPI(
     description="API local e explicável para análise de currículos e vagas.",
     version=__version__,
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def handle_request_validation_error(
+    _request: Request,
+    _exc: RequestValidationError,
+) -> JSONResponse:
+    return api_error_response(
+        422,
+        "validation_error",
+        "Payload inválido ou fora dos limites permitidos.",
+    )
 
 
 @app.middleware("http")
