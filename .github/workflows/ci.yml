@@ -13,12 +13,31 @@ concurrency:
 
 jobs:
   test:
+    name: tests (${{ matrix.suite }}, py${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        include:
+          - suite: unit
+            python-version: "3.11"
+            paths: tests/unit tests/test_app_smoke.py
+          - suite: unit
+            python-version: "3.12"
+            paths: tests/unit tests/test_app_smoke.py
+          - suite: unit
+            python-version: "3.13"
+            paths: tests/unit tests/test_app_smoke.py
+          - suite: integration
+            python-version: "3.11"
+            paths: tests/integration
+          - suite: security
+            python-version: "3.11"
+            paths: tests/security
+          - suite: evaluation
+            python-version: "3.11"
+            paths: tests/evaluation tests/test_evaluation.py tests/test_quality_regression.py
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -27,7 +46,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements-dev.txt
-      - run: python -m pytest --cov=resume_ai --cov-report=term-missing
+      - run: python -m pytest ${{ matrix.paths }} --cov=resume_ai --cov-report=term-missing
         env:
           RESUME_ENVIRONMENT: test
           RESUME_EMBEDDING_ENABLED: "false"
