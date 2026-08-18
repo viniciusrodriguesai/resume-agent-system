@@ -41,6 +41,13 @@ def test_guard_rejection_includes_request_id() -> None:
 
     assert response.status_code == 413
     assert response.headers["X-Request-ID"] == "oversized-request"
+    assert response.json() == {
+        "error": {
+            "code": "payload_too_large",
+            "message": "Payload acima do limite permitido.",
+            "request_id": "oversized-request",
+        }
+    }
 
 
 def test_validation_error_does_not_echo_submitted_personal_data() -> None:
