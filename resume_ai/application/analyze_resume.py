@@ -18,6 +18,7 @@ from resume_ai.agents import (
     ScoringAgent,
 )
 from resume_ai.agents.base import AgentExecutionError
+from resume_ai.application.ports import AnalysisHistoryWriter
 from resume_ai.domain.models import AgentResult, AnalysisRequest, AnalysisResult
 from resume_ai.infrastructure.cache import SafeResultCache
 from resume_ai.infrastructure.correlation import correlation_scope, current_correlation_id
@@ -44,12 +45,18 @@ _AGENT_STAGE_BY_NAME = {
 class ResumeAnalysisService:
     """Serviço de aplicação independente de Streamlit e FastAPI."""
 
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        history: AnalysisHistoryWriter | None = None,
+    ) -> None:
         self.settings = settings or Settings()
         self.telemetry = Telemetry(self.settings)
         self.cache = SafeResultCache(self.settings)
         self.engine = EmbeddingEngine(self.settings)
-        self.history = HistoryRepository(self.settings)
+        self.history: AnalysisHistoryWriter = (
+            history if history is not None else HistoryRepository(self.settings)
+        )
         self.privacy_agent = PrivacyAgent(PrivacyService(self.settings))
         self.candidate_agent = CandidateAgent(self.settings)
         self.job_agent = JobAgent(self.settings)
