@@ -163,6 +163,35 @@ def test_http_exception_does_not_echo_service_failure_detail(monkeypatch) -> Non
     assert personal_value not in response.text
 
 
+def test_unexpected_exception_returns_safe_internal_error(monkeypatch) -> None:
+    internal_detail = "C:/private/resumes candidate.private@example.invalid"
+
+    class CrashingService:
+        def analyze(self, _request: object) -> None:
+            raise RuntimeError(internal_detail)
+
+    monkeypatch.setattr(api_main, "service_for", lambda _profile: CrashingService())
+    response = TestClient(app, raise_server_exceptions=False).post(
+        "/v1/analyze",
+        json={
+            "resume_text": "Python engineer with production experience",
+            "job_text": "Hiring a Python engineer for production systems",
+        },
+        headers={"X-Request-ID": "unexpected-failure"},
+    )
+
+    assert response.status_code == 500
+    assert response.headers["X-Request-ID"] == "unexpected-failure"
+    assert response.json() == {
+        "error": {
+            "code": "internal_error",
+            "message": "Erro interno ao processar a requisição.",
+            "request_id": "unexpected-failure",
+        }
+    }
+    assert internal_detail not in response.text
+
+
 def test_cors_exposes_request_id_to_allowed_origin() -> None:
     allowed_origin = settings.cors_origins.split(",")[0]
 
