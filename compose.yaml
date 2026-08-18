@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "8501:8501"
+      - "127.0.0.1:8501:8501"
     environment:
       RESUME_PROFILE: demo
       RESUME_ALLOWED_PROFILES: '["demo"]'
@@ -21,7 +21,7 @@ services:
       retries: 3
       start_period: 10s
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       RESUME_PROFILE: demo
       RESUME_ALLOWED_PROFILES: '["demo"]'
