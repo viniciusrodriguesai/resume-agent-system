@@ -17,6 +17,7 @@ from resume_ai.application.analyze_resume import ResumeAnalysisService
 from resume_ai.domain.models import AnalysisRequest, AnalysisResult, HealthResponse
 from resume_ai.infrastructure.correlation import correlation_scope
 from resume_ai.infrastructure.observability import METRICS
+from resume_ai.infrastructure.telemetry import Telemetry
 from resume_ai.settings import Settings
 
 from .errors import api_error_response
@@ -28,6 +29,7 @@ def service_for(profile: str) -> ResumeAnalysisService:
 
 
 settings = Settings()
+api_telemetry = Telemetry(settings)
 _rate_lock = Lock()
 _request_times: dict[str, deque[float]] = {}
 app = FastAPI(
@@ -47,6 +49,19 @@ _HTTP_ERROR_MESSAGES: dict[int, tuple[str, str]] = {
     429: ("rate_limit_exceeded", "Limite de requisições excedido."),
     503: ("service_unavailable", "Serviço temporariamente indisponível."),
 }
+
+
+@app.exception_handler(Exception)
+async def handle_unexpected_exception(
+    _request: Request,
+    exc: Exception,
+) -> JSONResponse:
+    api_telemetry.error("api_unhandled_error", error_type=type(exc).__name__)
+    return api_error_response(
+        500,
+        "internal_error",
+        "Erro interno ao processar a requisição.",
+    )
 
 
 @app.exception_handler(HTTPException)
