@@ -99,6 +99,17 @@ async def guard_analysis_requests(
                 "Payload acima do limite permitido.",
             )
 
+    received_body = bytearray()
+    async for chunk in request.stream():
+        if len(received_body) + len(chunk) > max_bytes:
+            return api_error_response(
+                413,
+                "payload_too_large",
+                "Payload acima do limite permitido.",
+            )
+        received_body.extend(chunk)
+    request._body = bytes(received_body)
+
     limit = settings.api_rate_limit_per_minute
     if limit > 0:
         client = request.client.host if request.client else "unknown"
