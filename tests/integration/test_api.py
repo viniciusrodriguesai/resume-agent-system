@@ -50,6 +50,26 @@ def test_guard_rejection_includes_request_id() -> None:
     }
 
 
+def test_guard_rejects_body_larger_than_declared_content_length() -> None:
+    oversized_body = b"x" * (settings.api_max_body_mb * 1024 * 1024 + 1)
+    response = TestClient(app).post(
+        "/v1/analyze",
+        content=oversized_body,
+        headers={
+            "Content-Length": "1",
+            "Content-Type": "application/json",
+            "X-Request-ID": "deceptive-length",
+        },
+    )
+
+    assert response.status_code == 413
+    assert response.json()["error"] == {
+        "code": "payload_too_large",
+        "message": "Payload acima do limite permitido.",
+        "request_id": "deceptive-length",
+    }
+
+
 def test_validation_error_does_not_echo_submitted_personal_data() -> None:
     personal_value = "candidate.private@example.invalid"
     response = TestClient(app).post(
