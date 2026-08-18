@@ -12,6 +12,37 @@ def test_health_endpoint() -> None:
     assert response.json()["status"] == "ok"
 
 
+def test_readiness_endpoint_reports_ready_service() -> None:
+    response = TestClient(app).get("/ready")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ready"
+    assert response.json()["profile"] == settings.profile
+
+
+def test_readiness_failure_returns_safe_service_unavailable(monkeypatch) -> None:
+    internal_detail = "model path C:/private/candidate@example.invalid"
+
+    def fail_service_initialization(_profile: str) -> None:
+        raise RuntimeError(internal_detail)
+
+    monkeypatch.setattr(api_main, "service_for", fail_service_initialization)
+    response = TestClient(app).get(
+        "/ready",
+        headers={"X-Request-ID": "readiness-failure"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "error": {
+            "code": "service_unavailable",
+            "message": "Serviço temporariamente indisponível.",
+            "request_id": "readiness-failure",
+        }
+    }
+    assert internal_detail not in response.text
+
+
 def test_api_preserves_valid_request_id() -> None:
     response = TestClient(app).get(
         "/health",
