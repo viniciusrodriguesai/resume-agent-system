@@ -103,3 +103,37 @@ def test_telemetry_attaches_active_correlation_id(tmp_path) -> None:
     assert payload["profile"] == "demo"
     assert "resume_text" not in payload
     assert "Private Candidate" not in json.dumps(payload)
+
+
+def test_error_telemetry_drops_uncontrolled_exception_details(tmp_path) -> None:
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+    )
+    telemetry = Telemetry(settings)
+    records: list[logging.LogRecord] = []
+
+    class CaptureHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            records.append(record)
+
+    handler = CaptureHandler()
+    telemetry.logger.addHandler(handler)
+    try:
+        with correlation_scope("request-error"):
+            telemetry.error(
+                "api_unhandled_error",
+                error_type="RuntimeError",
+                exception_message="Private Candidate private@example.invalid",
+            )
+    finally:
+        telemetry.logger.removeHandler(handler)
+
+    payload = json.loads(JsonLogFormatter().format(records[-1]))
+    assert payload["level"] == "error"
+    assert payload["event"] == "api_unhandled_error"
+    assert payload["error_type"] == "RuntimeError"
+    assert payload["correlation_id"] == "request-error"
+    assert "exception_message" not in payload
+    assert "private@example.invalid" not in json.dumps(payload)
