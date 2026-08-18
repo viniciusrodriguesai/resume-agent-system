@@ -30,6 +30,17 @@ def test_api_replaces_unsafe_request_id() -> None:
     assert re.fullmatch(r"[0-9a-f]{32}", response.headers["X-Request-ID"])
 
 
+def test_api_adds_defensive_response_headers() -> None:
+    response = TestClient(app).get("/health")
+
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Referrer-Policy"] == "no-referrer"
+    assert response.headers["Permissions-Policy"] == (
+        "camera=(), geolocation=(), microphone=()"
+    )
+
+
 def test_guard_rejection_includes_request_id() -> None:
     response = TestClient(app).post(
         "/v1/analyze",
@@ -41,6 +52,7 @@ def test_guard_rejection_includes_request_id() -> None:
 
     assert response.status_code == 413
     assert response.headers["X-Request-ID"] == "oversized-request"
+    assert response.headers["Cache-Control"] == "no-store"
     assert response.json() == {
         "error": {
             "code": "payload_too_large",
