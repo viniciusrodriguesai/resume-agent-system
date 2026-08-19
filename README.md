@@ -147,8 +147,8 @@ aplicação em rede.
 
 | Perfil | Retrieval configurado | Reranker | Parsing e PII | Uso |
 |---|---|---|---|---|
-| `demo` | MiniLM multilingual, ONNX | não | parsers base e regex | notebook e CPU |
-| `balanced` | multilingual-e5-small, ONNX | top 3 | parsers base e regex | equilíbrio local |
+| `demo` | MiniLM multilingual, Torch | não | parsers base e regex | notebook e CPU |
+| `balanced` | multilingual-e5-small, Torch | top 3 | parsers base e regex | equilíbrio local |
 | `complete` | BGE-M3, Torch | BGE top 5 | Docling e Presidio | máquina com mais recursos |
 
 Os modelos carregam de forma preguiçosa e são opcionais. O nome do perfil não prova
@@ -187,8 +187,8 @@ python -m pip install -r requirements-full.txt
 ```
 
 - `requirements.txt`: UI, API, matching lexical, parsers e runtime base;
-- `requirements-ai.txt`: Sentence Transformers, ONNX, cache e extras de IA;
-- `requirements-full.txt`: Presidio, Docling, LanceDB, Prometheus e OpenTelemetry;
+- `requirements-ai.txt`: Sentence Transformers e Transformers corrigidos para embeddings e reranker;
+- `requirements-full.txt`: Presidio, Docling, LanceDB, Prometheus e restrição segura de `cryptography`;
 - `requirements-dev.txt`: testes, qualidade, auditoria e build.
 
 Consulte [deployment](docs/DEPLOYMENT.md) para comandos específicos de PowerShell,

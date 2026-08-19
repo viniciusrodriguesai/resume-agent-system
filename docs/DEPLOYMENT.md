@@ -40,10 +40,11 @@ python -m pip install -r requirements-ai.txt
 python -m pip install -r requirements-full.txt
 ```
 
-`requirements-ai.txt` adiciona embeddings, reranker e cache opcional.
-`requirements-full.txt` acrescenta Presidio, Docling, LanceDB, Prometheus e
-OpenTelemetry. Instalar um pacote não garante que o modelo correspondente já esteja
-baixado ou que o backend funcione na plataforma.
+`requirements-ai.txt` adiciona a pilha Torch de embeddings e reranker.
+`requirements-full.txt` acrescenta Presidio, Docling, LanceDB e Prometheus, além
+da restrição transitiva de `cryptography` exigida pela auditoria. Instalar um pacote
+não garante que o modelo correspondente já esteja baixado ou que o backend funcione
+na plataforma.
 
 Para pré-carregar:
 

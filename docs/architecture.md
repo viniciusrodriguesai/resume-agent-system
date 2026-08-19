@@ -85,7 +85,7 @@ O currículo é dividido em trechos limitados. Para cada requisito, o motor calc
 Os embeddings dos trechos são calculados em lote e reutilizados durante a vida da
 instância. Se modelo, backend ou inferência falhar, a análise continua pelo caminho
 lexical e registra o fallback no estado do motor e nos warnings do agente. O perfil
-`demo` não significa “somente lexical”: por padrão ele tenta MiniLM com backend ONNX.
+`demo` não significa “somente lexical”: por padrão ele tenta MiniLM com backend Torch.
 
 ## Estado, cache e persistência
 

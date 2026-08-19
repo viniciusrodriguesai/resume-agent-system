@@ -18,8 +18,8 @@ somente aos campos que não foram definidos explicitamente.
 
 | Perfil | Embedding | Backend | Reranker | Parser e PII | Top K |
 |---|---|---|---|---|---|
-| `demo` | MiniLM multilingual | ONNX | não | parsers base e regex | 3 |
-| `balanced` | multilingual-e5-small | ONNX | top 3 | parsers base e regex | 4 |
+| `demo` | MiniLM multilingual | Torch | não | parsers base e regex | 3 |
+| `balanced` | multilingual-e5-small | Torch | top 3 | parsers base e regex | 4 |
 | `complete` | BGE-M3 | Torch | BGE reranker top 5 | Docling e Presidio | 5 |
 
 Perfis declaram intenção. Dependências e modelos continuam opcionais: falha de
@@ -45,7 +45,7 @@ permissão de escrita para UID 10001.
 |---|---|---|
 | `RESUME_EMBEDDING_ENABLED` | `true` | permite tentativa de embedding |
 | `RESUME_EMBEDDING_MODEL` | MiniLM multilingual | identificador Sentence Transformers |
-| `RESUME_EMBEDDING_BACKEND` | `onnx` | `onnx`, `torch` ou `openvino` |
+| `RESUME_EMBEDDING_BACKEND` | `torch` | `onnx`, `torch` ou `openvino` |
 | `RESUME_EMBEDDING_DEVICE` | `cpu` | dispositivo entregue à biblioteca |
 | `RESUME_EMBEDDING_BATCH_SIZE` | 16 | tamanho de lote |
 | `RESUME_NORMALIZE_EMBEDDINGS` | `true` | normaliza vetores |
@@ -60,6 +60,11 @@ permissão de escrita para UID 10001.
 `RESUME_VECTOR_STORE` aceita `memory` ou `lancedb`, mas o fluxo de evidências
 atual usa o `EmbeddingEngine` em memória. Selecionar LanceDB não muda o pipeline da
 V6.
+
+O perfil de dependências da V6 instala e valida Torch. `onnx` e `openvino`
+permanecem valores aceitos para instalações gerenciadas pelo operador, mas seus
+adaptadores não fazem parte de `requirements-ai.txt`. Se o backend solicitado não
+carregar, o motor registra o fallback e continua pelo matching lexical.
 
 ## Parsing e privacidade
 

@@ -73,8 +73,8 @@ como dado sensível, não a registre em proxies e respeite `Cache-Control: no-st
 `GET /v1/profiles` retorna somente perfis habilitados no deployment. As descrições
 refletem as configurações padrão:
 
-- `demo`: MiniLM ONNX, sem reranker e sem Docling;
-- `balanced`: E5-small ONNX e reranker no top 3;
+- `demo`: MiniLM Torch, sem reranker e sem Docling;
+- `balanced`: E5-small Torch e reranker no top 3;
 - `complete`: BGE-M3, BGE reranker, Docling e Presidio quando instalados.
 
 Modelos carregam de forma preguiçosa. Se uma dependência ou modelo estiver

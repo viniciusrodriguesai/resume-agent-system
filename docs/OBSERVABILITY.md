@@ -139,9 +139,8 @@ sintéticos.
 
 ## Limitações e evolução
 
-- não há exportador OpenTelemetry conectado ao pipeline;
-- `structlog` e pacotes OpenTelemetry são opcionais, mas o runtime atual usa
-  `logging` padrão e métricas Prometheus;
+- não há exportador OpenTelemetry conectado ou declarado como dependência;
+- o runtime usa `logging` padrão e métricas Prometheus;
 - não há tracing distribuído porque a V6 é um processo local sem workers;
 - métricas e logs não têm retenção própria;
 - `/metrics` é público na aplicação e deve ser protegido pelo deployment;
