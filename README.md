@@ -1,722 +1,476 @@
-<div align="center">
-
 # Resume Match AI
 
 ### Análise local, explicável e multiagente de currículos e vagas
 
-Compare requisitos, encontre evidências no currículo, identifique lacunas e gere recomendações sem depender de APIs pagas e sem enviar os documentos para serviços externos.
-
-[![Version](https://img.shields.io/badge/version-5.2.1-5B5BD6)](https://github.com/viniciusrodriguesai/resume-agent-system)
-[![Python](https://img.shields.io/badge/Python-3.11%20%E2%80%93%203.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![V6 candidate](https://img.shields.io/badge/version-V6_candidate-5B5BD6)](pyproject.toml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776AB)](pyproject.toml)
 [![CI](https://github.com/viniciusrodriguesai/resume-agent-system/actions/workflows/ci.yml/badge.svg)](https://github.com/viniciusrodriguesai/resume-agent-system/actions/workflows/ci.yml)
-[![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
-[![Local First](https://img.shields.io/badge/AI-local--first-111827)](#privacidade-e-segurança)
-[![Academic Project](https://img.shields.io/badge/projeto-acad%C3%AAmico-Programa%C3%A7%C3%A3o%20com%20Agentes-7C3AED)](#contexto-acad%C3%AAmico)
+[![License: MIT](https://img.shields.io/badge/license-MIT-0F766E)](LICENSE)
 
-[Visão geral](#visão-geral) ·
-[Recursos](#principais-recursos) ·
-[Instalação](#início-rápido) ·
-[Arquitetura](#arquitetura) ·
-[API](#api-local) ·
-[Segurança](#privacidade-e-segurança)
+Resume Match AI compara um currículo com uma descrição de vaga, encontra evidências
+por requisito e gera score, diagnóstico e recomendações rastreáveis. O processamento
+é local, funciona sem serviço pago e mantém um caminho lexical quando modelos
+opcionais não estão disponíveis.
 
-</div>
-
----
-
-## Visão geral
-
-O **Resume Match AI** é uma aplicação open source que compara um currículo com uma descrição de vaga e produz uma análise estruturada, explicável e auditável.
-
-Em vez de retornar apenas uma porcentagem, o sistema mostra:
-
-- quais requisitos foram atendidos;
-- quais foram parcialmente atendidos;
-- quais não possuem evidência suficiente;
-- o trecho do currículo usado como evidência;
-- como a nota foi formada;
-- recomendações priorizadas para melhorar o currículo;
-- o tempo de execução de cada agente;
-- um relatório de privacidade;
-- relatórios para download em Markdown, JSON e CSV.
-
-A versão atual é a **5.2.1** e foi projetada para funcionar localmente em computadores com CPU, mantendo opções mais pesadas para máquinas com maior capacidade.
-
-> [!IMPORTANT]
-> O sistema oferece apoio à análise humana. Ele não deve ser usado como único critério para selecionar, rejeitar ou classificar pessoas.
-
-
-## Contexto acadêmico
-
-Este projeto foi desenvolvido para a disciplina **Programação com Agentes**, ministrada pelo professor **Andrei de Araujo Formiga**.
-
-A proposta da disciplina é aprender a programar melhor com o apoio de agentes de inteligência artificial, usando a IA não apenas para gerar trechos isolados de código, mas como parte ativa de todo o processo de desenvolvimento de software.
-
-No projeto, os agentes de IA foram utilizados para apoiar atividades como:
-
-- levantamento e refinamento de requisitos;
-- definição da arquitetura;
-- implementação de funcionalidades;
-- revisão e refatoração de código;
-- criação de testes;
-- identificação de erros;
-- melhoria da documentação;
-- análise de segurança;
-- organização do projeto para apresentação e evolução futura.
-
-O objetivo acadêmico não é substituir o aprendizado de programação, mas desenvolver a capacidade de:
-
-- formular instruções técnicas claras;
-- avaliar criticamente código produzido por IA;
-- validar resultados;
-- detectar erros e inconsistências;
-- compreender decisões de arquitetura;
-- melhorar código de forma iterativa;
-- usar agentes como ferramentas de engenharia de software.
-
-Este repositório representa, portanto, tanto o resultado funcional do sistema quanto o processo de aprendizagem sobre desenvolvimento assistido por agentes.
-
-### Informações da disciplina
-
-| Item | Informação |
-|---|---|
-| Disciplina | Programação com Agentes |
-| Professor | Andrei de Araujo Formiga |
-| Tipo de trabalho | Projeto final |
-| Tema | Sistema multiagente para análise de currículos e vagas |
-| Objetivo acadêmico | Aprender a programar e desenvolver software de forma mais eficiente com agentes de IA |
+> O resultado apoia revisão humana. Não deve decidir contratação, inferir atributos
+> sensíveis nem produzir ranking definitivo de pessoas.
 
 ## Problema
 
-Comparadores tradicionais dependem de palavras exatas e podem falhar quando currículo e vaga descrevem a mesma competência de maneiras diferentes.
-
-Exemplo:
-
-```text
-Vaga: experiência com modelagem preditiva
-Currículo: desenvolvimento de modelos de machine learning
-```
-
-O Resume Match AI combina técnicas lexicais, aproximação textual e similaridade semântica para encontrar relações como essa, mantendo a evidência utilizada visível ao usuário.
-
-## Principais recursos
-
-### Análise multiagente
-
-O fluxo é dividido em agentes especializados:
-
-1. **Agente de privacidade** — remove identificadores pessoais antes da análise.
-2. **Agente de currículo** — estrutura competências, formação, experiência e projetos.
-3. **Agente de vaga** — extrai requisitos e classifica prioridades.
-4. **Agente de evidências** — encontra os melhores trechos do currículo para cada requisito.
-5. **Agente de pontuação** — calcula notas por requisito e categoria.
-6. **Agente revisor** — verifica inconsistências e casos limítrofes.
-7. **Agente de recomendações** — sugere melhorias sem inventar experiências.
-8. **Agente de relatórios** — gera saídas legíveis e exportáveis.
-
-### Correspondência explicável
-
-- evidência específica para cada requisito;
-- status **Correspondido**, **Parcial** ou **Ausente**;
-- prioridade **Obrigatória**, **Desejável** ou **Neutra**;
-- detalhamento das notas lexical, aproximada, semântica e final;
-- explicação textual da pontuação;
-- notas por categoria;
-- identificação de requisitos obrigatórios ausentes.
-
-### Execução local
-
-- nenhum serviço pago obrigatório;
-- fallback offline com TF-IDF e RapidFuzz;
-- embeddings locais opcionais;
-- modelos ONNX para execução eficiente em CPU;
-- reranker opcional;
-- cache de embeddings e resultados em memória por padrão;
-- histórico local mínimo em SQLite.
-
-### Documentos
-
-- texto colado diretamente na interface;
-- upload de PDF, DOCX e TXT;
-- limite padrão de 10 MB;
-- validação de extensão e estrutura do arquivo;
-- parsing leve com `pypdf` e `python-docx`;
-- Docling opcional para documentos mais complexos.
-
-### Interface e API
-
-- dashboard em Streamlit;
-- gráficos com Plotly;
-- exemplo de currículo e vaga carregado com um clique;
-- API local com FastAPI, limites de entrada e rate limiting;
-- documentação OpenAPI automática;
-- Dockerfile para execução isolada.
-
-### Qualidade de software
-
-- modelos de domínio tipados com Pydantic;
-- lint com Ruff;
-- checagem estática com mypy;
-- testes com pytest;
-- cobertura de testes;
-- auditoria de dependências com pip-audit;
-- integração contínua com GitHub Actions;
-- atualizações automatizadas com Dependabot.
-
-## O que mudou na V5.2
-
-### Hotfix V5.2.1
-
-- limpa automaticamente resultados de sessão incompatíveis após uma atualização;
-- impede falha de validação do Pydantic ao abrir resultados antigos;
-- orienta o usuário a executar uma nova análise quando necessário.
-
-
-- classificação mais clara em baixa, moderada, boa, alta e excelente compatibilidade;
-- correção do texto de nível exibido no cartão principal;
-- cards renomeados para Correspondidos e Parcialmente atendidos;
-- separação visual entre requisitos desejáveis e obrigatórios ausentes;
-- aviso positivo quando todos os requisitos obrigatórios possuem evidência;
-- resumo automático da compatibilidade;
-- destaque dos principais pontos fortes e das principais lacunas;
-- cartão principal mais compacto;
-- relatórios atualizados com os novos indicadores;
-- cache de análises versionado para impedir reutilização de resultados antigos.
-
-## Como funciona
-
-```text
-Currículo + vaga
-      │
-      ▼
-Agente de privacidade
-      │
-      ▼
-Estruturação do currículo e da vaga
-      │
-      ▼
-Extração e priorização de requisitos
-      │
-      ▼
-Motor de evidências
-      ├── TF-IDF
-      ├── RapidFuzz
-      ├── embeddings locais
-      └── reranker opcional
-      │
-      ▼
-Pontuação explicável
-      │
-      ▼
-Agente revisor
-      │
-      ├── revisão necessária ──► nova passagem
-      └── aprovado
-      │
-      ▼
-Recomendações + relatórios
-```
-
-## Perfis de execução
-
-| Perfil | Modelo principal | Backend | Reranker | Parser avançado | Indicado para |
-|---|---|---|---:|---:|---|
-| `demo` | `paraphrase-multilingual-MiniLM-L12-v2` | ONNX | Não | Não | apresentação e CPU |
-| `balanced` | `multilingual-e5-small` | ONNX | Top 3 | Não | equilíbrio entre qualidade e velocidade |
-| `complete` | `BAAI/bge-m3` | PyTorch | BGE Reranker | Docling + Presidio | máquinas mais fortes |
-
-O modo de fallback continua disponível quando os modelos opcionais não podem ser carregados.
-
-## Tecnologias
-
-| Camada | Tecnologias |
-|---|---|
-| Linguagem | Python 3.11–3.13 |
-| Interface | Streamlit |
-| API | FastAPI + Uvicorn |
-| Modelagem | Pydantic + pydantic-settings |
-| Busca lexical | scikit-learn + TF-IDF |
-| Similaridade aproximada | RapidFuzz |
-| IA local | Sentence Transformers + ONNX Runtime |
-| Modelos opcionais | MiniLM, E5-small, BGE-M3 e BGE Reranker |
-| Documentos | pypdf, python-docx e Docling opcional |
-| Privacidade | regras locais e Presidio opcional |
-| Dados | SQLite e LanceDB opcional |
-| Gráficos | Plotly |
-| Testes | pytest |
-| Qualidade | Ruff, mypy e pip-audit |
-| Empacotamento | Docker |
-
-## Início rápido
-
-### Requisitos
-
-- Windows, Linux ou macOS;
-- Python 3.11, 3.12 ou 3.13;
-- Git;
-- VS Code recomendado;
-- conexão com a internet apenas para a instalação inicial e o download dos modelos opcionais.
-
-### 1. Clone o repositório
-
-```powershell
-git clone https://github.com/viniciusrodriguesai/resume-agent-system.git
-cd resume-agent-system
-```
-
-### 2. Crie o ambiente virtual
-
-#### Windows PowerShell
-
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-#### Linux ou macOS
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-```
-
-### 3. Atualize o instalador
-
-```powershell
-python -m pip install --upgrade pip
-```
-
-### 4. Escolha a instalação
-
-#### Base
-
-Instala a interface, a API e o fallback totalmente local:
-
-```powershell
-python -m pip install -r requirements.txt
-```
-
-#### IA local recomendada
-
-Instala embeddings locais e o backend ONNX:
-
-```powershell
-python -m pip install -r requirements-ai.txt
-python scripts\preload_models.py --profile demo
-```
-
-#### Completa
-
-Instala os componentes opcionais mais pesados:
-
-```powershell
-python -m pip install -r requirements-full.txt
-python scripts\preload_models.py --profile complete
-```
-
-> [!NOTE]
-> O perfil completo pode usar vários gigabytes de armazenamento e ser lento em computadores sem GPU.
-
-## Executar a interface
-
-```powershell
-python -m streamlit run app.py
-```
-
-A aplicação ficará disponível em:
-
-```text
-http://localhost:8501
-```
-
-O Streamlit normalmente abre o navegador automaticamente. Caso isso não aconteça:
-
-```powershell
-Start-Process "http://localhost:8501"
-```
-
-Para solicitar a abertura automática:
-
-```powershell
-python -m streamlit run app.py --server.headless false
-```
-
-Para encerrar:
-
-```text
-Ctrl + C
-```
-
-## Uso da interface
-
-1. Escolha o perfil de execução.
-2. Selecione o rigor da análise.
-3. Escolha entre colar textos ou enviar arquivos.
-4. Insira o currículo e a vaga.
-5. Clique em **Executar análise multiagente**.
-6. Consulte as abas:
-   - Visão geral;
-   - Evidências;
-   - Recomendações;
-   - Privacidade;
-   - Agentes;
-   - Exportar.
-7. Baixe o relatório no formato desejado.
-
-Para uma apresentação em notebook com CPU, use:
-
-```text
-Perfil: Demonstração
-Rigor: Equilibrado
-Entrada: Colar textos
-```
-
-## API local
-
-Inicie a API:
-
-```powershell
-python -m uvicorn api.main:app --reload
-```
-
-A documentação interativa será aberta em:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-A especificação OpenAPI estará disponível em:
-
-```text
-http://127.0.0.1:8000/openapi.json
-```
-
-Endpoints disponíveis no projeto:
-
-| Método | Endpoint | Função |
-|---|---|---|
-| `GET` | `/health` | verifica a saúde da API |
-| `GET` | `/v1/profiles` | lista os perfis de execução |
-| `POST` | `/v1/analyze` | executa uma análise |
-| `GET` | `/metrics` | expõe métricas quando habilitadas |
-
-A API pode ser protegida com uma chave. Em `RESUME_ENVIRONMENT=production`, a chave é obrigatória:
-
-```powershell
-$env:RESUME_API_KEY="uma-chave-segura"
-```
-
-## Configuração
-
-As opções podem ser definidas por variáveis de ambiente com o prefixo `RESUME_` ou em um arquivo `.env`.
-
-Exemplo de execução leve:
-
-```powershell
-$env:RESUME_PROFILE="demo"
-$env:RESUME_EMBEDDING_ENABLED="true"
-$env:RESUME_EMBEDDING_BACKEND="onnx"
-$env:RESUME_EMBEDDING_DEVICE="cpu"
-$env:RESUME_RERANKER_ENABLED="false"
-$env:RESUME_DOCLING_ENABLED="false"
-$env:RESUME_PRESIDIO_ENABLED="false"
-$env:RESUME_TOP_K="3"
-```
-
-Outras configurações relevantes:
-
-| Variável | Padrão | Descrição |
-|---|---:|---|
-| `RESUME_MAX_UPLOAD_MB` | `10` | tamanho máximo do arquivo |
-| `RESUME_MAX_DOCUMENT_CHARS` | `30000` | limite de caracteres processados |
-| `RESUME_MAX_JOB_CHARS` | `30000` | limite de caracteres da vaga |
-| `RESUME_MAX_REQUIREMENTS` | `30` | quantidade máxima de requisitos |
-| `RESUME_CACHE_ENABLED` | `true` | ativa o cache local |
-| `RESUME_CACHE_BACKEND` | `memory` | usa memória; disco exige consentimento explícito |
-| `RESUME_CACHE_MAX_ENTRIES` | `128` | limita o crescimento do cache em memória |
-| `RESUME_HISTORY_ENABLED` | `true` | ativa o histórico mínimo |
-| `RESUME_STORE_RAW_DOCUMENTS` | `false` | impede armazenamento do documento bruto |
-| `RESUME_STORE_ANONYMIZED_DOCUMENTS` | `false` | impede armazenamento do texto anonimizado |
-| `RESUME_LOG_PII` | `false` | impede dados pessoais nos logs |
-| `RESUME_REQUIRE_LOGIN` | `false` | ativa autenticação quando configurada |
-| `RESUME_ALLOWED_PROFILES` | todos | perfis que a API pode executar |
-| `RESUME_API_MAX_BODY_MB` | `1` | limite do corpo recebido pela API |
-| `RESUME_API_RATE_LIMIT_PER_MINUTE` | `60` | limite por IP e por instância |
-| `RESUME_VECTOR_STORE` | `memory` | usa memória ou LanceDB |
+Descrições de vaga misturam requisitos obrigatórios, diferenciais e
+responsabilidades. Currículos usam vocabulário diferente e podem mencionar uma
+tecnologia sem demonstrar experiência. Uma porcentagem sem evidência não explica
+essas diferenças e pode incentivar decisões frágeis.
+
+## Proposta
+
+O sistema:
+
+- anonimiza identificadores antes de embeddings;
+- separa a análise em oito agentes com contratos tipados;
+- estrutura requisitos e respectivas prioridades;
+- combina TF-IDF, RapidFuzz, catálogo de conceitos e, opcionalmente, embeddings e
+  reranker;
+- mostra o trecho que sustenta cada correspondência;
+- aplica score explicável com penalidade para lacunas obrigatórias;
+- registra duração, confiança, warnings e metadados por agente;
+- oferece interface Streamlit, API FastAPI e relatórios Markdown, JSON e CSV;
+- mede qualidade e desempenho com datasets sintéticos reproduzíveis;
+- mantém cache e histórico local sob configuração explícita.
 
 ## Arquitetura
 
-```text
-Streamlit ─┐
-           ├──► ResumeAnalysisService
-FastAPI ───┘             │
-                         ├──► domínio tipado
-                         ├──► agentes
-                         ├──► motor de evidências
-                         ├──► pontuação e revisão
-                         ├──► recomendações
-                         └──► relatórios
-                                  │
-                                  ├── cache local
-                                  └── histórico mínimo
+```mermaid
+flowchart LR
+    UI[Streamlit] --> APP[ResumeAnalysisService]
+    API[FastAPI] --> APP
+    APP --> AGENTS[Pipeline sequencial de agentes]
+    AGENTS --> DOMAIN[Domínio e scoring]
+    AGENTS --> INFRA[Privacidade, retrieval e telemetria]
+    APP --> PORT[AnalysisHistoryWriter]
+    PORT --> SQLITE[SQLite local]
 ```
 
-A lógica principal não depende diretamente do Streamlit nem do FastAPI. Isso permite trocar a interface sem reescrever o pipeline.
+`app.py` e `api/main.py` são adaptadores. A implementação canônica está em
+`resume_ai`; o caso de uso não importa Streamlit nem FastAPI. Persistência depende
+da porta `AnalysisHistoryWriter`, cuja implementação padrão é
+`SQLiteHistoryRepository`.
 
-### Estrutura do projeto
+O runtime da V6 não usa LangGraph. A orquestração é uma sequência explícita em
+`ResumeAnalysisService`, e o revisor produz alertas sem reexecutar o retrieval.
 
-```text
-resume-agent-system/
-├── api/                     # API FastAPI
-├── assets/                  # estilos da interface
-├── data/                    # histórico local ignorado pelo Git
-├── docs/                    # documentação complementar
-├── examples/                # currículo e vaga de demonstração
-├── resume_ai/
-│   ├── application/         # casos de uso
-│   ├── domain/              # modelos e regras
-│   ├── infrastructure/      # documentos, persistência e IA
-│   └── presentation/        # componentes de apresentação
-├── scripts/                 # instalação e download de modelos
-├── tests/                   # testes automatizados
-├── app.py                   # aplicação Streamlit
-├── pyproject.toml           # metadados e ferramentas
-├── requirements.txt         # dependências base
-├── requirements-ai.txt      # IA local
-├── requirements-full.txt    # componentes completos
-├── requirements-dev.txt     # desenvolvimento
-├── Dockerfile
-├── ARCHITECTURE.md
-├── SECURITY.md
-└── README.md
+Detalhes: [arquitetura](docs/architecture.md).
+
+## Pipeline multiagente
+
+```mermaid
+flowchart TD
+    INPUT[Currículo e vaga] --> PRIV[1. Privacidade]
+    PRIV --> CAND[2. Currículo]
+    CAND --> JOB[3. Vaga]
+    JOB --> EVID[4. Evidências]
+    EVID --> SCORE[5. Pontuação]
+    SCORE --> REVIEW[6. Revisão]
+    REVIEW --> REC[7. Recomendações]
+    REC --> REPORT[8. Relatório]
 ```
 
-Mais detalhes em [ARCHITECTURE.md](ARCHITECTURE.md).
+1. **Privacidade** — remove identificadores diretos do currículo.
+2. **Currículo** — extrai competências, formação, experiência, projetos e trechos.
+3. **Vaga** — extrai título, requisitos obrigatórios, desejáveis e neutros.
+4. **Evidências** — recupera e reranqueia trechos para cada requisito.
+5. **Pontuação** — calcula status, categorias e score geral.
+6. **Revisão** — sinaliza lacunas obrigatórias e casos próximos dos limiares.
+7. **Recomendações** — sugere ações sem inventar experiência.
+8. **Relatório** — prepara saída explicável e exportável.
+
+Cada estágio retorna um `AgentResult` com `status`, `duration_ms`, `confidence`,
+`warnings`, referências de evidência e metadados operacionais. Falhas preservam a
+causa privada para diagnóstico interno sem expor texto arbitrário em logs ou erros
+públicos.
+
+## Como o matching funciona
+
+O currículo anonimizado é dividido em trechos limitados. O motor processa os
+requisitos em lote e calcula, para cada trecho:
+
+- similaridade lexical TF-IDF;
+- similaridade aproximada RapidFuzz;
+- cobertura dos conceitos e aliases do catálogo local;
+- similaridade semântica, quando o embedding carrega;
+- score de CrossEncoder, quando o reranker está ativo.
+
+Com embedding disponível, o score de retrieval combina 42% semântico, 28% lexical,
+15% aproximado e 15% cobertura. No fallback, usa 48% lexical, 30% aproximado e 22%
+cobertura. Frase exata e cobertura completa recebem boosts controlados; menções
+negadas e requisitos cumulativos incompletos são limitados.
+
+O reranker atua apenas nos primeiros candidatos configurados. Se modelo, backend ou
+inferência falhar, a análise continua pelo caminho lexical e registra o fallback em
+`engine_status` e nos warnings do agente.
+
+O domínio classifica cada requisito como `matched`, `partial` ou `missing`.
+Obrigatórios, desejáveis e neutros têm pesos distintos; lacunas obrigatórias limitam
+o score para evitar uma nota geral enganosa. Os limiares variam com o rigor
+`flexível`, `equilibrado` ou `conservador`.
 
 ## Privacidade e segurança
 
-O projeto aplica privacidade antes da análise semântica:
+Antes dos embeddings, o agente de privacidade remove e-mail, telefone, CPF, CNPJ,
+CEP, RG, URLs, endereços, nascimento, identificadores sociais e uma provável linha
+de nome. Presidio pode complementar as expressões regulares no perfil completo.
+Anonimização automática é imperfeita e exige revisão humana.
 
-- identificadores pessoais são removidos antes dos embeddings;
-- currículo e vaga não são registrados nos logs;
-- o histórico guarda apenas metadados, pontuação e tempos;
-- documentos brutos não são armazenados por padrão;
-- arquivos aceitos são limitados a PDF, DOCX e TXT;
-- uploads possuem limite de tamanho;
-- PDF e DOCX passam por validação de assinatura e proteção contra ZIP bombs;
-- segredos, bancos, caches e arquivos `.env` são ignorados pelo Git;
-- a API exige chave em produção e limita corpo, texto, perfis e taxa de requisições;
-- o cache permanece em memória, salvo consentimento explícito para persistência anonimizada;
-- o CI executa auditoria de dependências.
+Uploads PDF, DOCX e TXT passam por validação de nome, tamanho, extensão, MIME e
+estrutura. O pipeline rejeita PDF truncado, DOCX criptografado, path traversal, links
+simbólicos, excesso de entradas, ZIP bombs, XML com entidades e TXT inválido. Erros
+de parser são convertidos em mensagens públicas sem caminho local ou detalhe de
+biblioteca.
 
-> [!WARNING]
-> Não exponha a interface diretamente na internet sem autenticação, HTTPS, controle de acesso e revisão adicional de segurança.
+Controles adicionais:
 
-Leia [SECURITY.md](SECURITY.md) antes de disponibilizar a aplicação em rede.
+- cache em memória por padrão;
+- cache em disco recusado sem consentimento para texto anonimizado;
+- histórico SQLite sem currículo, vaga completa ou evidências;
+- API key obrigatória para análise quando o ambiente é `production`;
+- limite de corpo e rate limiting por processo;
+- CORS explícito e security headers;
+- logs JSON com allowlist, limites e redação de PII;
+- IDs de correlação validados;
+- imagem Docker non-root e base fixada por digest;
+- segredos, bancos, caches e artefatos privados excluídos do Git e do build.
 
-## Testes e qualidade
+Leia [segurança](SECURITY.md) e [autenticação](AUTHENTICATION.md) antes de expor a
+aplicação em rede.
 
-Instale as dependências de desenvolvimento:
+## Perfis de execução
 
-```powershell
-python -m pip install -r requirements-dev.txt
+| Perfil | Retrieval configurado | Reranker | Parsing e PII | Uso |
+|---|---|---|---|---|
+| `demo` | MiniLM multilingual, ONNX | não | parsers base e regex | notebook e CPU |
+| `balanced` | multilingual-e5-small, ONNX | top 3 | parsers base e regex | equilíbrio local |
+| `complete` | BGE-M3, Torch | BGE top 5 | Docling e Presidio | máquina com mais recursos |
+
+Os modelos carregam de forma preguiçosa e são opcionais. O nome do perfil não prova
+que o backend carregou; confira a interface, o `engine_status` da API ou o relatório
+de benchmark. Para modo estritamente lexical:
+
+```dotenv
+RESUME_EMBEDDING_ENABLED=false
+RESUME_RERANKER_ENABLED=false
 ```
 
-Execute a suíte:
+Configuração completa: [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
-```powershell
-python -m pytest
+## Instalação
+
+Clone o repositório e permaneça na branch desejada:
+
+```bash
+git clone https://github.com/viniciusrodriguesai/resume-agent-system.git
+cd resume-agent-system
+python -m venv .venv
 ```
 
-Verifique o código:
+Instalação base:
 
-```powershell
-python -m ruff check .
-python -m mypy resume_ai
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-Gere cobertura:
+Dependências opcionais:
 
-```powershell
-python -m pytest --cov=resume_ai --cov-report=term-missing
+```bash
+python -m pip install -r requirements-ai.txt
+python -m pip install -r requirements-full.txt
 ```
 
-Execute o baseline sintético de qualidade:
+- `requirements.txt`: UI, API, matching lexical, parsers e runtime base;
+- `requirements-ai.txt`: Sentence Transformers, ONNX, cache e extras de IA;
+- `requirements-full.txt`: Presidio, Docling, LanceDB, Prometheus e OpenTelemetry;
+- `requirements-dev.txt`: testes, qualidade, auditoria e build.
 
-```powershell
-python scripts/evaluate.py --min-accuracy 0.95 --min-macro-f1 0.90
+Consulte [deployment](docs/DEPLOYMENT.md) para comandos específicos de PowerShell,
+Bash, modelos e operação.
+
+## Interface Streamlit
+
+```bash
+python -m streamlit run app.py
 ```
 
-Audite dependências:
+A interface oferece:
 
-```powershell
-python -m pip_audit -r requirements.txt
+- texto colado ou upload validado de PDF, DOCX e TXT;
+- perfis demo, balanced e complete;
+- rigor flexível, equilibrado e conservador;
+- score geral, categorias e resumo;
+- evidência e candidatos por requisito;
+- recomendações e diagnóstico do revisor;
+- relatório de privacidade;
+- duração, confiança e warnings dos agentes;
+- status real de embedding e reranker;
+- download Markdown, JSON e CSV.
+
+A apresentação chama os serviços da aplicação; matching e persistência não são
+implementados em `app.py`.
+
+## API FastAPI
+
+```bash
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
 ```
 
-## Integração contínua
+| Método | Endpoint | Função |
+|---|---|---|
+| GET | `/health` | liveness e estado básico |
+| GET | `/ready` | readiness do serviço |
+| GET | `/v1/profiles` | perfis permitidos |
+| POST | `/v1/analyze` | análise tipada |
+| GET | `/metrics` | métricas Prometheus ou RSS |
 
-O workflow de CI é executado em pushes e pull requests e inclui:
+A API limita corpo, texto, perfis e requisições. Erros usam envelope com `code`,
+`message` seguro e `request_id`. A resposta devolve `X-Request-ID`; a análise
+recebe `Cache-Control: no-store`.
 
-- matriz de testes em Python 3.11, 3.12 e 3.13;
-- Ruff;
-- pytest com cobertura;
-- baseline de accuracy e macro-F1;
-- pip-audit.
+Swagger local: `http://127.0.0.1:8000/docs`.
 
-O status atual aparece no badge no início deste README.
+Contrato e exemplos: [docs/API.md](docs/API.md).
 
 ## Docker
 
-Construa a imagem:
+Validar a configuração:
 
-```powershell
-docker build -t resume-match-ai:5.2 .
+```bash
+docker compose config
 ```
 
-Execute:
+Construir e executar:
 
-```powershell
-docker run --rm -p 8501:8501 resume-match-ai:5.2
+```bash
+docker compose build
+docker compose up
 ```
 
-Abra:
+O Compose publica Streamlit em `127.0.0.1:8501` e FastAPI em
+`127.0.0.1:8000`, monta `./data`, executa sem embeddings para startup previsível
+e possui healthchecks. A imagem roda como UID 10001 e instala apenas dependências
+base.
+
+Uma configuração Compose válida não comprova um build real. O status do daemon,
+build e execução é registrado na validação final, não inferido do Dockerfile.
+
+## Avaliação e benchmarks
+
+Os datasets versionados são sintéticos e validados por schemas estritos. O framework
+mede:
+
+- Precision, Recall e F1;
+- Precision@K e Recall@K;
+- MRR e NDCG@K;
+- latência média e p95;
+- delta estimado de memória RSS;
+- duração média de cada agente no pipeline completo.
+
+Benchmark de retrieval sem modelos:
+
+```bash
+python scripts/benchmark_retrieval.py --runs 3 --k 3
+```
+
+Pipeline completo sem cache, histórico ou modelos:
+
+```bash
+python scripts/benchmark_pipeline.py --profile demo --runs 3
+```
+
+Para tentar embedding e reranker, acrescente `--include-models` e confirme o backend
+real no JSON. Os relatórios registram SHA-256 do dataset, ambiente, parâmetros,
+métricas, desempenho e status dos backends.
+
+Este README não publica benchmark ou cobertura sem medição. Metodologia e limites:
+[docs/EVALUATION.md](docs/EVALUATION.md).
+
+## Observabilidade
+
+Cada requisição recebe correlação por `X-Request-ID` ou UUID local. Logs estruturados
+registram eventos, perfil, estágio, duração, score, cache hit ou miss, contagens e
+tipo de erro. Uma allowlist remove campos desconhecidos e redige e-mail, telefone,
+strings longas e objetos arbitrários.
+
+Com `prometheus-client`, `/metrics` expõe contadores de análise e cache, histograma
+de duração e último score por perfil. Sem o extra, expõe apenas memória RSS.
+
+Métricas são por processo, e o endpoint é público na aplicação. Proteja-o no
+deployment. Detalhes: [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md).
+
+## Testes e qualidade
+
+Suíte completa:
+
+```bash
+python -m pytest
+```
+
+Cobertura:
+
+```bash
+python -m pytest --cov=resume_ai --cov-report=term-missing
+```
+
+Gates:
+
+```bash
+python -m ruff check .
+python -m mypy .
+python -m pip_audit -r requirements.txt
+python -m build
+```
+
+As suítes estão organizadas em:
+
+- `tests/unit`;
+- `tests/integration`;
+- `tests/security`;
+- `tests/evaluation`;
+- smoke e regressões na raiz de `tests`.
+
+Contagens e cobertura mudam conforme o código. Consulte a validação do commit em vez
+de repetir baselines antigos como resultado atual.
+
+## Integração contínua
+
+`.github/workflows/ci.yml` executa:
+
+- unitários em Python 3.11, 3.12 e 3.13;
+- integração, segurança e avaliação em Python 3.11;
+- Ruff e mypy;
+- regressão de qualidade;
+- `pip-audit` das dependências base;
+- build de sdist e wheel.
+
+Actions de terceiros são fixadas por commit, jobs têm timeout e execuções
+substituídas são canceladas. Status local e remoto são evidências distintas; confirme
+o commit específico no GitHub Actions.
+
+## Estrutura
 
 ```text
-http://localhost:8501
+resume-agent-system/
+├── api/                  FastAPI e erros públicos
+├── assets/               CSS do Streamlit
+├── data/                 catálogos de exemplo e SQLite local ignorado
+├── docs/                 documentação canônica
+├── evaluation/           schemas, métricas, datasets e benchmarks
+├── examples/             entradas exclusivamente sintéticas
+├── resume_ai/
+│   ├── agents/           oito agentes e executor comum
+│   ├── application/      caso de uso e portas
+│   ├── domain/           modelos e scoring
+│   ├── infrastructure/   segurança, retrieval, cache, SQLite e telemetria
+│   └── presentation/     componentes de apresentação
+├── scripts/              avaliação, modelos e operação
+├── tests/                unit, integration, security e evaluation
+├── app.py                adaptador Streamlit
+├── compose.yaml
+├── Dockerfile
+└── pyproject.toml
 ```
 
-A imagem usa Python 3.11 slim, executa com usuário sem privilégios e possui health check do Streamlit.
+O pacote distribuído inclui `api`, `evaluation`, `resume_ai` e `app`. Árvores
+históricas presentes em cópias locais não fazem parte da implementação canônica.
 
-## Desempenho
+## Histórico local
 
-O tempo de análise depende de:
+`ResumeAnalysisService` depende da porta `AnalysisHistoryWriter`.
+`SQLiteHistoryRepository` é o padrão e pode ser desabilitado com
+`RESUME_HISTORY_ENABLED=false`. O histórico guarda somente resumo operacional da
+análise; currículo, texto integral da vaga e evidências não são salvos.
 
-- perfil escolhido;
-- tamanho dos documentos;
-- quantidade de requisitos;
-- disponibilidade de CPU ou GPU;
-- modelo utilizado;
-- uso de reranker e parser avançado;
-- estado do cache.
+O arquivo fica em `data/history.sqlite3` e é ignorado pelo Git. O operador controla
+permissões, retenção, backup e exclusão. Veja os detalhes atuais de campos e
+privacidade em [arquitetura](docs/architecture.md) e [segurança](SECURITY.md).
 
-Recomendações para CPU:
+## Limitações conhecidas
 
-```text
-Perfil: demo
-Backend: ONNX
-Batch: 32
-Top-k: 3
-Reranker: desativado
-Docling: desativado
-```
-
-A primeira execução pode ser mais lenta porque o modelo precisa ser carregado. As seguintes tendem a usar o cache.
-
-## Limitações
-
-- a extração pode falhar em PDFs com layouts muito complexos;
-- similaridade textual não comprova experiência real;
-- modelos locais podem ser lentos em CPU;
-- o catálogo de competências pode não cobrir todos os domínios;
-- a pontuação precisa ser calibrada com dados representativos;
-- modelos e textos podem reproduzir vieses;
-- o sistema não substitui entrevistas, testes técnicos ou revisão humana;
-- a qualidade da análise depende da clareza do currículo e da vaga.
+- regex e Presidio não garantem anonimização completa;
+- PDF de imagem sem OCR pode não produzir texto útil;
+- currículos complexos ou em duas colunas podem ter ordem de extração inadequada;
+- parsers executam no processo e não constituem sandbox antimalware;
+- o catálogo de conceitos não cobre todos os domínios;
+- matching lexical favorece vocabulário semelhante;
+- modelos de embedding e labels humanos podem reproduzir vieses;
+- os datasets atuais são pequenos e sintéticos;
+- não há calibração automática de limiares;
+- não há avaliação sistemática de viés concluída;
+- rate limiting e métricas são por processo;
+- readiness não executa inferência nem valida escrita no banco;
+- SQLite é armazenamento local simples, não banco distribuído;
+- não existe deploy público oficial;
+- Docker base não inclui o perfil completo.
 
 ## Uso responsável
 
-O projeto foi criado para:
+Use o sistema para:
 
-- ajudar candidatos a revisar currículos;
-- demonstrar sistemas multiagentes;
-- estudar busca semântica e IA explicável;
-- apoiar análises humanas com evidências;
-- gerar relatórios locais de compatibilidade.
+- revisar se um currículo apresenta evidências para uma vaga;
+- identificar lacunas e melhorar clareza;
+- demonstrar arquitetura multiagente e avaliação de IA;
+- comparar variantes técnicas em dados sintéticos.
 
-Não deve ser usado como único critério para:
+Não use para:
 
-- rejeitar candidatos;
-- decidir contratações;
-- inferir atributos sensíveis;
-- gerar rankings definitivos de pessoas;
-- automatizar decisões de alto impacto sem supervisão.
+- contratar ou rejeitar automaticamente;
+- inferir raça, gênero, idade, saúde, religião ou outro atributo sensível;
+- ordenar pessoas como decisão definitiva;
+- criar experiências ou competências inexistentes;
+- armazenar currículos reais em fixtures, logs ou repositórios;
+- substituir revisão humana e possibilidade de contestação.
 
-## Roadmap
+## Documentação
 
-- [x] fallback offline;
-- [x] embeddings locais;
-- [x] perfis de execução;
-- [x] anonimização antes dos embeddings;
-- [x] evidências por requisito;
-- [x] interface Streamlit;
-- [x] API FastAPI;
-- [x] relatórios exportáveis;
-- [x] histórico mínimo;
-- [x] testes e CI;
-- [x] Docker;
-- [ ] benchmark público entre modelos;
-- [ ] dataset de avaliação anonimizado;
-- [ ] calibração automática dos limiares;
-- [ ] avaliação sistemática de viés;
-- [ ] suporte aprimorado a currículos em duas colunas;
-- [ ] internacionalização completa;
-- [ ] SBOM e verificação de procedência;
-- [ ] isolamento reforçado do parser;
-- [ ] registro de modelos confiáveis por hash.
+- [Arquitetura](docs/architecture.md)
+- [Segurança e privacidade](SECURITY.md)
+- [Autenticação](AUTHENTICATION.md)
+- [API](docs/API.md)
+- [Configuração](docs/CONFIGURATION.md)
+- [Avaliação e benchmarks](docs/EVALUATION.md)
+- [Observabilidade](docs/OBSERVABILITY.md)
+- [Instalação e deployment](docs/DEPLOYMENT.md)
+- [Fundamentação e fontes](docs/research_basis.md)
 
-## Contribuição
+Documentos `CHANGELOG_V5.2.md` e materiais acadêmicos antigos permanecem históricos;
+eles não descrevem o runtime atual quando divergem destes guias.
 
-Contribuições são bem-vindas.
+## Roadmap após a V6
 
-1. Faça um fork.
-2. Crie uma branch:
+- benchmark público entre modelos;
+- dataset de avaliação anonimizado e revisado;
+- calibração automática de limiares;
+- avaliação sistemática de viés;
+- suporte aprimorado a duas colunas e OCR;
+- internacionalização completa;
+- SBOM e verificação de procedência;
+- isolamento reforçado de parser;
+- registro de modelos confiáveis por hash.
 
-```bash
-git checkout -b feature/minha-melhoria
-```
+Redis, Celery, Kafka, microservices, Kubernetes, PostgreSQL obrigatório e migração
+React ou Next.js não fazem parte do escopo da V6.
 
-3. Implemente a alteração.
-4. Execute testes, lint e auditoria.
-5. Faça commits objetivos.
-6. Abra um Pull Request descrevendo:
-   - problema;
-   - solução;
-   - testes executados;
-   - impactos de segurança e privacidade.
+## Contexto acadêmico
 
-Nunca envie currículos reais, dados pessoais, tokens ou segredos em commits, testes, issues ou pull requests.
+O projeto foi desenvolvido para a disciplina **Programação com Agentes**, ministrada
+pelo professor **Andrei de Araujo Formiga**. Ele demonstra como agentes de IA podem
+apoiar engenharia de software, avaliação, testes, segurança e documentação sem
+substituir revisão técnica.
 
-## Suporte
-
-Para relatar um erro ou sugerir uma melhoria, abra uma issue no repositório.
-
-Inclua:
-
-- sistema operacional;
-- versão do Python;
-- perfil utilizado;
-- etapas para reproduzir;
-- mensagem de erro;
-- logs sem dados pessoais.
+Autor: **Vinicius Mangueira**.
 
 ## Licença
 
-Distribuído sob a licença MIT. Consulte [LICENSE](LICENSE).
-
-## Autor e orientação acadêmica
-
-Desenvolvido por **Vinicius Mangueira** como projeto da disciplina **Programação com Agentes**.
-
-Professor da disciplina: **Andrei de Araujo Formiga**.
-
-GitHub: [@viniciusrodriguesai](https://github.com/viniciusrodriguesai)
+Distribuído sob a licença [MIT](LICENSE).
 
 ---
 
-<div align="center">
-
 **Local-first · Explainable · Multi-agent · Privacy-aware**
-
-</div>
