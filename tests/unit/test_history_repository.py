@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 
 from resume_ai.domain.models import (
@@ -141,3 +142,32 @@ def test_history_clear_removes_all_results(tmp_path) -> None:
     repository.clear()
 
     assert repository.list_recent() == []
+
+
+def test_history_configures_wal_and_busy_timeout(tmp_path) -> None:
+    repository = HistoryRepository(
+        history_settings(tmp_path, history_busy_timeout_ms=7000)
+    )
+
+    with repository._connect() as connection:
+        journal_mode = connection.execute('PRAGMA journal_mode').fetchone()[0]
+        busy_timeout = connection.execute('PRAGMA busy_timeout').fetchone()[0]
+
+    assert journal_mode == 'wal'
+    assert busy_timeout == 7000
+
+
+def test_history_supports_basic_concurrent_writes(tmp_path) -> None:
+    repository = HistoryRepository(
+        history_settings(tmp_path, history_busy_timeout_ms=10_000)
+    )
+    base_time = datetime(2026, 1, 1, tzinfo=UTC)
+    results = [
+        analysis_result(f'analysis-{index}', base_time + timedelta(seconds=index))
+        for index in range(12)
+    ]
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        list(executor.map(repository.save, results))
+
+    assert len(repository.list_recent(limit=20)) == 12

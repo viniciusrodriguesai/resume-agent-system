@@ -68,6 +68,7 @@ class Settings(BaseSettings):
 
     history_enabled: bool = True
     history_query_limit: int = Field(default=100, ge=1, le=1000)
+    history_busy_timeout_ms: int = Field(default=5000, ge=100, le=60_000)
     vector_store: Literal["memory", "lancedb"] = "memory"
 
     def model_post_init(self, __context: object) -> None:

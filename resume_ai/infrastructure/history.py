@@ -16,12 +16,14 @@ class SQLiteHistoryRepository:
             self._initialize()
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.path)
-        connection.execute("PRAGMA journal_mode=WAL")
+        timeout_seconds = self.settings.history_busy_timeout_ms / 1000
+        connection = sqlite3.connect(self.path, timeout=timeout_seconds)
+        connection.execute(f"PRAGMA busy_timeout = {self.settings.history_busy_timeout_ms}")
         return connection
 
     def _initialize(self) -> None:
         with self._connect() as connection:
+            connection.execute("PRAGMA journal_mode=WAL")
             connection.execute("""
                 CREATE TABLE IF NOT EXISTS analyses (
                     id TEXT PRIMARY KEY,
