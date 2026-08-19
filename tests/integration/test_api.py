@@ -20,6 +20,16 @@ def test_readiness_endpoint_reports_ready_service() -> None:
     assert response.json()["profile"] == settings.profile
 
 
+def test_profiles_endpoint_describes_supported_torch_backends() -> None:
+    response = TestClient(app).get("/v1/profiles")
+
+    assert response.status_code == 200
+    profiles = response.json()["profiles"]
+    assert "Torch" in profiles["demo"]
+    assert "Torch" in profiles["balanced"]
+    assert "ONNX" not in str(profiles)
+
+
 def test_readiness_failure_returns_safe_service_unavailable(monkeypatch) -> None:
     internal_detail = "model path C:/private/candidate@example.invalid"
 

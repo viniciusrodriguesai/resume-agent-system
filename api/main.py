@@ -216,8 +216,8 @@ def readiness() -> HealthResponse:
 @app.get("/v1/profiles")
 def profiles() -> dict[str, object]:
     descriptions = {
-        "demo": "MiniLM ONNX, sem reranker e sem Docling",
-        "balanced": "E5-small ONNX e reranker apenas no top 3",
+        "demo": "MiniLM Torch, sem reranker e sem Docling",
+        "balanced": "E5-small Torch e reranker apenas no top 3",
         "complete": "BGE-M3, reranker BGE, Docling e Presidio quando instalados",
     }
     return {
