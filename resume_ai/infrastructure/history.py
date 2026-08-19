@@ -7,6 +7,8 @@ from typing import Any
 from resume_ai.domain.models import AnalysisResult
 from resume_ai.settings import Settings
 
+_SCHEMA_VERSION = 1
+
 
 class SQLiteHistoryRepository:
     def __init__(self, settings: Settings) -> None:
@@ -19,11 +21,16 @@ class SQLiteHistoryRepository:
         timeout_seconds = self.settings.history_busy_timeout_ms / 1000
         connection = sqlite3.connect(self.path, timeout=timeout_seconds)
         connection.execute(f"PRAGMA busy_timeout = {self.settings.history_busy_timeout_ms}")
+        connection.execute("PRAGMA secure_delete=ON")
         return connection
 
     def _initialize(self) -> None:
+        migration_performed = False
         with self._connect() as connection:
             connection.execute("PRAGMA journal_mode=WAL")
+            schema_version = connection.execute("PRAGMA user_version").fetchone()[0]
+            if schema_version > _SCHEMA_VERSION:
+                raise RuntimeError("history database schema is newer than this application")
             connection.execute("""
                 CREATE TABLE IF NOT EXISTS analyses (
                     id TEXT PRIMARY KEY,
@@ -35,6 +42,13 @@ class SQLiteHistoryRepository:
                     summary_json TEXT NOT NULL
                 )
             """)
+            if schema_version < 1:
+                connection.execute("UPDATE analyses SET job_title = '' WHERE job_title <> ''")
+                connection.execute("PRAGMA user_version = 1")
+                migration_performed = True
+        if migration_performed:
+            with self._connect() as connection:
+                connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 
     def save(self, result: AnalysisResult) -> None:
         if not self.settings.history_enabled:
@@ -46,11 +60,15 @@ class SQLiteHistoryRepository:
         }
         with self._connect() as connection:
             connection.execute(
-                "INSERT OR REPLACE INTO analyses VALUES (?, ?, ?, ?, ?, ?, ?)",
+                """
+                INSERT OR REPLACE INTO analyses (
+                    id, created_at, job_title, profile, score, level, summary_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
                 (
                     result.analysis_id,
                     result.created_at.isoformat(),
-                    result.job.title,
+                    "",
                     result.profile,
                     result.score.overall_score,
                     result.score.level,
@@ -75,11 +93,22 @@ class SQLiteHistoryRepository:
         effective_limit = min(limit, self.settings.history_query_limit)
         with self._connect() as connection:
             rows = connection.execute(
-                "SELECT id, created_at, job_title, profile, score, level FROM analyses ORDER BY created_at DESC LIMIT ?",
+                """
+                SELECT id, created_at, profile, score, level
+                FROM analyses
+                ORDER BY created_at DESC, id DESC
+                LIMIT ?
+                """,
                 (effective_limit,),
             ).fetchall()
         return [
-            {"id": row[0], "created_at": row[1], "job_title": row[2], "profile": row[3], "score": row[4], "level": row[5]}
+            {
+                "id": row[0],
+                "created_at": row[1],
+                "profile": row[2],
+                "score": row[3],
+                "level": row[4],
+            }
             for row in rows
         ]
 

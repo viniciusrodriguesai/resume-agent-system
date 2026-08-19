@@ -1,5 +1,8 @@
+import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+
+import pytest
 
 from resume_ai.domain.models import (
     AnalysisResult,
@@ -79,7 +82,6 @@ def test_history_saves_and_lists_result_in_temporary_database(tmp_path) -> None:
         {
             'id': 'analysis-1',
             'created_at': created_at.isoformat(),
-            'job_title': 'Synthetic role',
             'profile': 'demo',
             'score': 80,
             'level': 'boa',
@@ -189,3 +191,80 @@ def test_history_retention_keeps_only_configured_recent_entries(tmp_path) -> Non
         'analysis-3',
         'analysis-2',
     ]
+
+
+def test_history_does_not_store_or_return_job_title(tmp_path) -> None:
+    settings = history_settings(tmp_path)
+    repository = HistoryRepository(settings)
+    sensitive_sentinel = 'SENSITIVE_JOB_TITLE_SENTINEL'
+
+    repository.save(
+        analysis_result(
+            'analysis-private',
+            datetime(2026, 1, 1, tzinfo=UTC),
+            job_title=sensitive_sentinel,
+        )
+    )
+
+    with sqlite3.connect(settings.history_db) as connection:
+        stored_title = connection.execute(
+            'SELECT job_title FROM analyses WHERE id = ?',
+            ('analysis-private',),
+        ).fetchone()[0]
+    assert stored_title == ''
+    assert 'job_title' not in repository.list_recent()[0]
+    assert sensitive_sentinel.encode() not in settings.history_db.read_bytes()
+
+
+def test_history_migration_scrubs_legacy_job_titles(tmp_path) -> None:
+    settings = history_settings(tmp_path)
+    sensitive_sentinel = 'LEGACY_SENSITIVE_TITLE_SENTINEL'
+    with sqlite3.connect(settings.history_db) as connection:
+        connection.execute(
+            """
+            CREATE TABLE analyses (
+                id TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL,
+                job_title TEXT NOT NULL,
+                profile TEXT NOT NULL,
+                score INTEGER NOT NULL,
+                level TEXT NOT NULL,
+                summary_json TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            'INSERT INTO analyses VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (
+                'legacy-analysis',
+                datetime(2025, 1, 1, tzinfo=UTC).isoformat(),
+                sensitive_sentinel,
+                'demo',
+                70,
+                'boa',
+                '{}',
+            ),
+        )
+
+    repository = HistoryRepository(settings)
+
+    with sqlite3.connect(settings.history_db) as connection:
+        stored_title = connection.execute(
+            'SELECT job_title FROM analyses WHERE id = ?',
+            ('legacy-analysis',),
+        ).fetchone()[0]
+        schema_version = connection.execute('PRAGMA user_version').fetchone()[0]
+    assert stored_title == ''
+    assert schema_version == 1
+    assert 'job_title' not in repository.list_recent()[0]
+    database_files = settings.history_db.parent.glob(f'{settings.history_db.name}*')
+    assert all(sensitive_sentinel.encode() not in path.read_bytes() for path in database_files)
+
+
+def test_history_rejects_newer_unknown_schema(tmp_path) -> None:
+    settings = history_settings(tmp_path)
+    with sqlite3.connect(settings.history_db) as connection:
+        connection.execute('PRAGMA user_version = 999')
+
+    with pytest.raises(RuntimeError, match='schema is newer'):
+        HistoryRepository(settings)
