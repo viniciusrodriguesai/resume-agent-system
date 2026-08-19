@@ -7,8 +7,8 @@ import psutil
 from sentence_transformers import SentenceTransformer
 
 MODELS = [
-    ("MiniLM ONNX", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "onnx"),
-    ("E5-small ONNX", "intfloat/multilingual-e5-small", "onnx"),
+    ("MiniLM Torch", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "torch"),
+    ("E5-small Torch", "intfloat/multilingual-e5-small", "torch"),
 ]
 
 parser = argparse.ArgumentParser()

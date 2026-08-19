@@ -5,8 +5,8 @@ import argparse
 from sentence_transformers import SentenceTransformer
 
 MODELS = {
-    "demo": ("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "onnx"),
-    "balanced": ("intfloat/multilingual-e5-small", "onnx"),
+    "demo": ("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "torch"),
+    "balanced": ("intfloat/multilingual-e5-small", "torch"),
     "complete": ("BAAI/bge-m3", "torch"),
 }
 
