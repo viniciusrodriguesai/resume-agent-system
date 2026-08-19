@@ -57,12 +57,13 @@ class SQLiteHistoryRepository:
             )
 
     def list_recent(self, limit: int = 20) -> list[dict[str, Any]]:
-        if not self.settings.history_enabled:
+        if not self.settings.history_enabled or limit <= 0:
             return []
+        effective_limit = min(limit, self.settings.history_query_limit)
         with self._connect() as connection:
             rows = connection.execute(
                 "SELECT id, created_at, job_title, profile, score, level FROM analyses ORDER BY created_at DESC LIMIT ?",
-                (limit,),
+                (effective_limit,),
             ).fetchall()
         return [
             {"id": row[0], "created_at": row[1], "job_title": row[2], "profile": row[3], "score": row[4], "level": row[5]}

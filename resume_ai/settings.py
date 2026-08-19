@@ -67,6 +67,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:8501,http://127.0.0.1:8501"
 
     history_enabled: bool = True
+    history_query_limit: int = Field(default=100, ge=1, le=1000)
     vector_store: Literal["memory", "lancedb"] = "memory"
 
     def model_post_init(self, __context: object) -> None:

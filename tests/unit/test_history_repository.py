@@ -103,6 +103,25 @@ def test_history_orders_multiple_results_and_applies_limit(tmp_path) -> None:
     assert [row['id'] for row in rows] == ['analysis-3', 'analysis-2']
 
 
+def test_history_non_positive_limit_returns_no_rows(tmp_path) -> None:
+    repository = HistoryRepository(history_settings(tmp_path))
+    repository.save(analysis_result('analysis-1', datetime(2026, 1, 1, tzinfo=UTC)))
+
+    assert repository.list_recent(limit=0) == []
+    assert repository.list_recent(limit=-1) == []
+
+
+def test_history_excessive_limit_is_bounded_by_configuration(tmp_path) -> None:
+    repository = HistoryRepository(history_settings(tmp_path, history_query_limit=2))
+    base_time = datetime(2026, 1, 1, tzinfo=UTC)
+    for index in range(4):
+        repository.save(analysis_result(f'analysis-{index}', base_time + timedelta(minutes=index)))
+
+    rows = repository.list_recent(limit=10_000)
+
+    assert [row['id'] for row in rows] == ['analysis-3', 'analysis-2']
+
+
 def test_history_persists_after_repository_reopen(tmp_path) -> None:
     settings = history_settings(tmp_path)
     HistoryRepository(settings).save(
