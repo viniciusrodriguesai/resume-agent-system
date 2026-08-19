@@ -16,15 +16,8 @@ class SafeResultCache:
         self.path = settings.cache_dir / "results"
         self._memory: dict[str, tuple[float, dict[str, Any]]] = {}
         self._lock = threading.RLock()
-        self._diskcache = None
         if settings.cache_enabled and settings.cache_backend == "disk":
             self.path.mkdir(parents=True, exist_ok=True)
-            try:
-                from diskcache import Cache
-
-                self._diskcache = Cache(str(self.path))
-            except Exception:
-                self._diskcache = None
 
     def get(self, key: str) -> dict[str, Any] | None:
         if not self.settings.cache_enabled:
@@ -39,9 +32,6 @@ class SafeResultCache:
                     self._memory.pop(key, None)
                     return None
                 return value
-        if self._diskcache is not None:
-            value = self._diskcache.get(key)
-            return value if isinstance(value, dict) else None
         file = self.path / f"{key}.json"
         if not file.exists():
             return None
@@ -67,9 +57,6 @@ class SafeResultCache:
                     self._memory.pop(oldest, None)
                 self._memory[key] = (time.time(), value)
             return
-        if self._diskcache is not None:
-            self._diskcache.set(key, value, expire=self.settings.cache_ttl_seconds)
-            return
         payload = {"saved_at": time.time(), "value": value}
         destination = self.path / f"{key}.json"
         temporary = destination.with_suffix(".tmp")
@@ -79,8 +66,6 @@ class SafeResultCache:
     def clear(self) -> None:
         with self._lock:
             self._memory.clear()
-        if self._diskcache is not None:
-            self._diskcache.clear()
         if self.path.exists():
             for file in self.path.glob("*.json"):
                 file.unlink(missing_ok=True)
