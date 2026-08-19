@@ -171,3 +171,21 @@ def test_history_supports_basic_concurrent_writes(tmp_path) -> None:
         list(executor.map(repository.save, results))
 
     assert len(repository.list_recent(limit=20)) == 12
+
+
+def test_history_retention_keeps_only_configured_recent_entries(tmp_path) -> None:
+    settings = history_settings(tmp_path, history_max_entries=3)
+    repository = HistoryRepository(settings)
+    base_time = datetime(2026, 1, 1, tzinfo=UTC)
+    for index in range(5):
+        repository.save(
+            analysis_result(f'analysis-{index}', base_time + timedelta(minutes=index))
+        )
+
+    rows = HistoryRepository(settings).list_recent(limit=10)
+
+    assert [row['id'] for row in rows] == [
+        'analysis-4',
+        'analysis-3',
+        'analysis-2',
+    ]

@@ -57,6 +57,17 @@ class SQLiteHistoryRepository:
                     json.dumps(summary, ensure_ascii=False),
                 ),
             )
+            connection.execute(
+                """
+                DELETE FROM analyses
+                WHERE id NOT IN (
+                    SELECT id FROM analyses
+                    ORDER BY created_at DESC, id DESC
+                    LIMIT ?
+                )
+                """,
+                (self.settings.history_max_entries,),
+            )
 
     def list_recent(self, limit: int = 20) -> list[dict[str, Any]]:
         if not self.settings.history_enabled or limit <= 0:
