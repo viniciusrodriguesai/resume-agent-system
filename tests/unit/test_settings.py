@@ -23,3 +23,10 @@ def test_disk_cache_requires_explicit_anonymized_storage_consent(tmp_path):
             cache_backend="disk",
             store_anonymized_documents=False,
         )
+
+
+@pytest.mark.parametrize('profile', ['demo', 'balanced', 'complete'])
+def test_profiles_use_supported_torch_embedding_backend(profile):
+    settings = Settings.for_profile(profile)
+
+    assert settings.embedding_backend == 'torch'

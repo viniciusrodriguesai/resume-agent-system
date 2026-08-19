@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     embedding_enabled: bool = True
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-    embedding_backend: Literal["onnx", "torch", "openvino"] = "onnx"
+    embedding_backend: Literal["onnx", "torch", "openvino"] = "torch"
     embedding_device: str = "cpu"
     embedding_batch_size: int = 16
     normalize_embeddings: bool = True
@@ -95,7 +95,7 @@ class Settings(BaseSettings):
         if profile == "demo":
             defaults = {
                 "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-                "embedding_backend": "onnx",
+                "embedding_backend": "torch",
                 "embedding_enabled": True,
                 "reranker_enabled": False,
                 "docling_enabled": False,
@@ -107,7 +107,7 @@ class Settings(BaseSettings):
         elif profile == "balanced":
             defaults = {
                 "embedding_model": "intfloat/multilingual-e5-small",
-                "embedding_backend": "onnx",
+                "embedding_backend": "torch",
                 "embedding_enabled": True,
                 "reranker_enabled": True,
                 "reranker_top_n": 3,
