@@ -5,13 +5,14 @@ from resume_ai.infrastructure.cache import SafeResultCache
 from resume_ai.settings import Settings
 
 
-def disk_cache_settings(tmp_path):
+def disk_cache_settings(tmp_path, **overrides):
     return Settings(
         project_root=tmp_path,
         data_dir=tmp_path / 'data',
         cache_dir=tmp_path / 'cache',
         cache_backend='disk',
         store_anonymized_documents=True,
+        **overrides,
     )
 
 
@@ -53,3 +54,16 @@ def test_disk_cache_serializes_concurrent_writes_to_the_same_key(tmp_path):
     assert stored is not None
     assert stored['sentinel'].startswith('DOC-')
     assert not list(cache.path.glob('*.tmp'))
+
+
+def test_disk_cache_evicts_oldest_entries_at_configured_limit(tmp_path):
+    cache = SafeResultCache(disk_cache_settings(tmp_path, cache_max_entries=2))
+
+    cache.set('first', {'sentinel': 'DOC-A'})
+    cache.set('second', {'sentinel': 'DOC-B'})
+    cache.set('third', {'sentinel': 'DOC-C'})
+
+    assert cache.get('first') is None
+    assert cache.get('second') == {'sentinel': 'DOC-B'}
+    assert cache.get('third') == {'sentinel': 'DOC-C'}
+    assert len(list(cache.path.glob('*.json'))) == 2

@@ -4,6 +4,7 @@ import json
 import threading
 import time
 import uuid
+from pathlib import Path
 from typing import Any
 
 from resume_ai.settings import Settings
@@ -65,8 +66,25 @@ class SafeResultCache:
             try:
                 temporary.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
                 temporary.replace(destination)
+                self._enforce_disk_limit()
             finally:
                 temporary.unlink(missing_ok=True)
+
+    def _enforce_disk_limit(self) -> None:
+        files = list(self.path.glob("*.json"))
+        excess = len(files) - self.settings.cache_max_entries
+        if excess <= 0:
+            return
+
+        def saved_at(file: Path) -> tuple[float, str]:
+            try:
+                payload = json.loads(file.read_text(encoding="utf-8"))
+                return float(payload.get("saved_at", 0)), file.name
+            except Exception:
+                return 0.0, file.name
+
+        for stale in sorted(files, key=saved_at)[:excess]:
+            stale.unlink(missing_ok=True)
 
     def clear(self) -> None:
         with self._lock:
