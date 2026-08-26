@@ -76,7 +76,7 @@ def test_mixed_catalog_cumulative_requirement_needs_every_concept(tmp_path):
     )[0]
 
     assert groups == [["Python", "python"], ["kubernetes"]]
-    assert partial["final_score"] < 0.60
+    assert partial["final_score"] < 0.50
     assert complete["final_score"] >= 0.80
 
 
@@ -91,6 +91,28 @@ def test_mixed_catalog_alternative_accepts_known_option(tmp_path):
     )[0]
 
     assert result["final_score"] >= 0.80
+
+
+def test_three_skill_cumulative_requirement_needs_all_concepts(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com Python, Kubernetes e AWS"
+    groups = concept_alias_groups(requirement)
+
+    partial = engine.retrieve(
+        requirement,
+        ["Python e AWS"],
+        concept_groups=groups,
+    )[0]
+    complete = engine.retrieve(
+        requirement,
+        ["Python, Kubernetes e AWS em produção"],
+        concept_groups=groups,
+    )[0]
+
+    assert len(groups) == 3
+    assert partial["concept_coverage"] == 0.6667
+    assert partial["final_score"] < 0.50
+    assert complete["final_score"] >= 0.80
 
 
 def test_reranker_preserves_partial_cumulative_evidence(tmp_path):

@@ -79,7 +79,8 @@ def concept_alias_groups(text: str) -> list[list[str]]:
         if any(exact_phrase(normalized, value) for value in values):
             groups.append(list(dict.fromkeys(values)))
 
-    coordinated_parts = _COORDINATED_CONCEPT_RE.split(normalized)
+    coordinated_text = normalize(re.sub(r"[,;]", " and ", text))
+    coordinated_parts = _COORDINATED_CONCEPT_RE.split(coordinated_text)
     if len(coordinated_parts) > 1:
         for part in coordinated_parts:
             literal = _REQUIREMENT_PREFIX_RE.sub("", part).strip()

@@ -18,6 +18,7 @@ from resume_ai.utils.text import (
 )
 
 INCOMPLETE_CUMULATIVE_FLOOR = THRESHOLDS["equilibrado"]["partial"]
+INCOMPLETE_CUMULATIVE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 SUPERFICIAL_EVIDENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 
 
@@ -174,7 +175,10 @@ class EmbeddingEngine:
             elif len(concept_groups) > 1 and not alternatives and coverage > 0.0:
                 # Uma competência comprovada é evidência parcial, mesmo quando
                 # a similaridade da frase cumulativa completa é baixa.
-                final = max(final, INCOMPLETE_CUMULATIVE_FLOOR)
+                final = max(
+                    INCOMPLETE_CUMULATIVE_FLOOR,
+                    min(final, INCOMPLETE_CUMULATIVE_CEILING),
+                )
             if explicitly_negated:
                 final = min(final, 0.15)
             elif superficially_mentioned and (not alternatives or strong_coverage == 0.0):
@@ -297,7 +301,7 @@ class EmbeddingEngine:
                 ):
                     reranked = max(
                         INCOMPLETE_CUMULATIVE_FLOOR,
-                        min(reranked, 0.59),
+                        min(reranked, INCOMPLETE_CUMULATIVE_CEILING),
                     )
                 item["final_score"] = round(reranked, 4)
                 item["retrieval_method"] += " · CrossEncoder"
