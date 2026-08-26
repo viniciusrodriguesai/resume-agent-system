@@ -262,3 +262,100 @@ def test_not_found_and_method_not_allowed_use_correlated_error_contract() -> Non
     assert missing.json()["error"]["request_id"] == "missing-route"
     assert wrong_method.status_code == 405
     assert wrong_method.json()["error"]["request_id"] == "wrong-method"
+
+
+def test_production_api_key_rejects_missing_and_wrong_but_accepts_correct(
+    monkeypatch,
+) -> None:
+    class ControlledService:
+        def analyze(self, _request: object) -> None:
+            raise ValueError("synthetic controlled failure")
+
+    monkeypatch.setattr(settings, "environment", "production")
+    monkeypatch.setattr(settings, "api_key", "synthetic-secret")
+    monkeypatch.setattr(api_main, "service_for", lambda _profile: ControlledService())
+    client = TestClient(app)
+    payload = {
+        "resume_text": "Python engineer with production experience",
+        "job_text": "Python engineer required for production systems",
+    }
+
+    assert client.post("/v1/analyze", json=payload).status_code == 401
+    assert (
+        client.post(
+            "/v1/analyze",
+            json=payload,
+            headers={"X-API-Key": "wrong-secret"},
+        ).status_code
+        == 401
+    )
+    accepted = client.post(
+        "/v1/analyze",
+        json=payload,
+        headers={"X-API-Key": "synthetic-secret"},
+    )
+    assert accepted.status_code == 422
+    assert "synthetic controlled failure" not in accepted.text
+
+
+def test_production_without_configured_api_key_is_unavailable(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "environment", "production")
+    monkeypatch.setattr(settings, "api_key", None)
+
+    response = TestClient(app).post(
+        "/v1/analyze",
+        json={
+            "resume_text": "Python engineer with production experience",
+            "job_text": "Python engineer required for production systems",
+        },
+        headers={"X-Request-ID": "production-misconfigured"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["request_id"] == "production-misconfigured"
+
+
+def test_analysis_rate_limit_returns_correlated_429(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "api_rate_limit_per_minute", 1)
+    api_main._request_times.clear()
+    client = TestClient(app)
+    try:
+        first = client.post(
+            "/v1/analyze",
+            json={},
+            headers={"X-Request-ID": "rate-first"},
+        )
+        limited = client.post(
+            "/v1/analyze",
+            json={},
+            headers={"X-Request-ID": "rate-limited"},
+        )
+    finally:
+        api_main._request_times.clear()
+
+    assert first.status_code == 422
+    assert limited.status_code == 429
+    assert limited.json()["error"]["request_id"] == "rate-limited"
+
+
+def test_malformed_json_wrong_content_type_and_metrics_are_safe() -> None:
+    client = TestClient(app)
+    malformed = client.post(
+        "/v1/analyze",
+        content=b"{not-json",
+        headers={"Content-Type": "application/json"},
+    )
+    wrong_type = client.post(
+        "/v1/analyze",
+        content=b'{"resume_text":"Python","job_text":"Python"}',
+        headers={"Content-Type": "text/plain"},
+    )
+    metrics = client.get("/metrics")
+
+    assert malformed.status_code == 422
+    assert malformed.json()["error"]["code"] == "validation_error"
+    assert wrong_type.status_code == 422
+    assert wrong_type.json()["error"]["code"] == "validation_error"
+    assert metrics.status_code == 200
+    assert metrics.headers["Content-Type"].startswith("text/plain")
+    assert "resume_ai_" in metrics.text
