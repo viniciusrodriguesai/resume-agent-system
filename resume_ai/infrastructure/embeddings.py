@@ -6,8 +6,11 @@ from typing import Any
 import numpy as np
 from rapidfuzz.fuzz import WRatio
 
+from resume_ai.domain.scoring import THRESHOLDS
 from resume_ai.settings import Settings
 from resume_ai.utils.text import content_hash, exact_phrase, negated_phrase, normalize, tfidf_similarity
+
+INCOMPLETE_CUMULATIVE_FLOOR = THRESHOLDS["equilibrado"]["partial"]
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
@@ -151,6 +154,10 @@ class EmbeddingEngine:
             elif concept_groups and coverage == 1.0:
                 floor = 0.78 if len(concept_groups) > 1 else 0.74
                 final = max(final, floor + 0.16 * final)
+            elif len(concept_groups) > 1 and not alternatives and coverage > 0.0:
+                # Uma competência comprovada é evidência parcial, mesmo quando
+                # a similaridade da frase cumulativa completa é baixa.
+                final = max(final, INCOMPLETE_CUMULATIVE_FLOOR)
             if explicitly_negated:
                 final = min(final, 0.15)
 
@@ -267,7 +274,10 @@ class EmbeddingEngine:
                     and not item.get("alternative_concepts", False)
                     and item.get("concept_coverage", 0.0) < 1.0
                 ):
-                    reranked = min(reranked, 0.59)
+                    reranked = max(
+                        INCOMPLETE_CUMULATIVE_FLOOR,
+                        min(reranked, 0.59),
+                    )
                 item["final_score"] = round(reranked, 4)
                 item["retrieval_method"] += " · CrossEncoder"
             top.sort(key=lambda item: item["final_score"], reverse=True)

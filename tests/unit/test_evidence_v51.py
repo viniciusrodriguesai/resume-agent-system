@@ -44,7 +44,7 @@ def test_one_skill_does_not_satisfy_three_skill_requirement(tmp_path):
         concept_groups=groups,
     )[0]
 
-    assert partial["final_score"] < 0.60
+    assert 0.35 <= partial["final_score"] < 0.60
     assert complete["final_score"] >= 0.80
 
 
@@ -91,6 +91,27 @@ def test_mixed_catalog_alternative_accepts_known_option(tmp_path):
     )[0]
 
     assert result["final_score"] >= 0.80
+
+
+def test_reranker_preserves_partial_cumulative_evidence(tmp_path):
+    settings = make_settings(tmp_path).model_copy(update={"reranker_enabled": True})
+    engine = EmbeddingEngine(settings)
+
+    class RejectingReranker:
+        def predict(self, _pairs, **_kwargs):
+            return [-10.0]
+
+    engine._reranker = RejectingReranker()
+    requirement = "Experiência com Pandas, NumPy e Scikit-learn"
+    candidates = engine.retrieve(
+        requirement,
+        ["Usei Pandas para limpeza de dados."],
+        concept_groups=concept_alias_groups(requirement),
+    )
+
+    result = engine.rerank(requirement, candidates)[0]
+
+    assert result["final_score"] == 0.35
 
 
 def test_explicit_negation_does_not_count_as_evidence(tmp_path):
