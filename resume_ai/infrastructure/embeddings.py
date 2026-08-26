@@ -10,6 +10,10 @@ from resume_ai.settings import Settings
 from resume_ai.utils.text import content_hash, exact_phrase, negated_phrase, normalize, tfidf_similarity
 
 
+def _safe_backend_error(stage: str, error: BaseException) -> str:
+    return f"{stage}:{type(error).__name__}"
+
+
 class EmbeddingEngine:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -49,7 +53,7 @@ class EmbeddingEngine:
                 kwargs.pop("backend", None)
                 self._model = SentenceTransformer(self.settings.embedding_model, **kwargs)
         except Exception as exc:
-            self._load_error = f"{type(exc).__name__}: {exc}"
+            self._load_error = _safe_backend_error("load", exc)
             self._model = None
         return self._model
 
@@ -61,7 +65,7 @@ class EmbeddingEngine:
 
             self._reranker = CrossEncoder(self.settings.reranker_model, device=self.settings.embedding_device)
         except Exception as exc:
-            self._reranker_error = f"{type(exc).__name__}: {exc}"
+            self._reranker_error = _safe_backend_error("load", exc)
             self._reranker = None
         return self._reranker
 
@@ -210,7 +214,7 @@ class EmbeddingEngine:
                 semantic_matrix = np.matmul(np.asarray(query_embeddings, dtype=float), chunk_embeddings.T)
                 semantic_method = f"{self.settings.embedding_model} ({self.settings.embedding_backend})"
             except Exception as exc:
-                self._load_error = f"falha na inferência: {type(exc).__name__}: {exc}"
+                self._load_error = _safe_backend_error("inference", exc)
                 model = None
                 semantic_matrix = np.zeros((len(queries), len(chunks)), dtype=float)
 
@@ -269,5 +273,5 @@ class EmbeddingEngine:
             top.sort(key=lambda item: item["final_score"], reverse=True)
             return top + candidates[len(top):]
         except Exception as exc:
-            self._reranker_error = f"falha na inferência: {type(exc).__name__}: {exc}"
+            self._reranker_error = _safe_backend_error("inference", exc)
             return candidates

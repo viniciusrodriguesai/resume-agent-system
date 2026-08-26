@@ -135,3 +135,37 @@ def test_embeddings_are_batched_and_candidate_cache_is_reused(tmp_path, monkeypa
 
     engine.retrieve_many(queries, chunks, concept_groups=groups)
     assert len(model.calls) == 3  # trechos vieram do cache; só consultas foram codificadas
+
+
+def test_embedding_failure_status_does_not_copy_exception_message(tmp_path, monkeypatch):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=True))
+    private_detail = "candidate@example.invalid at C:\\private\\model"
+
+    class FailingModel:
+        def encode(self, _texts, **_kwargs):
+            raise RuntimeError(private_detail)
+
+    monkeypatch.setattr(engine, "_load_model", FailingModel)
+
+    engine.retrieve("Python", ["Python em produção"])
+
+    assert engine.status["embedding_error"] == "inference:RuntimeError"
+    assert private_detail not in str(engine.status)
+
+
+def test_reranker_failure_status_does_not_copy_exception_message(tmp_path):
+    settings = make_settings(tmp_path).model_copy(update={"reranker_enabled": True})
+    engine = EmbeddingEngine(settings)
+    private_detail = "candidate@example.invalid at C:\\private\\reranker"
+
+    class FailingReranker:
+        def predict(self, _pairs, **_kwargs):
+            raise ValueError(private_detail)
+
+    engine._reranker = FailingReranker()
+    candidates = engine.retrieve("Python", ["Python em produção"])
+
+    engine.rerank("Python", candidates)
+
+    assert engine.status["reranker_error"] == "inference:ValueError"
+    assert private_detail not in str(engine.status)
