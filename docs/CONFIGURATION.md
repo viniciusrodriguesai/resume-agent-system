@@ -57,10 +57,6 @@ permissão de escrita para UID 10001.
 | `RESUME_MAX_CHUNK_CHARS` | 420 | tamanho aproximado de trecho |
 | `RESUME_MAX_REVISIONS` | 1 | compatibilidade de configuração; não reexecuta o pipeline atual |
 
-`RESUME_VECTOR_STORE` aceita `memory` ou `lancedb`, mas o fluxo de evidências
-atual usa o `EmbeddingEngine` em memória. Selecionar LanceDB não muda o pipeline da
-V6.
-
 O perfil de dependências da V6 instala e valida Torch. `onnx` e `openvino`
 permanecem valores aceitos para instalações gerenciadas pelo operador, mas seus
 adaptadores não fazem parte de `requirements-ai.txt`. Se o backend solicitado não

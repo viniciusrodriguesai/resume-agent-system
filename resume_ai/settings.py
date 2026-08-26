@@ -70,8 +70,6 @@ class Settings(BaseSettings):
     history_max_entries: int = Field(default=500, ge=1, le=10_000)
     history_query_limit: int = Field(default=100, ge=1, le=1000)
     history_busy_timeout_ms: int = Field(default=5000, ge=100, le=60_000)
-    vector_store: Literal["memory", "lancedb"] = "memory"
-
     def model_post_init(self, __context: object) -> None:
         root = self.project_root
         if not self.data_dir.is_absolute():

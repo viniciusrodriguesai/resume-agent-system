@@ -189,7 +189,7 @@ python -m pip install -r requirements-full.txt
 
 - `requirements.txt`: UI, API, matching lexical, parsers e runtime base;
 - `requirements-ai.txt`: Sentence Transformers e Transformers corrigidos para embeddings e reranker;
-- `requirements-full.txt`: Presidio, Docling, LanceDB, Prometheus e restrição segura de `cryptography`;
+- `requirements-full.txt`: Presidio, Docling, Prometheus e restrição segura de `cryptography`;
 - `requirements-dev.txt`: testes, qualidade, auditoria e build.
 
 Consulte [deployment](docs/DEPLOYMENT.md) para comandos específicos de PowerShell,
