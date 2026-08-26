@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import threading
 import time
+import uuid
 from typing import Any
 
 from resume_ai.settings import Settings
@@ -59,9 +60,13 @@ class SafeResultCache:
             return
         payload = {"saved_at": time.time(), "value": value}
         destination = self.path / f"{key}.json"
-        temporary = destination.with_suffix(".tmp")
-        temporary.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-        temporary.replace(destination)
+        temporary = destination.with_name(f".{destination.name}.{uuid.uuid4().hex}.tmp")
+        with self._lock:
+            try:
+                temporary.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+                temporary.replace(destination)
+            finally:
+                temporary.unlink(missing_ok=True)
 
     def clear(self) -> None:
         with self._lock:
