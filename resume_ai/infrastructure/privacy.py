@@ -24,6 +24,15 @@ PATTERNS = {
 _RESUME_HEADINGS = {"curriculo", "curriculum vitae", "resume", "cv"}
 
 
+def _is_probable_name_line(value: str) -> bool:
+    if not value or len(value.split()) > 6 or re.search(r"[@\d:<>]", value):
+        return False
+    # Import locally to keep the privacy module independent during agent package import.
+    from resume_ai.agents.catalog import detect_skills
+
+    return not detect_skills(value)
+
+
 class PrivacyService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -50,7 +59,7 @@ class PrivacyService:
                 value = line.strip()
                 if normalize(value) in _RESUME_HEADINGS:
                     continue
-                if value and len(value.split()) <= 6 and not re.search(r"[@\d:<>]", value):
+                if _is_probable_name_line(value):
                     counts["NOME_CANDIDATO"] += 1
                     lines[index] = "<NOME_CANDIDATO>"
                     break

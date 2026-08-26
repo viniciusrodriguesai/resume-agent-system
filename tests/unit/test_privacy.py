@@ -68,3 +68,20 @@ def test_regex_privacy_removes_name_after_resume_heading_or_label(
     assert "Alex Example" not in text
     assert "Python e SQL" in text
     assert any(entity.entity_type == "NOME_CANDIDATO" for entity in report.entities)
+
+
+def test_regex_privacy_does_not_remove_technical_lines_after_heading(tmp_path) -> None:
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+        presidio_enabled=False,
+    )
+    original = "CURRÍCULO\nPython\nFastAPI\nPostgreSQL"
+
+    text, report = PrivacyService(settings).anonymize(original)
+
+    assert "Python" in text
+    assert "FastAPI" in text
+    assert "PostgreSQL" in text
+    assert all(entity.entity_type != "NOME_CANDIDATO" for entity in report.entities)
