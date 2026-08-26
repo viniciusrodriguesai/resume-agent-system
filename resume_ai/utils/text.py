@@ -156,7 +156,8 @@ def _phrase_contexts(text: str, phrase: str) -> list[str]:
 def _is_negated_context(context: str) -> bool:
     negation = re.compile(
         r"(?:\bsem|\bnao|\bnot|\bwithout|\bnever|\bnenhum(?:a)?|"
-        r"\bno experience (?:with|in))\s+(?:[a-z0-9+#./-]+\s+){0,3}$"
+        r"\bno\s+(?:[a-z0-9+#./-]+\s+){0,2}experience\s+(?:with|in))"
+        r"\s+(?:[a-z0-9+#./-]+\s+){0,3}$"
     )
     return negation.search(context) is not None
 

@@ -127,6 +127,18 @@ def test_explicit_negation_does_not_count_as_evidence(tmp_path):
     assert result["final_score"] < 0.32
 
 
+def test_qualified_english_negation_does_not_count_as_evidence(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Java"
+    result = engine.retrieve(
+        requirement,
+        ["No professional experience with Java."],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["final_score"] < 0.32
+
+
 def test_embeddings_are_batched_and_candidate_cache_is_reused(tmp_path, monkeypatch):
     engine = EmbeddingEngine(make_settings(tmp_path, embeddings=True))
 
