@@ -8,9 +8,17 @@ from rapidfuzz.fuzz import WRatio
 
 from resume_ai.domain.scoring import THRESHOLDS
 from resume_ai.settings import Settings
-from resume_ai.utils.text import content_hash, exact_phrase, negated_phrase, normalize, tfidf_similarity
+from resume_ai.utils.text import (
+    content_hash,
+    exact_phrase,
+    negated_phrase,
+    normalize,
+    superficial_phrase,
+    tfidf_similarity,
+)
 
 INCOMPLETE_CUMULATIVE_FLOOR = THRESHOLDS["equilibrado"]["partial"]
+SUPERFICIAL_EVIDENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
@@ -103,7 +111,10 @@ class EmbeddingEngine:
             return 0.0
         covered = 0
         for aliases in groups:
-            if any(exact_phrase(chunk, alias) for alias in aliases):
+            if any(
+                exact_phrase(chunk, alias) and not superficial_phrase(chunk, alias)
+                for alias in aliases
+            ):
                 covered += 1
         return covered / len(groups)
 
@@ -135,6 +146,12 @@ class EmbeddingEngine:
             semantic = float(semantic_scores[index]) if index < len(semantic_scores) else 0.0
             semantic = max(0.0, min(semantic, 1.0))
             coverage = self._concept_coverage(chunk, concept_groups)
+            strong_coverage = coverage
+            superficially_mentioned = superficial_phrase(chunk, requirement_text) or any(
+                superficial_phrase(chunk, alias)
+                for group in concept_groups
+                for alias in group
+            )
             normalized_requirement = f" {normalize(requirement_text)} "
             alternatives = len(concept_groups) > 1 and (
                 " ou " in normalized_requirement or " or " in normalized_requirement
@@ -160,6 +177,8 @@ class EmbeddingEngine:
                 final = max(final, INCOMPLETE_CUMULATIVE_FLOOR)
             if explicitly_negated:
                 final = min(final, 0.15)
+            elif superficially_mentioned and (not alternatives or strong_coverage == 0.0):
+                final = min(final, SUPERFICIAL_EVIDENCE_CEILING)
 
             method_parts = [semantic_method if model_available else "TF-IDF + RapidFuzz"]
             if concept_groups:
@@ -168,6 +187,8 @@ class EmbeddingEngine:
                 method_parts.append("frase exata")
             if explicitly_negated:
                 method_parts.append("menção negada")
+            if superficially_mentioned:
+                method_parts.append("menção superficial")
 
             candidates.append({
                 "text": chunk,

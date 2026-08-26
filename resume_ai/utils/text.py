@@ -172,6 +172,16 @@ def negated_phrase(text: str, phrase: str) -> bool:
     return bool(contexts) and all(_is_negated_context(context) for context in contexts)
 
 
+def superficial_phrase(text: str, phrase: str) -> bool:
+    """Return true when every occurrence only describes reading about a concept."""
+    contexts = _phrase_contexts(text, phrase)
+    superficial = re.compile(
+        r"(?:\bli|\bleu|\blido|\bread|\breading)\s+"
+        r"(?:(?:apenas|somente|only)\s+)?(?:sobre|about)\s+$"
+    )
+    return bool(contexts) and all(superficial.search(context) is not None for context in contexts)
+
+
 def content_hash(*parts: str) -> str:
     joined = "\0".join(parts).encode("utf-8", errors="ignore")
     return hashlib.sha256(joined).hexdigest()

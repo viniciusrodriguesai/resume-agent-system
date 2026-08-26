@@ -139,6 +139,26 @@ def test_qualified_english_negation_does_not_count_as_evidence(tmp_path):
     assert result["final_score"] < 0.32
 
 
+def test_superficial_reading_is_not_equivalent_to_operational_evidence(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Kubernetes"
+
+    superficial = engine.retrieve(
+        requirement,
+        ["Li sobre Kubernetes."],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+    operational = engine.retrieve(
+        requirement,
+        ["Operei clusters Kubernetes em produção por dois anos."],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert 0.28 <= superficial["final_score"] < 0.50
+    assert operational["final_score"] >= 0.80
+    assert superficial["final_score"] < operational["final_score"]
+
+
 def test_embeddings_are_batched_and_candidate_cache_is_reused(tmp_path, monkeypatch):
     engine = EmbeddingEngine(make_settings(tmp_path, embeddings=True))
 
