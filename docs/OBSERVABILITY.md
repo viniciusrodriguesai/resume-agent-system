@@ -81,9 +81,9 @@ Cada `AgentResult` também contém `duration_ms`, `confidence`, `status`,
 são exibidos no Streamlit e retornados no `AnalysisResult`.
 
 O estado do motor informa configuração e carregamento real de embedding e reranker,
-erros de backend e número de entradas do cache de embeddings. Erros podem conter
-detalhes técnicos de biblioteca e devem ser tratados como diagnóstico local, não
-como mensagem pública para usuários não confiáveis.
+falhas de backend e número de entradas do cache de embeddings. Falhas usam somente o
+estágio (`load` ou `inference`) e o nome da classe da exceção; mensagens arbitrárias
+de bibliotecas não são copiadas para `engine_status`.
 
 ## Métricas
 

@@ -42,8 +42,9 @@ antivírus, isolamento de processo ou limites de CPU/memória do sistema operaci
 
 O currículo passa pelo agente de privacidade antes da estruturação e dos embeddings.
 O modo base usa expressões regulares locais para e-mail, telefone, CPF, CNPJ, CEP,
-RG, URL, endereço, nascimento, identificadores sociais e uma provável primeira linha
-de nome. O modo completo pode complementar esse processo com Microsoft Presidio.
+RG, URL, endereço, nascimento, identificadores sociais, nomes rotulados e uma
+provável linha de nome próxima ao cabeçalho. O modo completo pode complementar esse
+processo com Microsoft Presidio.
 
 Anonimização automática é imperfeita: dados indiretos, formatos inesperados e texto
 extraído incorretamente podem permanecer. O resultado deve ser revisado antes de ser
@@ -55,9 +56,11 @@ Por padrão:
 - cache fica em memória;
 - cache em disco é recusado sem
   `RESUME_STORE_ANONYMIZED_DOCUMENTS=true`;
-- SQLite não salva currículo, vaga completa ou evidências;
-- o histórico atual salva título inferido da vaga, ID, horário, perfil, score, nível,
-  estado do motor e tempos.
+- SQLite não salva currículo, vaga completa, título inferido ou evidências;
+- o histórico atual salva ID, horário, perfil, score, nível, tempos e somente flags
+  enumeradas do estado do motor;
+- a retenção padrão mantém as 500 entradas mais recentes e pode ser reduzida por
+  configuração.
 
 O arquivo SQLite e seus arquivos WAL/SHM são ignorados pelo Git. Quem opera a
 instalação é responsável por permissões, backup, retenção e exclusão do diretório

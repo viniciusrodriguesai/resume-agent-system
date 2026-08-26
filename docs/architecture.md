@@ -98,9 +98,10 @@ O cache padrão é em memória. Cache em disco só é aceito quando
 textuais anonimizadas.
 
 A aplicação depende apenas da porta `AnalysisHistoryWriter`. A implementação padrão,
-`SQLiteHistoryRepository`, salva ID, data, título inferido da vaga, perfil, score,
-nível e um resumo JSON com score, estado do motor e tempos. Currículo, texto integral
-da vaga e evidências não são persistidos no histórico. O histórico pode ser
+`SQLiteHistoryRepository`, salva ID, data, perfil, score, nível e um resumo JSON com
+score, tempos e flags enumeradas do estado do motor. Currículo, texto integral da
+vaga, título inferido, evidências, nomes de modelo e erros de backend não são
+persistidos no histórico. A retenção padrão é de 500 entradas; o histórico pode ser
 desativado com `RESUME_HISTORY_ENABLED=false`.
 
 ## Fronteiras de confiança

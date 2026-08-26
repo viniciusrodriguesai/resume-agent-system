@@ -117,8 +117,9 @@ o score para evitar uma nota geral enganosa. Os limiares variam com o rigor
 ## Privacidade e segurança
 
 Antes dos embeddings, o agente de privacidade remove e-mail, telefone, CPF, CNPJ,
-CEP, RG, URLs, endereços, nascimento, identificadores sociais e uma provável linha
-de nome. Presidio pode complementar as expressões regulares no perfil completo.
+CEP, RG, URLs, endereços, nascimento, identificadores sociais, nomes rotulados e uma
+provável linha de nome próxima ao cabeçalho. Presidio pode complementar as expressões
+regulares no perfil completo.
 Anonimização automática é imperfeita e exige revisão humana.
 
 Uploads PDF, DOCX e TXT passam por validação de nome, tamanho, extensão, MIME e
@@ -386,10 +387,11 @@ históricas presentes em cópias locais não fazem parte da implementação can�
 `ResumeAnalysisService` depende da porta `AnalysisHistoryWriter`.
 `SQLiteHistoryRepository` é o padrão e pode ser desabilitado com
 `RESUME_HISTORY_ENABLED=false`. O histórico guarda somente resumo operacional da
-análise; currículo, texto integral da vaga e evidências não são salvos.
+análise; currículo, texto integral da vaga, título inferido e evidências não são
+salvos. A retenção padrão é de 500 entradas.
 
 O arquivo fica em `data/history.sqlite3` e é ignorado pelo Git. O operador controla
-permissões, retenção, backup e exclusão. Veja os detalhes atuais de campos e
+permissões, limite de retenção, backup e exclusão. Veja os detalhes atuais de campos e
 privacidade em [arquitetura](docs/architecture.md) e [segurança](SECURITY.md).
 
 ## Limitações conhecidas

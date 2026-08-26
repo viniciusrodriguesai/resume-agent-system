@@ -137,7 +137,8 @@ Em deployment distribuído, aplique o limite autoritativo no gateway.
 
 `RESUME_CORS_ORIGINS` é uma lista separada por vírgulas. O padrão permite apenas
 Streamlit em localhost e loopback. Credenciais CORS ficam desabilitadas; métodos
-permitidos são GET e POST.
+permitidos são GET e POST. O preflight aceita somente `Content-Type`, `X-API-Key` e
+`X-Request-ID` como headers de requisição não simples.
 
 Respostas recebem:
 
