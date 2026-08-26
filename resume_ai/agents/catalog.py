@@ -1,7 +1,18 @@
 from __future__ import annotations
 
+import re
+
 from resume_ai.domain.models import Skill
 from resume_ai.utils.text import exact_phrase, normalize
+
+_COORDINATED_CONCEPT_RE = re.compile(
+    r"\s*(?:,|;|\be\b|\band\b|\bou\b|\bor\b)\s*"
+)
+_REQUIREMENT_PREFIX_RE = re.compile(
+    r"^(?:(?:experiencia|conhecimento|dominio|familiaridade|vivencia)"
+    r"(?:\s+(?:com|em|de))?|(?:experience|knowledge|familiarity)"
+    r"(?:\s+(?:with|in|of))?)\s+"
+)
 
 SKILLS: dict[str, tuple[str, list[str]]] = {
     "Python": ("programação", ["python"]),
@@ -67,6 +78,20 @@ def concept_alias_groups(text: str) -> list[list[str]]:
         values = [name, *aliases]
         if any(exact_phrase(normalized, value) for value in values):
             groups.append(list(dict.fromkeys(values)))
+
+    coordinated_parts = _COORDINATED_CONCEPT_RE.split(normalized)
+    if len(coordinated_parts) > 1:
+        for part in coordinated_parts:
+            literal = _REQUIREMENT_PREFIX_RE.sub("", part).strip()
+            if not literal or len(literal.split()) > 6:
+                continue
+            if any(
+                exact_phrase(part, alias)
+                for group in groups
+                for alias in group
+            ):
+                continue
+            groups.append([literal])
     return groups
 
 

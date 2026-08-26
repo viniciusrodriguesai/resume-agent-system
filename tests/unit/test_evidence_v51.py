@@ -59,6 +59,40 @@ def test_or_requirement_accepts_one_alternative(tmp_path):
     assert result["final_score"] >= 0.80
 
 
+def test_mixed_catalog_cumulative_requirement_needs_every_concept(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com Python e Kubernetes"
+    groups = concept_alias_groups(requirement)
+
+    partial = engine.retrieve(
+        requirement,
+        ["Desenvolvi serviços em Python."],
+        concept_groups=groups,
+    )[0]
+    complete = engine.retrieve(
+        requirement,
+        ["Desenvolvi serviços em Python executados no Kubernetes."],
+        concept_groups=groups,
+    )[0]
+
+    assert groups == [["Python", "python"], ["kubernetes"]]
+    assert partial["final_score"] < 0.60
+    assert complete["final_score"] >= 0.80
+
+
+def test_mixed_catalog_alternative_accepts_known_option(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com Python ou Kubernetes"
+
+    result = engine.retrieve(
+        requirement,
+        ["Desenvolvi serviços em Python."],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["final_score"] >= 0.80
+
+
 def test_explicit_negation_does_not_count_as_evidence(tmp_path):
     engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
     requirement = "NumPy"
