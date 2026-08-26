@@ -17,7 +17,7 @@ from resume_ai.settings import Settings
 
 ROOT = Path(__file__).resolve().parent
 EXAMPLES = ROOT / "examples"
-APP_VERSION = "6.0.0"
+APP_VERSION = "6.0.1"
 
 STATUS_LABELS = {
     "matched": "Correspondido",
@@ -41,7 +41,7 @@ ENTITY_LABELS = {
 }
 
 st.set_page_config(
-    page_title="Resume Match AI V6.0.0",
+    page_title="Resume Match AI V6.0.1",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -420,7 +420,7 @@ def main() -> None:
     st.markdown(
         """
         <div class="hero">
-          <div><span class="eyebrow">V6.0.0 · LOCAL · CÓDIGO ABERTO</span><h1>IA de Correspondência de Currículos</h1><p>Plataforma multiagente para comparar currículos e vagas com evidências, privacidade e explicabilidade.</p></div>
+          <div><span class="eyebrow">V6.0.1 · LOCAL · CÓDIGO ABERTO</span><h1>IA de Correspondência de Currículos</h1><p>Plataforma multiagente para comparar currículos e vagas com evidências, privacidade e explicabilidade.</p></div>
           <div class="hero-badges"><span>Otimizado para CPU</span><span>API local com FastAPI</span><span>Fallback totalmente offline</span></div>
         </div>
         """,
