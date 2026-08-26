@@ -103,3 +103,43 @@ def test_missing_required_evidence_cannot_improve_an_existing_score() -> None:
 
     assert with_required_gap.overall_score <= baseline.overall_score
     assert with_required_gap.required_missing == 1
+
+
+def test_zero_requirements_has_consistent_empty_summary() -> None:
+    result = calculate_score([], "equilibrado")
+
+    assert result.overall_score == 0
+    assert result.matched == result.partial == result.missing == 0
+    assert result.required_missing == 0
+    assert result.categories == []
+
+
+def test_all_missing_and_all_matched_keep_exact_boundary_scores() -> None:
+    missing = calculate_score(
+        [make_match(str(index), 0.0, priority="required") for index in range(3)],
+        "equilibrado",
+    )
+    matched = calculate_score(
+        [make_match(str(index), 1.0, priority="required") for index in range(3)],
+        "equilibrado",
+    )
+
+    assert missing.overall_score == 0
+    assert missing.missing == missing.required_missing == 3
+    assert matched.overall_score == 100
+    assert matched.matched == 3
+    assert matched.required_missing == 0
+
+
+def test_repeating_the_same_requirement_does_not_change_its_score() -> None:
+    original = [make_match("python", 0.5, priority="required", category="backend")]
+    repeated = [
+        make_match("python-1", 0.5, priority="required", category="backend"),
+        make_match("python-2", 0.5, priority="required", category="backend"),
+    ]
+
+    original_score = calculate_score(original, "equilibrado")
+    repeated_score = calculate_score(repeated, "equilibrado")
+
+    assert repeated_score.overall_score == original_score.overall_score
+    assert repeated_score.categories[0].score == original_score.categories[0].score
