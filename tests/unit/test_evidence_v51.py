@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from resume_ai.agents.catalog import concept_alias_groups
 from resume_ai.infrastructure.embeddings import EmbeddingEngine
@@ -115,6 +116,30 @@ def test_three_skill_cumulative_requirement_needs_all_concepts(tmp_path):
     assert complete["final_score"] >= 0.80
 
 
+@pytest.mark.parametrize(
+    ("requirement", "expected_minimum", "expected_maximum"),
+    [
+        ("Python and Kubernetes", 0.35, 0.50),
+        ("Python or Kubernetes", 0.80, 1.01),
+    ],
+)
+def test_english_coordination_preserves_and_or_semantics(
+    tmp_path,
+    requirement: str,
+    expected_minimum: float,
+    expected_maximum: float,
+):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+
+    result = engine.retrieve(
+        requirement,
+        ["Developed production APIs in Python."],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert expected_minimum <= result["final_score"] < expected_maximum
+
+
 def test_reranker_preserves_partial_cumulative_evidence(tmp_path):
     settings = make_settings(tmp_path).model_copy(update={"reranker_enabled": True})
     engine = EmbeddingEngine(settings)
@@ -159,6 +184,31 @@ def test_qualified_english_negation_does_not_count_as_evidence(tmp_path):
     )[0]
 
     assert result["final_score"] < 0.32
+
+
+@pytest.mark.parametrize(
+    ("requirement", "resume_line"),
+    [
+        ("Docker", "Não tenho experiência com Docker."),
+        ("AWS", "Sem experiência em AWS."),
+        ("Kubernetes", "Never used Kubernetes."),
+        ("Java", "No professional experience with Java."),
+    ],
+)
+def test_required_negation_matrix_never_becomes_positive_evidence(
+    tmp_path,
+    requirement: str,
+    resume_line: str,
+):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+
+    result = engine.retrieve(
+        requirement,
+        [resume_line],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["final_score"] < 0.28
 
 
 def test_superficial_reading_is_not_equivalent_to_operational_evidence(tmp_path):
