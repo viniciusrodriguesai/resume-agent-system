@@ -530,14 +530,21 @@ def main() -> None:
                 profile=profile,
                 strictness=strictness,
             )
-            with st.status("Executando pipeline local...", expanded=True) as status:
-                st.write("1. Removendo dados pessoais")
-                st.write("2. Estruturando currículo e vaga")
-                st.write("3. Recuperando evidências em lote")
-                st.write("4. Calculando pontuação e revisão")
-                result = service.analyze(request)
-                status.update(label="Análise concluída", state="complete", expanded=False)
-            st.session_state["last_result"] = result.model_dump(mode="json")
+            try:
+                with st.status("Executando pipeline local...", expanded=True) as status:
+                    st.write("1. Removendo dados pessoais")
+                    st.write("2. Estruturando currículo e vaga")
+                    st.write("3. Recuperando evidências em lote")
+                    st.write("4. Calculando pontuação e revisão")
+                    result = service.analyze(request)
+                    status.update(label="Análise concluída", state="complete", expanded=False)
+            except Exception:
+                st.session_state.pop("last_result", None)
+                st.error(
+                    "Não foi possível concluir a análise. Verifique as entradas e tente novamente."
+                )
+            else:
+                st.session_state["last_result"] = result.model_dump(mode="json")
 
     if "last_result" in st.session_state:
         try:
