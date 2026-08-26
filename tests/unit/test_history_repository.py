@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
@@ -214,6 +215,46 @@ def test_history_does_not_store_or_return_job_title(tmp_path) -> None:
     assert stored_title == ''
     assert 'job_title' not in repository.list_recent()[0]
     assert sensitive_sentinel.encode() not in settings.history_db.read_bytes()
+
+
+def test_history_allowlists_engine_status_fields(tmp_path) -> None:
+    settings = history_settings(tmp_path)
+    repository = HistoryRepository(settings)
+    sensitive_sentinel = "candidate@example.invalid at C:\\private\\model"
+    result = analysis_result(
+        "analysis-engine-status",
+        datetime(2026, 1, 1, tzinfo=UTC),
+    )
+    result.engine_status = {
+        "embedding_enabled": True,
+        "embedding_backend": "torch",
+        "embedding_loaded": False,
+        "embedding_model": sensitive_sentinel,
+        "embedding_error": sensitive_sentinel,
+        "reranker_enabled": True,
+        "reranker_loaded": False,
+        "reranker_error": sensitive_sentinel,
+        "cache_hit": False,
+        "unexpected": sensitive_sentinel,
+    }
+
+    repository.save(result)
+
+    with sqlite3.connect(settings.history_db) as connection:
+        stored_summary = connection.execute(
+            "SELECT summary_json FROM analyses WHERE id = ?",
+            (result.analysis_id,),
+        ).fetchone()[0]
+    assert json.loads(stored_summary)["engine_status"] == {
+        "embedding_enabled": True,
+        "embedding_backend": "torch",
+        "embedding_loaded": False,
+        "reranker_enabled": True,
+        "reranker_loaded": False,
+        "cache_hit": False,
+    }
+    database_files = settings.history_db.parent.glob(f"{settings.history_db.name}*")
+    assert all(sensitive_sentinel.encode() not in path.read_bytes() for path in database_files)
 
 
 def test_history_migration_scrubs_legacy_job_titles(tmp_path) -> None:

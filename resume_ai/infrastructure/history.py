@@ -8,6 +8,26 @@ from resume_ai.domain.models import AnalysisResult
 from resume_ai.settings import Settings
 
 _SCHEMA_VERSION = 1
+_BOOLEAN_ENGINE_STATUS_FIELDS = (
+    "embedding_enabled",
+    "embedding_loaded",
+    "reranker_enabled",
+    "reranker_loaded",
+    "cache_hit",
+)
+_ALLOWED_EMBEDDING_BACKENDS = frozenset({"onnx", "openvino", "torch"})
+
+
+def _safe_engine_status(status: dict[str, Any]) -> dict[str, bool | str]:
+    safe: dict[str, bool | str] = {
+        field: value
+        for field in _BOOLEAN_ENGINE_STATUS_FIELDS
+        if isinstance((value := status.get(field)), bool)
+    }
+    backend = status.get("embedding_backend")
+    if isinstance(backend, str) and backend in _ALLOWED_EMBEDDING_BACKENDS:
+        safe["embedding_backend"] = backend
+    return safe
 
 
 class SQLiteHistoryRepository:
@@ -55,7 +75,7 @@ class SQLiteHistoryRepository:
             return
         summary: dict[str, Any] = {
             "score": result.score.model_dump(),
-            "engine_status": result.engine_status,
+            "engine_status": _safe_engine_status(result.engine_status),
             "timings_ms": result.timings_ms,
         }
         with self._connect() as connection:
