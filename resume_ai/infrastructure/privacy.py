@@ -5,8 +5,10 @@ from collections import Counter
 
 from resume_ai.domain.models import PrivacyEntity, PrivacyReport
 from resume_ai.settings import Settings
+from resume_ai.utils.text import normalize
 
 PATTERNS = {
+    "NOME_CANDIDATO": r"(?im)^(?:nome(?:\s+completo)?|full\s+name|name)\s*:\s*[^\n]+$",
     "EMAIL": r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+",
     "CPF": r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b",
     "CNPJ": r"\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b",
@@ -18,6 +20,8 @@ PATTERNS = {
     "ENDERECO": r"(?im)^(?:(?:endere[cç]o)\s*:?\s*)?(?:rua|avenida|av\.?|alameda|travessa|rodovia|estrada)\s+[^\n]+$",
     "SOCIAL_HANDLE": r"(?im)^(?:linkedin|github|telegram|instagram)\s*:\s*[^\n]+$",
 }
+
+_RESUME_HEADINGS = {"curriculo", "curriculum vitae", "resume", "cv"}
 
 
 class PrivacyService:
@@ -40,14 +44,17 @@ class PrivacyService:
                 counts[entity_type] += len(matches)
                 output = re.sub(pattern, f"<{entity_type}>", output, flags=re.IGNORECASE)
 
-        lines = output.splitlines()
-        for index, line in enumerate(lines[:4]):
-            value = line.strip()
-            if value and len(value.split()) <= 6 and not re.search(r"[@\d:<>]", value):
-                counts["NOME_CANDIDATO"] += 1
-                lines[index] = "<NOME_CANDIDATO>"
-                break
-        output = "\n".join(lines)
+        if not counts["NOME_CANDIDATO"]:
+            lines = output.splitlines()
+            for index, line in enumerate(lines[:4]):
+                value = line.strip()
+                if normalize(value) in _RESUME_HEADINGS:
+                    continue
+                if value and len(value.split()) <= 6 and not re.search(r"[@\d:<>]", value):
+                    counts["NOME_CANDIDATO"] += 1
+                    lines[index] = "<NOME_CANDIDATO>"
+                    break
+            output = "\n".join(lines)
         entities = [
             PrivacyEntity(entity_type=kind, replacement="REMOVIDO", count=count)
             for kind, count in counts.items()

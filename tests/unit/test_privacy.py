@@ -1,3 +1,5 @@
+import pytest
+
 from resume_ai.infrastructure.privacy import PrivacyService
 from resume_ai.settings import Settings
 
@@ -38,3 +40,31 @@ Python e SQL
     assert "Rua Exemplo" not in text
     assert "maria-example" not in text
     assert report.total_removed >= 4
+
+
+@pytest.mark.parametrize(
+    "original",
+    [
+        "CURRÍCULO\nMaria Silva\nPython e SQL",
+        "RESUME\nAlex Example\nPython e SQL",
+        "Nome: Maria Silva\nPython e SQL",
+        "Full name: Alex Example\nPython e SQL",
+    ],
+)
+def test_regex_privacy_removes_name_after_resume_heading_or_label(
+    tmp_path,
+    original: str,
+) -> None:
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+        presidio_enabled=False,
+    )
+
+    text, report = PrivacyService(settings).anonymize(original)
+
+    assert "Maria Silva" not in text
+    assert "Alex Example" not in text
+    assert "Python e SQL" in text
+    assert any(entity.entity_type == "NOME_CANDIDATO" for entity in report.entities)
