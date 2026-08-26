@@ -10,6 +10,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import RequestResponseEndpoint
 
 from resume_ai import __version__
@@ -67,10 +68,10 @@ async def handle_unexpected_exception(
         return response
 
 
-@app.exception_handler(HTTPException)
+@app.exception_handler(StarletteHTTPException)
 async def handle_http_exception(
     _request: Request,
-    exc: HTTPException,
+    exc: StarletteHTTPException,
 ) -> JSONResponse:
     code, message = _HTTP_ERROR_MESSAGES.get(
         exc.status_code,

@@ -251,3 +251,14 @@ def test_cors_preflight_allows_request_id_for_analysis() -> None:
     assert response.status_code == 200
     allowed_headers = response.headers["Access-Control-Allow-Headers"].lower()
     assert "x-request-id" in allowed_headers
+
+
+def test_not_found_and_method_not_allowed_use_correlated_error_contract() -> None:
+    client = TestClient(app)
+    missing = client.get("/does-not-exist", headers={"X-Request-ID": "missing-route"})
+    wrong_method = client.put("/health", headers={"X-Request-ID": "wrong-method"})
+
+    assert missing.status_code == 404
+    assert missing.json()["error"]["request_id"] == "missing-route"
+    assert wrong_method.status_code == 405
+    assert wrong_method.json()["error"]["request_id"] == "wrong-method"
