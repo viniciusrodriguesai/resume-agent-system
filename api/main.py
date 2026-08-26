@@ -177,7 +177,7 @@ app.add_middleware(
     allow_origins=[origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()],
     allow_credentials=False,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_headers=["Content-Type", "X-API-Key", "X-Request-ID"],
     expose_headers=["X-Request-ID"],
 )
 

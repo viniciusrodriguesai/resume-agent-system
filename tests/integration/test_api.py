@@ -213,3 +213,22 @@ def test_cors_exposes_request_id_to_allowed_origin() -> None:
     exposed_headers = response.headers["Access-Control-Expose-Headers"]
     assert "X-Request-ID" in exposed_headers
     assert response.headers["Access-Control-Allow-Origin"] == allowed_origin
+
+
+def test_cors_preflight_allows_request_id_for_analysis() -> None:
+    allowed_origin = settings.cors_origins.split(",")[0]
+
+    response = TestClient(app).options(
+        "/v1/analyze",
+        headers={
+            "Origin": allowed_origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": (
+                "Content-Type, X-API-Key, X-Request-ID"
+            ),
+        },
+    )
+
+    assert response.status_code == 200
+    allowed_headers = response.headers["Access-Control-Allow-Headers"].lower()
+    assert "x-request-id" in allowed_headers
