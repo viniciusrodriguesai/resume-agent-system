@@ -85,3 +85,33 @@ def test_regex_privacy_does_not_remove_technical_lines_after_heading(tmp_path) -
     assert "FastAPI" in text
     assert "PostgreSQL" in text
     assert all(entity.entity_type != "NOME_CANDIDATO" for entity in report.entities)
+
+
+@pytest.mark.parametrize(
+    ("original", "private_name", "technical_line"),
+    [
+        ("Nome completo: Maria Silva\nPython", "Maria Silva", "Python"),
+        ("CURRÍCULO\nJosé da Silva\nPython", "José da Silva", "Python"),
+        ("CV\nJoão D'Ávila\nFastAPI", "João D'Ávila", "FastAPI"),
+        ("RESUME\n김민수\nPython 개발 경험", "김민수", "Python 개발 경험"),
+        ("CV\n李伟\nPython 开发经验", "李伟", "Python 开发经验"),
+    ],
+)
+def test_regex_privacy_handles_labeled_and_unicode_names_without_losing_technical_text(
+    tmp_path,
+    original: str,
+    private_name: str,
+    technical_line: str,
+) -> None:
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+        presidio_enabled=False,
+    )
+
+    text, report = PrivacyService(settings).anonymize(original)
+
+    assert private_name not in text
+    assert technical_line in text
+    assert any(entity.entity_type == "NOME_CANDIDATO" for entity in report.entities)
