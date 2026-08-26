@@ -104,6 +104,8 @@ async def guard_analysis_requests(
     if raw_length:
         try:
             content_length = int(raw_length)
+            if content_length < 0:
+                raise ValueError
         except ValueError:
             return api_error_response(
                 400,

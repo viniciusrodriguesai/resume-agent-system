@@ -123,6 +123,25 @@ def test_guard_rejects_body_larger_than_declared_content_length() -> None:
     }
 
 
+def test_guard_rejects_negative_content_length() -> None:
+    response = TestClient(app).post(
+        "/v1/analyze",
+        content=b"{}",
+        headers={
+            "Content-Length": "-1",
+            "Content-Type": "application/json",
+            "X-Request-ID": "negative-length",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"] == {
+        "code": "invalid_content_length",
+        "message": "Cabeçalho Content-Length inválido.",
+        "request_id": "negative-length",
+    }
+
+
 def test_validation_error_does_not_echo_submitted_personal_data() -> None:
     personal_value = "candidate.private@example.invalid"
     response = TestClient(app).post(
