@@ -1,11 +1,62 @@
 from __future__ import annotations
 
-from resume_ai.domain.models import AgentTrace, CandidateProfile, EvidenceCandidate, EvidenceMatch, JobProfile
+from typing import Any
+
+from resume_ai.domain.concepts import ConceptGroup
+from resume_ai.domain.models import (
+    AgentTrace,
+    CandidateProfile,
+    EvidenceCandidate,
+    EvidenceMatch,
+    JobProfile,
+    Requirement,
+)
 from resume_ai.infrastructure.embeddings import EmbeddingEngine
 from resume_ai.utils.text import best_snippet, remove_privacy_placeholders
 
 from .base import run_agent
 from .catalog import concept_group_for
+
+
+def _explain_evidence(
+    requirement: Requirement,
+    group: ConceptGroup,
+    candidate: dict[str, Any] | None,
+) -> str:
+    if candidate is None:
+        return "Nenhum trecho do currículo apresentou evidência suficiente."
+
+    labels = " e ".join(concept.canonical for concept in group.concepts)
+    details: list[str] = []
+    if candidate["explicitly_negated"]:
+        details.append(f"{labels or requirement.text} foi explicitamente negado nesta evidência.")
+    elif (
+        group.operator == "AND"
+        and 0.0 < candidate["concept_coverage"] < 1.0
+    ):
+        covered = round(candidate["concept_coverage"] * len(group.concepts))
+        details.append(
+            f"Apenas {covered} de {len(group.concepts)} conceitos obrigatórios foi encontrado."
+        )
+    elif (
+        group.operator == "OR"
+        and candidate["concept_coverage"] == 1.0
+        and not candidate["weak_experience"]
+    ):
+        details.append("Uma alternativa válida do requisito OR foi comprovada.")
+    elif candidate["weak_experience"] or candidate["superficially_mentioned"]:
+        details.append(
+            f"{labels or requirement.text} foi citado apenas em contexto teórico; "
+            "o requisito pede experiência aplicada."
+        )
+    elif candidate["operational_experience"]:
+        details.append(f"A evidência demonstra uso operacional de {labels or requirement.text}.")
+    else:
+        details.append(f"A evidência cita explicitamente {labels or requirement.text}.")
+
+    if group.uses_literal_fallback:
+        details.append("Correspondência baseada em conceito literal fora do catálogo.")
+    return " ".join(details)
 
 
 class EvidenceAgent:
@@ -26,16 +77,20 @@ class EvidenceAgent:
             )
 
             output: list[EvidenceMatch] = []
-            for requirement, query, candidates in zip(job.requirements, queries, retrieved, strict=True):
+            for requirement, query, group, candidates in zip(
+                job.requirements,
+                queries,
+                concept_groups,
+                retrieved,
+                strict=True,
+            ):
                 candidates = self.engine.rerank(query, candidates)
                 for item in candidates:
                     item["text"] = best_snippet(item["text"], requirement.text)
+                    item["literal_concept_fallback"] = group.uses_literal_fallback
                 best = candidates[0] if candidates else None
                 final = float(best["final_score"]) if best else 0.0
-                explanation = (
-                    "A evidência combina similaridade lexical, aproximada, semântica e cobertura das competências citadas."
-                    if best else "Nenhum trecho do currículo apresentou evidência suficiente."
-                )
+                explanation = _explain_evidence(requirement, group, best)
                 output.append(EvidenceMatch(
                     requirement=requirement,
                     evidence=remove_privacy_placeholders(best["text"]) if best else None,

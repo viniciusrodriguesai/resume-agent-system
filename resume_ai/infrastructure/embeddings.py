@@ -250,6 +250,10 @@ class EmbeddingEngine:
                 "concept_count": len(concept_groups),
                 "alternative_concepts": alternatives,
                 "requirement_intent": intent.value,
+                "explicitly_negated": explicitly_negated,
+                "superficially_mentioned": superficially_mentioned,
+                "weak_experience": weak_experience,
+                "operational_experience": operational_experience,
             })
 
         candidates.sort(key=lambda item: item["final_score"], reverse=True)
