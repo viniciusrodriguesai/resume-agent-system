@@ -1,5 +1,6 @@
 import pytest
 
+from resume_ai.agents.catalog import concept_alias_groups
 from resume_ai.agents.job_agent import JobAgent
 from resume_ai.settings import Settings
 
@@ -90,6 +91,20 @@ def test_manual_validation_job_headers_are_not_requirements(tmp_path):
     }.isdisjoint(texts)
     assert "Experiência com Terraform ou CloudFormation" in texts
     assert "Experiência com Redis ou RabbitMQ" in texts
+
+
+def test_manual_validation_sections_preserve_priority_and_alternative_semantics(tmp_path):
+    profile, _ = JobAgent(make_settings(tmp_path)).run(MANUAL_VALIDATION_JOB)
+    by_text = {item.text: item for item in profile.requirements}
+
+    infrastructure = by_text["Experiência com Terraform ou CloudFormation"]
+    alternative = by_text["Experiência com Redis ou RabbitMQ"]
+
+    assert infrastructure.priority == "required"
+    assert infrastructure.source_section == "infrastructure"
+    assert alternative.priority == "neutral"
+    assert alternative.source_section == "alternative"
+    assert concept_alias_groups(alternative.text) == [["redis"], ["rabbitmq"]]
 
 
 @pytest.mark.parametrize(

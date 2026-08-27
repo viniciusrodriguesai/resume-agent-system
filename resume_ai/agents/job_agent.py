@@ -19,15 +19,14 @@ DESIRED_MARKERS = (
 RESPONSIBILITY_MARKERS = (
     "responsabilidades", "responsibilities", "atividades", "atribuicoes",
 )
+ALTERNATIVE_MARKERS = ("requisitos alternativos", "alternative requirements")
+INFRASTRUCTURE_MARKERS = ("requisitos de infraestrutura", "infrastructure requirements", "infraestrutura")
+TECHNICAL_MARKERS = ("requisitos tecnicos", "technical requirements")
 TITLE_MARKERS = (
     "estágio", "estagio", "intern", "analista", "cientista", "engenheiro", "developer", "desenvolvedor",
 )
 BULLET_PREFIXES = ("-", "•", "*", "–", "—")
-GENERIC_SECTION_HEADINGS = {
-    "qualifications",
-    "qualification",
-    "infraestrutura",
-}
+GENERIC_QUALIFICATION_HEADINGS = {"qualifications", "qualification"}
 
 
 def _heading_section(line: str, *, is_bullet: bool) -> str | None:
@@ -38,13 +37,19 @@ def _heading_section(line: str, *, is_bullet: bool) -> str | None:
         return "responsibilities"
     if any(marker in normalized for marker in DESIRED_MARKERS):
         return "desired"
+    if any(marker in normalized for marker in ALTERNATIVE_MARKERS):
+        return "alternative"
+    if any(marker in normalized for marker in INFRASTRUCTURE_MARKERS):
+        return "infrastructure"
+    if any(marker in normalized for marker in TECHNICAL_MARKERS):
+        return "technical"
     if any(marker in normalized for marker in REQUIRED_MARKERS):
         return "required"
     first_word = normalized.split(maxsplit=1)[0] if normalized else ""
     if first_word in {"requisito", "requisitos", "requirement", "requirements"}:
-        return "heading"
-    if normalized in GENERIC_SECTION_HEADINGS:
-        return "heading"
+        return "required"
+    if normalized in GENERIC_QUALIFICATION_HEADINGS:
+        return "neutral"
     return None
 
 
@@ -74,8 +79,7 @@ class JobAgent:
                 is_bullet = raw_line.lstrip().startswith(BULLET_PREFIXES)
                 heading_section = _heading_section(line, is_bullet=is_bullet)
                 if heading_section is not None:
-                    if heading_section != "heading":
-                        section = heading_section
+                    section = heading_section
                     continue
 
                 if line == title:
@@ -93,7 +97,13 @@ class JobAgent:
 
                 if len(line.split()) > 35:
                     continue
-                priority = "desired" if section == "desired" else "required" if section == "required" else "neutral"
+                priority = (
+                    "desired"
+                    if section == "desired"
+                    else "required"
+                    if section in {"required", "infrastructure", "technical"}
+                    else "neutral"
+                )
                 key = normalize(line)
                 if key in seen:
                     continue
