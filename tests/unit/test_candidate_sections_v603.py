@@ -65,3 +65,22 @@ def test_project_section_is_still_detected(tmp_path, heading: str):
     assert "Desenvolvi uma API pública com FastAPI." in profile.projects
     assert "Implementei um pipeline de eventos." in profile.projects
     assert profile.experience == []
+
+
+def test_multiple_jobs_keep_later_experience_entries(tmp_path):
+    earlier_entries = "\n".join(
+        f"- Implementei serviço numerado {index} em produção."
+        for index in range(16)
+    )
+    text = f"""CANDIDATO SINTÉTICO
+
+EXPERIÊNCIA PROFISSIONAL
+{earlier_entries}
+Backend Developer — Empresa Dois
+- Desenvolvi aplicações backend em Python.
+"""
+
+    profile, _ = make_agent(tmp_path).run(text, text)
+
+    assert "Desenvolvi aplicações backend em Python." in profile.experience
+    assert profile.projects == []

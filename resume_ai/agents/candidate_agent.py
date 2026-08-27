@@ -99,7 +99,7 @@ def _section_aware_profile_chunks(
                 if any(marker in normalized for marker in PROJECT_MARKERS):
                     projects.append(chunk)
 
-    return education[:8], experience[:15], projects[:12]
+    return education[:12], experience[:30], projects[:20]
 
 
 class CandidateAgent:
