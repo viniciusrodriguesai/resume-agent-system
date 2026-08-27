@@ -275,12 +275,30 @@ def test_superficial_reading_is_not_equivalent_to_operational_evidence(tmp_path)
     assert superficial["final_score"] < operational["final_score"]
 
 
+def test_superficial_and_negated_kubernetes_mentions_do_not_combine_into_experience(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência prática com Kubernetes em ambientes de produção"
+
+    result = engine.retrieve(
+        requirement,
+        [
+            "Li diversos artigos e tutoriais sobre Kubernetes, mas nunca administrei "
+            "clusters Kubernetes em produção."
+        ],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["concept_coverage"] == 0.0
+    assert result["final_score"] < 0.60
+
+
 @pytest.mark.parametrize(
     "resume_line",
     [
         "Conhecimento básico de Redis.",
         "Tenho noções de Redis.",
         "Estudei Redis.",
+        "Estudei conceitos de Redis.",
         "Li sobre Redis.",
         "Curso introdutório de Redis.",
     ],

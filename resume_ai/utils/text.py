@@ -185,9 +185,18 @@ def superficial_phrase(text: str, phrase: str) -> bool:
     contexts = _phrase_contexts(text, phrase)
     superficial = re.compile(
         r"(?:\bli|\bleu|\blido|\bread|\breading)\s+"
-        r"(?:(?:apenas|somente|only)\s+)?(?:sobre|about)\s+$"
+        r"(?:(?:apenas|somente|only)\s+)?"
+        r"(?:(?:(?:diversos?|varios?|alguns?|many|several)\s+)?"
+        r"(?:artigos?|articles?|tutoriais?|tutorials?|documentacao|documentation)"
+        r"(?:\s+(?:e|and)\s+"
+        r"(?:artigos?|articles?|tutoriais?|tutorials?|documentacao|documentation))?\s+)?"
+        r"(?:sobre|about)\s+$"
     )
-    return bool(contexts) and all(superficial.search(before) is not None for before, _ in contexts)
+    positive_contexts = [context for context in contexts if not _is_negated_context(context)]
+    return bool(positive_contexts) and all(
+        superficial.search(before) is not None
+        for before, _ in positive_contexts
+    )
 
 
 def requirement_demands_experience(text: str) -> bool:
@@ -200,13 +209,19 @@ def weak_experience_phrase(text: str, phrase: str) -> bool:
     contexts = _phrase_contexts(text, phrase)
     weak = re.compile(
         r"(?:\bconhecimento\s+(?:basico|teorico)|"
-        r"\b(?:tenho|possuo)\s+nocoes|\bnocoes|\bestudei|\bstudied|"
+        r"\b(?:tenho|possuo)\s+nocoes|\bnocoes|"
+        r"\bestudei(?:\s+(?:conceitos?|fundamentos?))?|"
+        r"\bstudied(?:\s+(?:concepts?|fundamentals?))?|"
         r"\bli(?:\s+sobre)?|\bread(?:ing)?(?:\s+about)?|"
         r"\bcurso\s+(?:introdutorio|basico)|"
         r"\b(?:basic|theoretical)\s+knowledge|\bintroductory\s+course)"
         r"(?:\s+(?:de|em|sobre|of|in|about))?\s+$"
     )
-    return bool(contexts) and all(weak.search(before) is not None for before, _ in contexts)
+    positive_contexts = [context for context in contexts if not _is_negated_context(context)]
+    return bool(positive_contexts) and all(
+        weak.search(before) is not None
+        for before, _ in positive_contexts
+    )
 
 
 def operational_experience_phrase(text: str, phrase: str) -> bool:
