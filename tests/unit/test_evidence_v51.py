@@ -275,6 +275,57 @@ def test_superficial_reading_is_not_equivalent_to_operational_evidence(tmp_path)
     assert superficial["final_score"] < operational["final_score"]
 
 
+@pytest.mark.parametrize(
+    "resume_line",
+    [
+        "Conhecimento básico de Redis.",
+        "Tenho noções de Redis.",
+        "Estudei Redis.",
+        "Li sobre Redis.",
+        "Curso introdutório de Redis.",
+    ],
+)
+def test_basic_or_theoretical_redis_is_not_strong_experience(
+    tmp_path,
+    resume_line: str,
+):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com Redis ou RabbitMQ"
+
+    result = engine.retrieve(
+        requirement,
+        [resume_line],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["final_score"] < 0.50
+
+
+@pytest.mark.parametrize(
+    "resume_line",
+    [
+        "Utilizei Redis em produção por dois anos.",
+        "Implementei cache distribuído com Redis.",
+        "Operei Redis em produção.",
+        "Desenvolvi serviços utilizando Redis.",
+    ],
+)
+def test_operational_redis_can_satisfy_experience_requirement(
+    tmp_path,
+    resume_line: str,
+):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com Redis ou RabbitMQ"
+
+    result = engine.retrieve(
+        requirement,
+        [resume_line],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["final_score"] >= 0.80
+
+
 def test_embeddings_are_batched_and_candidate_cache_is_reused(tmp_path, monkeypatch):
     engine = EmbeddingEngine(make_settings(tmp_path, embeddings=True))
 

@@ -13,13 +13,16 @@ from resume_ai.utils.text import (
     exact_phrase,
     negated_phrase,
     normalize,
+    requirement_demands_experience,
     superficial_phrase,
     tfidf_similarity,
+    weak_experience_phrase,
 )
 
 INCOMPLETE_CUMULATIVE_FLOOR = THRESHOLDS["equilibrado"]["partial"]
 INCOMPLETE_CUMULATIVE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 SUPERFICIAL_EVIDENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
+WEAK_EXPERIENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
@@ -107,13 +110,19 @@ class EmbeddingEngine:
         return matrix
 
     @staticmethod
-    def _concept_coverage(chunk: str, groups: list[list[str]]) -> float:
+    def _concept_coverage(
+        chunk: str,
+        groups: list[list[str]],
+        *,
+        require_operational: bool = False,
+    ) -> float:
         if not groups:
             return 0.0
         covered = 0
         for aliases in groups:
             if any(
                 exact_phrase(chunk, alias) and not superficial_phrase(chunk, alias)
+                and (not require_operational or not weak_experience_phrase(chunk, alias))
                 for alias in aliases
             ):
                 covered += 1
@@ -144,7 +153,12 @@ class EmbeddingEngine:
             semantic = float(semantic_scores[index]) if index < len(semantic_scores) else 0.0
             semantic = max(0.0, min(semantic, 1.0))
             coverage = self._concept_coverage(chunk, concept_groups)
-            strong_coverage = coverage
+            experience_required = requirement_demands_experience(requirement_text)
+            strong_coverage = self._concept_coverage(
+                chunk,
+                concept_groups,
+                require_operational=experience_required,
+            )
             explicitly_negated = negated_phrase(chunk, requirement_text) or (
                 negated_concept and coverage == 0.0
             )
@@ -159,6 +173,9 @@ class EmbeddingEngine:
             )
             if alternatives:
                 coverage = 1.0 if coverage > 0 else 0.0
+                strong_coverage = 1.0 if strong_coverage > 0 else 0.0
+
+            weak_experience = experience_required and coverage > 0.0 and strong_coverage == 0.0
 
             if model_available:
                 final = 0.42 * semantic + 0.28 * lexical + 0.15 * fuzzy + 0.15 * coverage
@@ -169,10 +186,10 @@ class EmbeddingEngine:
             # requisito que também exige NumPy e Scikit-learn.
             if exact_requirement:
                 final = max(final, 0.94 + 0.04 * final)
-            elif concept_groups and coverage == 1.0:
+            elif concept_groups and strong_coverage == 1.0:
                 floor = 0.78 if len(concept_groups) > 1 else 0.74
                 final = max(final, floor + 0.16 * final)
-            elif len(concept_groups) > 1 and not alternatives and coverage > 0.0:
+            elif len(concept_groups) > 1 and not alternatives and strong_coverage > 0.0:
                 # Uma competência comprovada é evidência parcial, mesmo quando
                 # a similaridade da frase cumulativa completa é baixa.
                 final = max(
@@ -181,6 +198,8 @@ class EmbeddingEngine:
                 )
             if explicitly_negated:
                 final = min(final, 0.15)
+            elif weak_experience:
+                final = min(final, WEAK_EXPERIENCE_CEILING)
             elif superficially_mentioned and (not alternatives or strong_coverage == 0.0):
                 final = min(final, SUPERFICIAL_EVIDENCE_CEILING)
 
@@ -193,6 +212,8 @@ class EmbeddingEngine:
                 method_parts.append("menção negada")
             if superficially_mentioned:
                 method_parts.append("menção superficial")
+            if weak_experience:
+                method_parts.append("evidência básica ou teórica")
 
             candidates.append({
                 "text": chunk,

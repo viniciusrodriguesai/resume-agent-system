@@ -190,6 +190,25 @@ def superficial_phrase(text: str, phrase: str) -> bool:
     return bool(contexts) and all(superficial.search(before) is not None for before, _ in contexts)
 
 
+def requirement_demands_experience(text: str) -> bool:
+    """Return true when the requirement asks for applied experience."""
+    return re.search(r"\b(?:experiencia|experience)\b", normalize(text)) is not None
+
+
+def weak_experience_phrase(text: str, phrase: str) -> bool:
+    """Return true when every occurrence is framed as basic or theoretical learning."""
+    contexts = _phrase_contexts(text, phrase)
+    weak = re.compile(
+        r"(?:\bconhecimento\s+(?:basico|teorico)|"
+        r"\b(?:tenho|possuo)\s+nocoes|\bnocoes|\bestudei|\bstudied|"
+        r"\bli(?:\s+sobre)?|\bread(?:ing)?(?:\s+about)?|"
+        r"\bcurso\s+(?:introdutorio|basico)|"
+        r"\b(?:basic|theoretical)\s+knowledge|\bintroductory\s+course)"
+        r"(?:\s+(?:de|em|sobre|of|in|about))?\s+$"
+    )
+    return bool(contexts) and all(weak.search(before) is not None for before, _ in contexts)
+
+
 def content_hash(*parts: str) -> str:
     joined = "\0".join(parts).encode("utf-8", errors="ignore")
     return hashlib.sha256(joined).hexdigest()
