@@ -24,9 +24,9 @@ def make_engine(tmp_path) -> EmbeddingEngine:
 @pytest.mark.parametrize(
     ("requirement", "expected"),
     [
-        ("Experiência com Terraform ou Pulumi", ["Terraform", "pulumi"]),
-        ("Experiência com Redis ou Memcached", ["Redis", "memcached"]),
-        ("Experiência com RabbitMQ ou Apache Kafka", ["RabbitMQ", "apache kafka"]),
+        ("Experiência com Terraform ou Pulumi", ["Terraform", "Pulumi"]),
+        ("Experiência com Redis ou Memcached", ["Redis", "Memcached"]),
+        ("Experiência com RabbitMQ ou Apache Kafka", ["RabbitMQ", "Apache Kafka"]),
         ("Experiência com AlphaDB ou BetaDB", ["alphadb", "betadb"]),
     ],
 )
