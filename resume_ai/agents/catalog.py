@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from resume_ai.domain.concepts import Concept, ConceptGroup, ConceptOperator
 from resume_ai.domain.models import Skill
 from resume_ai.utils.text import exact_phrase, normalize
 
@@ -110,6 +111,31 @@ def concept_alias_groups(text: str) -> list[list[str]]:
         if prefix_was_removed and 0 < len(literal.split()) <= 8:
             groups.append([literal])
     return groups
+
+
+def concept_group_for(text: str) -> ConceptGroup:
+    """Return every coordinated concept with an explicit logical operator."""
+    normalized = normalize(text)
+    padded = f" {normalized} "
+    operator: ConceptOperator = (
+        "OR"
+        if " ou " in padded or " or " in padded
+        else "AND"
+        if len(_COORDINATED_CONCEPT_RE.split(normalized)) > 1
+        else "SINGLE"
+    )
+    concepts: list[Concept] = []
+    for aliases in concept_alias_groups(text):
+        canonical = aliases[0]
+        cataloged = canonical in SKILLS
+        concepts.append(
+            Concept(
+                canonical=canonical,
+                aliases=tuple(aliases),
+                cataloged=cataloged,
+            )
+        )
+    return ConceptGroup(operator=operator, concepts=tuple(concepts))
 
 
 def category_for(text: str) -> str:

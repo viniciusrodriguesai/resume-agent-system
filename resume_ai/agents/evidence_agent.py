@@ -5,7 +5,7 @@ from resume_ai.infrastructure.embeddings import EmbeddingEngine
 from resume_ai.utils.text import best_snippet, remove_privacy_placeholders
 
 from .base import run_agent
-from .catalog import concept_alias_groups
+from .catalog import concept_group_for
 
 
 class EvidenceAgent:
@@ -17,12 +17,12 @@ class EvidenceAgent:
     def run(self, candidate: CandidateProfile, job: JobProfile, top_k: int) -> tuple[list[EvidenceMatch], AgentTrace]:
         def action() -> list[EvidenceMatch]:
             queries = [" | ".join([requirement.text, *requirement.aliases]) for requirement in job.requirements]
-            groups = [concept_alias_groups(requirement.text) for requirement in job.requirements]
+            concept_groups = [concept_group_for(requirement.text) for requirement in job.requirements]
             retrieved = self.engine.retrieve_many(
                 queries,
                 candidate.chunks,
                 top_k=top_k,
-                concept_groups=groups,
+                concept_groups=[group.alias_groups for group in concept_groups],
             )
 
             output: list[EvidenceMatch] = []
@@ -77,6 +77,10 @@ class EvidenceAgent:
             metadata=lambda result: {
                 "requirement_count": len(result),
                 "candidate_count": sum(len(match.top_candidates) for match in result),
+                "literal_fallback_count": sum(
+                    concept_group_for(match.requirement.text).uses_literal_fallback
+                    for match in result
+                ),
                 "embedding_loaded": bool(self.engine.status["embedding_loaded"]),
                 "reranker_loaded": bool(self.engine.status["reranker_loaded"]),
             },
