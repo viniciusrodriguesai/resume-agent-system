@@ -5,6 +5,7 @@ import io
 import json
 import uuid
 from datetime import UTC, datetime
+from time import perf_counter
 
 from resume_ai import __version__
 from resume_ai.agents import (
@@ -106,13 +107,26 @@ class ResumeAnalysisService:
             request.resume_text,
             request.job_text,
         )
+        cache_started = perf_counter()
         cached = self.cache.get(key)
+        timings["cache_lookup"] = round((perf_counter() - cache_started) * 1000, 2)
         if cached:
             result = AnalysisResult.model_validate(cached)
+            original_processing_timings = dict(result.timings_ms)
             result.analysis_id = str(uuid.uuid4())
             result.created_at = datetime.now(UTC)
-            result.engine_status = {**result.engine_status, "cache_hit": True}
-            result.timings_ms = {"cache_lookup": 0.0}
+            result.engine_status = {
+                **result.engine_status,
+                "cache_hit": True,
+                "cached_execution": True,
+                "original_processing_timings": original_processing_timings,
+            }
+            markdown, report_trace = self.report_agent.run(result)
+            result.markdown_report = markdown
+            result.timings_ms = {
+                "cache_lookup": timings["cache_lookup"],
+                "report_regeneration": report_trace.duration_ms,
+            }
             self.history.save(result)
             METRICS.record_cache(request.profile, hit=True)
             METRICS.record_success(request.profile, 0.0, result.score.overall_score)
