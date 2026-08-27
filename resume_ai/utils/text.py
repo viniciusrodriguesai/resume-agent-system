@@ -6,6 +6,8 @@ import re
 import unicodedata
 from collections import Counter
 
+from resume_ai.domain.concepts import RequirementIntent
+
 STOPWORDS = {
     "a", "as", "ao", "aos", "com", "da", "das", "de", "do", "dos", "e", "em",
     "entre", "é", "o", "os", "ou", "para", "por", "que", "se", "um", "uma",
@@ -201,7 +203,19 @@ def superficial_phrase(text: str, phrase: str) -> bool:
 
 def requirement_demands_experience(text: str) -> bool:
     """Return true when the requirement asks for applied experience."""
-    return re.search(r"\b(?:experiencia|experience)\b", normalize(text)) is not None
+    return requirement_intent(text) is not RequirementIntent.KNOWLEDGE
+
+
+def requirement_intent(text: str) -> RequirementIntent:
+    """Classify how strong the context around a cited concept must be."""
+    normalized = normalize(text)
+    if re.search(r"\b(?:experiencia|experience)\b", normalized) is None:
+        return RequirementIntent.KNOWLEDGE
+    if re.search(r"\b(?:producao|production)\b", normalized):
+        return RequirementIntent.PRODUCTION_EXPERIENCE
+    if re.search(r"\b(?:profissional|professional)\b", normalized):
+        return RequirementIntent.PROFESSIONAL_EXPERIENCE
+    return RequirementIntent.EXPERIENCE
 
 
 def weak_experience_phrase(text: str, phrase: str) -> bool:
@@ -227,8 +241,11 @@ def weak_experience_phrase(text: str, phrase: str) -> bool:
 def operational_experience_phrase(text: str, phrase: str) -> bool:
     """Return true when a local concept mention includes applied-work context."""
     operational = re.compile(
-        r"\b(?:usei|utilizei|implementei|desenvolvi|criei|operei|configurei|"
+        r"\b(?:uso|utilizo|implemento|desenvolvo|crio|opero|configuro|mantenho|"
+        r"modelo|otimizo|trabalho|administro|construo|"
+        r"usei|utilizei|implementei|desenvolvi|criei|operei|configurei|"
         r"mantive|modelei|otimizei|trabalhei|administrei|construi|"
+        r"use|implement|develop|build|operate|configure|maintain|deploy|"
         r"used|implemented|developed|built|operated|configured|maintained|deployed|"
         r"experiencia\s+profissional|professional\s+experience|producao|production)\b"
     )

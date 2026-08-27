@@ -1,9 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Literal
 
 ConceptOperator = Literal["SINGLE", "AND", "OR"]
+
+
+class RequirementIntent(StrEnum):
+    KNOWLEDGE = "knowledge"
+    EXPERIENCE = "experience"
+    PROFESSIONAL_EXPERIENCE = "professional_experience"
+    PRODUCTION_EXPERIENCE = "production_experience"
 
 
 @dataclass(frozen=True)

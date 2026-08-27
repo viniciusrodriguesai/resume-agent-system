@@ -17,6 +17,7 @@ from resume_ai.utils.text import (
     operational_experience_phrase,
     quantified_request_volume,
     requirement_demands_experience,
+    requirement_intent,
     superficial_phrase,
     tfidf_similarity,
     weak_experience_phrase,
@@ -144,6 +145,7 @@ class EmbeddingEngine:
         model_available: bool,
     ) -> list[dict[str, Any]]:
         requirement_text = query.split("|", 1)[0].strip()
+        intent = requirement_intent(requirement_text)
         candidates: list[dict[str, Any]] = []
 
         for index, chunk in enumerate(chunks):
@@ -247,6 +249,7 @@ class EmbeddingEngine:
                 "concept_coverage": round(coverage, 4),
                 "concept_count": len(concept_groups),
                 "alternative_concepts": alternatives,
+                "requirement_intent": intent.value,
             })
 
         candidates.sort(key=lambda item: item["final_score"], reverse=True)
