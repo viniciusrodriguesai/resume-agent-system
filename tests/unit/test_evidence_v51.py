@@ -211,6 +211,50 @@ def test_required_negation_matrix_never_becomes_positive_evidence(
     assert result["final_score"] < 0.28
 
 
+@pytest.mark.parametrize(
+    "resume_line",
+    [
+        "Nunca utilizei Terraform em produção.",
+        "Nunca usei Terraform.",
+        "Jamais utilizei Terraform.",
+        "Sem experiência com Terraform.",
+        "Não utilizei Terraform profissionalmente.",
+        "Never used Terraform.",
+        "I have never used Terraform in production.",
+        "No Terraform experience.",
+    ],
+)
+def test_negated_terraform_does_not_satisfy_alternative_requirement(
+    tmp_path,
+    resume_line: str,
+):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com Terraform ou CloudFormation"
+
+    result = engine.retrieve(
+        requirement,
+        [resume_line],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["concept_coverage"] == 0.0
+    assert result["final_score"] < 0.35
+
+
+def test_positive_cloudformation_still_satisfies_or_when_terraform_is_negated(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com Terraform ou CloudFormation"
+
+    result = engine.retrieve(
+        requirement,
+        ["Never used Terraform, but I have three years of CloudFormation experience."],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["concept_coverage"] == 1.0
+    assert result["final_score"] >= 0.80
+
+
 def test_superficial_reading_is_not_equivalent_to_operational_evidence(tmp_path):
     engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
     requirement = "Kubernetes"

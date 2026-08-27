@@ -141,25 +141,33 @@ def tfidf_similarity(a: str, b: str) -> float:
     return product / (na * nb) if na and nb else 0.0
 
 
-def _phrase_contexts(text: str, phrase: str) -> list[str]:
+def _phrase_contexts(text: str, phrase: str) -> list[tuple[str, str]]:
     normalized_phrase = normalize(phrase)
     normalized_text = normalize(text)
     if not normalized_phrase or not normalized_text:
         return []
     pattern = rf"(?<![a-z0-9+#]){re.escape(normalized_phrase)}(?![a-z0-9+#])"
     return [
-        normalized_text[max(0, match.start() - 60) : match.start()]
+        (
+            normalized_text[max(0, match.start() - 60) : match.start()],
+            normalized_text[match.end() : match.end() + 60],
+        )
         for match in re.finditer(pattern, normalized_text)
     ]
 
 
-def _is_negated_context(context: str) -> bool:
+def _is_negated_context(context: tuple[str, str]) -> bool:
+    before, after = context
     negation = re.compile(
-        r"(?:\bsem|\bnao|\bnot|\bwithout|\bnever|\bnenhum(?:a)?|"
+        r"(?:\bsem|\bnao|\bnunca|\bjamais|\bnot|\bwithout|\bnever|\bnenhum(?:a)?|"
         r"\bno\s+(?:[a-z0-9+#./-]+\s+){0,2}experience\s+(?:with|in))"
         r"\s+(?:[a-z0-9+#./-]+\s+){0,3}$"
     )
-    return negation.search(context) is not None
+    no_concept_experience = re.search(r"\bno\s+$", before) and re.match(
+        r"\s+(?:professional\s+)?experience\b",
+        after,
+    )
+    return negation.search(before) is not None or no_concept_experience is not None
 
 
 def exact_phrase(text: str, phrase: str) -> bool:
@@ -179,7 +187,7 @@ def superficial_phrase(text: str, phrase: str) -> bool:
         r"(?:\bli|\bleu|\blido|\bread|\breading)\s+"
         r"(?:(?:apenas|somente|only)\s+)?(?:sobre|about)\s+$"
     )
-    return bool(contexts) and all(superficial.search(context) is not None for context in contexts)
+    return bool(contexts) and all(superficial.search(before) is not None for before, _ in contexts)
 
 
 def content_hash(*parts: str) -> str:

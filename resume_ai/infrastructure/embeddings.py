@@ -134,13 +134,10 @@ class EmbeddingEngine:
 
         for index, chunk in enumerate(chunks):
             exact_requirement = exact_phrase(chunk, requirement_text)
-            explicitly_negated = len(concept_groups) <= 1 and (
-                negated_phrase(chunk, requirement_text)
-                or any(
-                    negated_phrase(chunk, alias)
-                    for group in concept_groups
-                    for alias in group
-                )
+            negated_concept = any(
+                negated_phrase(chunk, alias)
+                for group in concept_groups
+                for alias in group
             )
             lexical = max(0.0, min(tfidf_similarity(requirement_text, chunk), 1.0))
             fuzzy = WRatio(normalize(requirement_text), normalize(chunk)) / 100
@@ -148,6 +145,9 @@ class EmbeddingEngine:
             semantic = max(0.0, min(semantic, 1.0))
             coverage = self._concept_coverage(chunk, concept_groups)
             strong_coverage = coverage
+            explicitly_negated = negated_phrase(chunk, requirement_text) or (
+                negated_concept and coverage == 0.0
+            )
             superficially_mentioned = superficial_phrase(chunk, requirement_text) or any(
                 superficial_phrase(chunk, alias)
                 for group in concept_groups
