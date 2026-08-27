@@ -71,10 +71,15 @@ def test_negated_first_or_positive_second_still_matches(tmp_path):
     [
         "Never used AlphaDB and never used BetaDB.",
         "Li artigos sobre AlphaDB e li artigos sobre BetaDB.",
+        "Não tenho experiência com RabbitMQ e li artigos sobre Apache Kafka.",
     ],
 )
 def test_all_or_options_negative_or_superficial_do_not_match(tmp_path, evidence: str):
-    requirement = "Experiência com AlphaDB ou BetaDB"
+    requirement = (
+        "Experiência com RabbitMQ ou Apache Kafka"
+        if "RabbitMQ" in evidence
+        else "Experiência com AlphaDB ou BetaDB"
+    )
     group = concept_group_for(requirement)
 
     result = make_engine(tmp_path).retrieve(

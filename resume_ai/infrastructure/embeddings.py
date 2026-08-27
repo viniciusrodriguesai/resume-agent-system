@@ -126,10 +126,22 @@ class EmbeddingEngine:
             return 0.0
         covered = 0
         for aliases in groups:
+            present_aliases = [alias for alias in aliases if exact_phrase(chunk, alias)]
+            if not present_aliases:
+                continue
+            maximum_specificity = max(
+                (len(normalize(alias).split()), len(normalize(alias)))
+                for alias in present_aliases
+            )
+            most_specific_aliases = [
+                alias
+                for alias in present_aliases
+                if (len(normalize(alias).split()), len(normalize(alias))) == maximum_specificity
+            ]
             if any(
-                exact_phrase(chunk, alias) and not superficial_phrase(chunk, alias)
+                not superficial_phrase(chunk, alias)
                 and (not require_operational or not weak_experience_phrase(chunk, alias))
-                for alias in aliases
+                for alias in most_specific_aliases
             ):
                 covered += 1
         return covered / len(groups)
