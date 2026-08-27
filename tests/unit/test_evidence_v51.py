@@ -377,6 +377,35 @@ def test_quantified_request_volume_outranks_generic_web_experience(tmp_path):
     assert generic["final_score"] < production_scale["final_score"] < 0.50
 
 
+def test_experience_requirement_prefers_operational_evidence_over_skill_listing(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com Docker"
+    operational = "Criei imagens Docker e utilizei containers em produção."
+
+    results = engine.retrieve(
+        requirement,
+        ["Docker", operational],
+        top_k=2,
+        concept_groups=concept_alias_groups(requirement),
+    )
+
+    assert results[0]["text"] == operational
+    assert results[0]["final_score"] > results[1]["final_score"]
+
+
+def test_knowledge_requirement_still_accepts_a_skill_listing(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Conhecimento de Docker"
+
+    result = engine.retrieve(
+        requirement,
+        ["Docker"],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["final_score"] >= 0.60
+
+
 def test_embeddings_are_batched_and_candidate_cache_is_reused(tmp_path, monkeypatch):
     engine = EmbeddingEngine(make_settings(tmp_path, embeddings=True))
 

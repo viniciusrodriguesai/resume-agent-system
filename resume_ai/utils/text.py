@@ -209,6 +209,20 @@ def weak_experience_phrase(text: str, phrase: str) -> bool:
     return bool(contexts) and all(weak.search(before) is not None for before, _ in contexts)
 
 
+def operational_experience_phrase(text: str, phrase: str) -> bool:
+    """Return true when a local concept mention includes applied-work context."""
+    operational = re.compile(
+        r"\b(?:usei|utilizei|implementei|desenvolvi|criei|operei|configurei|"
+        r"mantive|modelei|otimizei|trabalhei|administrei|construi|"
+        r"used|implemented|developed|built|operated|configured|maintained|deployed|"
+        r"experiencia\s+profissional|professional\s+experience|producao|production)\b"
+    )
+    return any(
+        operational.search(f"{before} {after}") is not None
+        for before, after in _phrase_contexts(text, phrase)
+    )
+
+
 def high_volume_request_requirement(text: str) -> bool:
     normalized = normalize(text)
     volume = "alto volume" in normalized or "high volume" in normalized

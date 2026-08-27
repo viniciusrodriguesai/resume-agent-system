@@ -14,6 +14,7 @@ from resume_ai.utils.text import (
     high_volume_request_requirement,
     negated_phrase,
     normalize,
+    operational_experience_phrase,
     quantified_request_volume,
     requirement_demands_experience,
     superficial_phrase,
@@ -26,6 +27,7 @@ INCOMPLETE_CUMULATIVE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 SUPERFICIAL_EVIDENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 WEAK_EXPERIENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 QUANTIFIED_SCALE_FLOOR = THRESHOLDS["conservador"]["partial"]
+OPERATIONAL_EXPERIENCE_BONUS = 0.06
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
@@ -179,6 +181,11 @@ class EmbeddingEngine:
                 strong_coverage = 1.0 if strong_coverage > 0 else 0.0
 
             weak_experience = experience_required and coverage > 0.0 and strong_coverage == 0.0
+            operational_experience = experience_required and any(
+                operational_experience_phrase(chunk, alias)
+                for group in concept_groups
+                for alias in group
+            )
             quantified_scale = high_volume_request_requirement(
                 requirement_text
             ) and quantified_request_volume(chunk)
@@ -202,6 +209,8 @@ class EmbeddingEngine:
                     INCOMPLETE_CUMULATIVE_FLOOR,
                     min(final, INCOMPLETE_CUMULATIVE_CEILING),
                 )
+            if operational_experience:
+                final = min(1.0, final + OPERATIONAL_EXPERIENCE_BONUS)
             if quantified_scale:
                 final = max(final, QUANTIFIED_SCALE_FLOOR)
             if explicitly_negated:
@@ -224,6 +233,8 @@ class EmbeddingEngine:
                 method_parts.append("evidência básica ou teórica")
             if quantified_scale:
                 method_parts.append("carga quantificada")
+            if operational_experience:
+                method_parts.append("contexto operacional")
 
             candidates.append({
                 "text": chunk,
