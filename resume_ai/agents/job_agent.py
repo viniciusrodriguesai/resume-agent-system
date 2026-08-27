@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 
-from resume_ai.domain.models import AgentTrace, JobProfile, Requirement
+from resume_ai.domain.models import AgentTrace, JobProfile, Priority, Requirement
 from resume_ai.settings import Settings
 from resume_ai.utils.text import normalize
 
@@ -28,6 +29,56 @@ TITLE_MARKERS = (
 )
 BULLET_PREFIXES = ("-", "•", "*", "–", "—")
 GENERIC_QUALIFICATION_HEADINGS = {"qualifications", "qualification"}
+
+
+@dataclass(frozen=True)
+class SectionContext:
+    section: str = "preamble"
+    priority: Priority = "neutral"
+    subsection: str | None = None
+
+
+def _context_for_section(section: str) -> SectionContext:
+    priority = (
+        "desired"
+        if section == "desired"
+        else "required"
+        if section in {"required", "infrastructure", "technical"}
+        else "neutral"
+    )
+    return SectionContext(section=section, priority=priority)
+
+
+def _looks_like_generic_subheading(
+    line: str,
+    *,
+    is_bullet: bool,
+    next_is_bullet: bool,
+    context: SectionContext,
+) -> bool:
+    """Recognize a structural label without maintaining a vocabulary of labels."""
+    if (
+        is_bullet
+        or not next_is_bullet
+        or context.section in {"preamble", "responsibilities"}
+        or len(line) > 80
+        or len(line.split()) > 7
+        or line.endswith((".", "!", "?", ";"))
+    ):
+        return False
+
+    stripped = line.rstrip(":").strip()
+    letters = [character for character in stripped if character.isalpha()]
+    if not letters:
+        return False
+    uppercase_ratio = sum(character.isupper() for character in letters) / len(letters)
+    significant_words = [
+        word
+        for word in stripped.replace("/", " ").replace("&", " ").split()
+        if normalize(word) not in {"de", "da", "do", "das", "dos", "e", "and", "of"}
+    ]
+    title_case = bool(significant_words) and all(word[0].isupper() for word in significant_words)
+    return line.endswith(":") or uppercase_ratio >= 0.72 or title_case
 
 
 def _heading_section(line: str, *, is_bullet: bool) -> str | None:
@@ -83,42 +134,52 @@ class JobAgent:
                 "Vaga não identificada",
             )
 
-            section = "preamble"
+            context = SectionContext()
             requirements: list[Requirement] = []
             responsibilities: list[str] = []
             seen: set[str] = set()
 
-            for raw_line, line in zip(raw_lines, clean_lines, strict=True):
+            for index, (raw_line, line) in enumerate(zip(raw_lines, clean_lines, strict=True)):
                 if len(line) < 2:
                     continue
                 is_bullet = raw_line.lstrip().startswith(BULLET_PREFIXES)
                 heading_section = _heading_section(line, is_bullet=is_bullet)
                 if heading_section is not None:
-                    section = heading_section
+                    context = _context_for_section(heading_section)
+                    continue
+
+                next_is_bullet = (
+                    index + 1 < len(raw_lines)
+                    and raw_lines[index + 1].lstrip().startswith(BULLET_PREFIXES)
+                )
+                if _looks_like_generic_subheading(
+                    line,
+                    is_bullet=is_bullet,
+                    next_is_bullet=next_is_bullet,
+                    context=context,
+                ):
+                    context = SectionContext(
+                        section=context.section,
+                        priority=context.priority,
+                        subsection=line.rstrip(":"),
+                    )
                     continue
 
                 if line == title:
                     continue
 
-                if section == "responsibilities":
+                if context.section == "responsibilities":
                     if is_bullet or len(line) <= 220:
                         responsibilities.append(line.rstrip(".;"))
                     continue
 
                 # Textos introdutórios não são requisitos. Em vagas sem cabeçalhos,
                 # bullets ainda podem ser tratados como requisitos neutros.
-                if section == "preamble" and not is_bullet:
+                if context.section == "preamble" and not is_bullet:
                     continue
 
                 if len(line.split()) > 35:
                     continue
-                priority = (
-                    "desired"
-                    if section == "desired"
-                    else "required"
-                    if section in {"required", "infrastructure", "technical"}
-                    else "neutral"
-                )
                 key = normalize(line)
                 if key in seen:
                     continue
@@ -126,10 +187,10 @@ class JobAgent:
                 requirements.append(Requirement(
                     id=str(uuid.uuid4()),
                     text=line.rstrip(".;"),
-                    priority=priority,  # type: ignore[arg-type]
+                    priority=context.priority,
                     category=category_for(line),
                     aliases=aliases_for(line),
-                    source_section=section,
+                    source_section=context.section,
                 ))
                 if len(requirements) >= self.settings.max_requirements:
                     break
