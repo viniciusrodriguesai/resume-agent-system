@@ -209,6 +209,38 @@ def weak_experience_phrase(text: str, phrase: str) -> bool:
     return bool(contexts) and all(weak.search(before) is not None for before, _ in contexts)
 
 
+def high_volume_request_requirement(text: str) -> bool:
+    normalized = normalize(text)
+    volume = "alto volume" in normalized or "high volume" in normalized
+    requests = re.search(r"\b(?:requisicoes|requests?)\b", normalized) is not None
+    return volume and requests
+
+
+def quantified_request_volume(text: str) -> bool:
+    """Detect a non-trivial request count without declaring it universally high volume."""
+    normalized = normalize(text)
+    pattern = re.compile(
+        r"\b(\d+(?:[.,]\d+)?)\s*"
+        r"(milhoes?|milhao|mil|millions?|thousand|[km])?\s+"
+        r"(?:de\s+)?(?:requisicoes|requests?)\b"
+    )
+    match = pattern.search(normalized)
+    if match is None:
+        return False
+    value = float(match.group(1).replace(",", "."))
+    multiplier = {
+        "mil": 1_000,
+        "thousand": 1_000,
+        "k": 1_000,
+        "milhao": 1_000_000,
+        "milhoes": 1_000_000,
+        "million": 1_000_000,
+        "millions": 1_000_000,
+        "m": 1_000_000,
+    }.get(match.group(2) or "", 1)
+    return value * multiplier >= 1_000
+
+
 def content_hash(*parts: str) -> str:
     joined = "\0".join(parts).encode("utf-8", errors="ignore")
     return hashlib.sha256(joined).hexdigest()

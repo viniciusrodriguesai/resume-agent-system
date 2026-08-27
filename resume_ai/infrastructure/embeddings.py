@@ -11,8 +11,10 @@ from resume_ai.settings import Settings
 from resume_ai.utils.text import (
     content_hash,
     exact_phrase,
+    high_volume_request_requirement,
     negated_phrase,
     normalize,
+    quantified_request_volume,
     requirement_demands_experience,
     superficial_phrase,
     tfidf_similarity,
@@ -23,6 +25,7 @@ INCOMPLETE_CUMULATIVE_FLOOR = THRESHOLDS["equilibrado"]["partial"]
 INCOMPLETE_CUMULATIVE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 SUPERFICIAL_EVIDENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 WEAK_EXPERIENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
+QUANTIFIED_SCALE_FLOOR = THRESHOLDS["conservador"]["partial"]
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
@@ -176,6 +179,9 @@ class EmbeddingEngine:
                 strong_coverage = 1.0 if strong_coverage > 0 else 0.0
 
             weak_experience = experience_required and coverage > 0.0 and strong_coverage == 0.0
+            quantified_scale = high_volume_request_requirement(
+                requirement_text
+            ) and quantified_request_volume(chunk)
 
             if model_available:
                 final = 0.42 * semantic + 0.28 * lexical + 0.15 * fuzzy + 0.15 * coverage
@@ -196,6 +202,8 @@ class EmbeddingEngine:
                     INCOMPLETE_CUMULATIVE_FLOOR,
                     min(final, INCOMPLETE_CUMULATIVE_CEILING),
                 )
+            if quantified_scale:
+                final = max(final, QUANTIFIED_SCALE_FLOOR)
             if explicitly_negated:
                 final = min(final, 0.15)
             elif weak_experience:
@@ -214,6 +222,8 @@ class EmbeddingEngine:
                 method_parts.append("menção superficial")
             if weak_experience:
                 method_parts.append("evidência básica ou teórica")
+            if quantified_scale:
+                method_parts.append("carga quantificada")
 
             candidates.append({
                 "text": chunk,

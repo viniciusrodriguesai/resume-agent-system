@@ -359,6 +359,24 @@ def test_operational_pytest_paraphrase_matches_experience_requirement(tmp_path):
     assert result["final_score"] >= 0.60
 
 
+def test_quantified_request_volume_outranks_generic_web_experience(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com aplicações de alto volume de requisições"
+
+    quantified = engine.retrieve(
+        requirement,
+        ["Implementei serviços backend utilizados por aproximadamente 150 mil requisições por dia."],
+    )[0]
+    generic = engine.retrieve(requirement, ["Desenvolvi aplicações web."])[0]
+    production_scale = engine.retrieve(
+        requirement,
+        ["Operei sistemas que processavam 5 milhões de requisições por dia em produção."],
+    )[0]
+
+    assert generic["final_score"] < quantified["final_score"] < 0.50
+    assert generic["final_score"] < production_scale["final_score"] < 0.50
+
+
 def test_embeddings_are_batched_and_candidate_cache_is_reused(tmp_path, monkeypatch):
     engine = EmbeddingEngine(make_settings(tmp_path, embeddings=True))
 
