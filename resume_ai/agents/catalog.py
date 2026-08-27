@@ -9,9 +9,11 @@ _COORDINATED_CONCEPT_RE = re.compile(
     r"\s*(?:,|;|\be\b|\band\b|\bou\b|\bor\b)\s*"
 )
 _REQUIREMENT_PREFIX_RE = re.compile(
-    r"^(?:(?:experiencia|conhecimento|dominio|familiaridade|vivencia)"
-    r"(?:\s+(?:com|em|de))?|(?:experience|knowledge|familiarity)"
-    r"(?:\s+(?:with|in|of))?)\s+"
+    r"^(?:(?:(?:experiencia|vivencia)"
+    r"(?:\s+(?:profissional|pratica|comprovada|em producao|de producao))?|"
+    r"(?:professional|practical|production)\s+experience|experience|"
+    r"conhecimento|dominio|familiaridade|knowledge|familiarity)"
+    r"(?:\s+(?:com|em|de|with|in|of))?)\s+"
 )
 
 SKILLS: dict[str, tuple[str, list[str]]] = {
@@ -100,6 +102,12 @@ def concept_alias_groups(text: str) -> list[list[str]]:
                 for alias in group
             ):
                 continue
+            groups.append([literal])
+
+    if not groups:
+        literal = _REQUIREMENT_PREFIX_RE.sub("", normalized).strip()
+        prefix_was_removed = literal != normalized
+        if prefix_was_removed and 0 < len(literal.split()) <= 8:
             groups.append([literal])
     return groups
 
