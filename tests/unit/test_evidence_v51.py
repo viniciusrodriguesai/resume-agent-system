@@ -76,7 +76,7 @@ def test_mixed_catalog_cumulative_requirement_needs_every_concept(tmp_path):
         concept_groups=groups,
     )[0]
 
-    assert groups == [["Python", "python"], ["kubernetes"]]
+    assert groups == [["Python", "python"], ["Kubernetes", "kubernetes", "k8s"]]
     assert partial["final_score"] < 0.50
     assert complete["final_score"] >= 0.80
 
@@ -324,6 +324,39 @@ def test_operational_redis_can_satisfy_experience_requirement(
     )[0]
 
     assert result["final_score"] >= 0.80
+
+
+def test_operational_cicd_outranks_theoretical_knowledge(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com CI/CD"
+
+    operational = engine.retrieve(
+        requirement,
+        ["Configurei pipelines de CI/CD utilizando GitHub Actions."],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+    theoretical = engine.retrieve(
+        requirement,
+        ["Conhecimento teórico de CI/CD."],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert operational["final_score"] >= 0.60
+    assert theoretical["final_score"] < 0.50
+    assert operational["final_score"] > theoretical["final_score"]
+
+
+def test_operational_pytest_paraphrase_matches_experience_requirement(tmp_path):
+    engine = EmbeddingEngine(make_settings(tmp_path, embeddings=False))
+    requirement = "Experiência com testes automatizados utilizando pytest"
+
+    result = engine.retrieve(
+        requirement,
+        ["Implementei testes automatizados utilizando pytest."],
+        concept_groups=concept_alias_groups(requirement),
+    )[0]
+
+    assert result["final_score"] >= 0.60
 
 
 def test_embeddings_are_batched_and_candidate_cache_is_reused(tmp_path, monkeypatch):

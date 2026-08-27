@@ -104,7 +104,10 @@ def test_manual_validation_sections_preserve_priority_and_alternative_semantics(
     assert infrastructure.source_section == "infrastructure"
     assert alternative.priority == "neutral"
     assert alternative.source_section == "alternative"
-    assert concept_alias_groups(alternative.text) == [["redis"], ["rabbitmq"]]
+    assert concept_alias_groups(alternative.text) == [
+        ["Redis", "redis"],
+        ["RabbitMQ", "rabbitmq", "rabbit mq"],
+    ]
 
 
 @pytest.mark.parametrize(
