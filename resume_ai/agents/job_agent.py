@@ -39,7 +39,7 @@ class SectionContext:
 
 
 def _context_for_section(section: str) -> SectionContext:
-    priority = (
+    priority: Priority = (
         "desired"
         if section == "desired"
         else "required"

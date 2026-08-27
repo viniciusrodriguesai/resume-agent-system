@@ -80,6 +80,9 @@ class PrivacyService:
         try:
             from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer
             from presidio_anonymizer import AnonymizerEngine
+            from presidio_anonymizer.entities import (
+                RecognizerResult as AnonymizerRecognizerResult,
+            )
         except Exception:
             return None
         try:
@@ -94,7 +97,19 @@ class PrivacyService:
                     )
                 )
             results = analyzer.analyze(text=baseline_text, language="en")
-            anonymized = AnonymizerEngine().anonymize(text=baseline_text, analyzer_results=results).text
+            anonymizer_results = [
+                AnonymizerRecognizerResult(
+                    entity_type=item.entity_type,
+                    start=item.start,
+                    end=item.end,
+                    score=item.score,
+                )
+                for item in results
+            ]
+            anonymized = AnonymizerEngine().anonymize(
+                text=baseline_text,
+                analyzer_results=anonymizer_results,
+            ).text
             counts = Counter({item.entity_type: item.count for item in baseline_report.entities})
             counts.update(item.entity_type for item in results)
             entities = [
