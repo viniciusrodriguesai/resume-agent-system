@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from enum import StrEnum
 
 from resume_ai.domain.models import AgentTrace, CandidateProfile
 from resume_ai.settings import Settings
@@ -14,6 +15,93 @@ EXPERIENCE_MARKERS = ("experiência", "experiencia", "estágio", "estagio", "tra
 PROJECT_MARKERS = ("projeto", "project", "desenvolvi", "developed", "construí", "construi", "built", "implementei", "implemented")
 
 
+class ResumeSection(StrEnum):
+    UNKNOWN = "unknown"
+    EXPERIENCE = "experience"
+    PROJECTS = "projects"
+    EDUCATION = "education"
+    OTHER = "other"
+
+
+SECTION_HEADINGS: dict[ResumeSection, set[str]] = {
+    ResumeSection.EXPERIENCE: {
+        "experiencia",
+        "experiencia profissional",
+        "professional experience",
+        "work experience",
+        "employment",
+    },
+    ResumeSection.PROJECTS: {
+        "projetos",
+        "projetos pessoais",
+        "projects",
+        "personal projects",
+    },
+    ResumeSection.EDUCATION: {
+        "educacao",
+        "formacao",
+        "formacao academica",
+        "education",
+        "academic background",
+    },
+    ResumeSection.OTHER: {
+        "resumo",
+        "summary",
+        "tecnologias",
+        "technology",
+        "technologies",
+        "competencias",
+        "skills",
+        "conhecimentos",
+        "conhecimentos e limitacoes",
+        "idiomas",
+        "languages",
+    },
+}
+
+
+def _resume_section(line: str) -> ResumeSection | None:
+    normalized = normalize(line.rstrip(":"))
+    for section, headings in SECTION_HEADINGS.items():
+        if normalized in headings:
+            return section
+    return None
+
+
+def _section_aware_profile_chunks(
+    text: str,
+    max_chunk_chars: int,
+) -> tuple[list[str], list[str], list[str]]:
+    education: list[str] = []
+    experience: list[str] = []
+    projects: list[str] = []
+    section = ResumeSection.UNKNOWN
+
+    for raw_line in text.splitlines():
+        detected_section = _resume_section(raw_line.strip())
+        if detected_section is not None:
+            section = detected_section
+            continue
+        line_chunks = split_chunks(raw_line, max_chunk_chars)
+        for chunk in line_chunks:
+            normalized = normalize(chunk)
+            if section is ResumeSection.EXPERIENCE:
+                experience.append(chunk)
+            elif section is ResumeSection.PROJECTS:
+                projects.append(chunk)
+            elif section is ResumeSection.EDUCATION:
+                education.append(chunk)
+            elif section is ResumeSection.UNKNOWN:
+                if any(marker in normalized for marker in EDUCATION_MARKERS):
+                    education.append(chunk)
+                if any(marker in normalized for marker in EXPERIENCE_MARKERS):
+                    experience.append(chunk)
+                if any(marker in normalized for marker in PROJECT_MARKERS):
+                    projects.append(chunk)
+
+    return education[:8], experience[:15], projects[:12]
+
+
 class CandidateAgent:
     name = "Agente de Currículo"
 
@@ -25,9 +113,10 @@ class CandidateAgent:
             public_text = remove_privacy_placeholders(anonymized)
             chunks = split_chunks(public_text, self.settings.max_chunk_chars)
             skills = detect_skills(public_text)
-            education = [chunk for chunk in chunks if any(marker in normalize(chunk) for marker in EDUCATION_MARKERS)][:8]
-            experience = [chunk for chunk in chunks if any(marker in normalize(chunk) for marker in EXPERIENCE_MARKERS)][:15]
-            projects = [chunk for chunk in chunks if any(marker in normalize(chunk) for marker in PROJECT_MARKERS)][:12]
+            education, experience, projects = _section_aware_profile_chunks(
+                public_text,
+                self.settings.max_chunk_chars,
+            )
             years = [
                 int(match.group(1))
                 for match in re.finditer(r"\b(\d{1,2})\s*(?:anos?|years?)\b", normalize(public_text))
