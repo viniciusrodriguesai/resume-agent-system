@@ -13,6 +13,7 @@ from resume_ai.domain.models import AnalysisRequest, AnalysisResult
 from resume_ai.infrastructure.documents import DocumentReader
 from resume_ai.presentation.auth import enforce_optional_oidc
 from resume_ai.presentation.charts import agent_timing_chart, category_chart, status_chart
+from resume_ai.presentation.engine_status import backend_error_reason, runtime_status_label
 from resume_ai.settings import Settings
 
 ROOT = Path(__file__).resolve().parent
@@ -277,9 +278,15 @@ def render_agents(result: AnalysisResult) -> None:
     loaded_reranker = bool(engine.get("reranker_loaded"))
 
     cols = st.columns(4)
-    cols[0].metric("Embeddings", "Ativos" if active_embeddings else "Desativados")
-    cols[1].metric("Modelo carregado", "Sim" if loaded_embeddings else "Fallback")
-    cols[2].metric("Reranker", "Ativo" if active_reranker else "Desativado")
+    cols[0].metric(
+        "Embeddings",
+        runtime_status_label(enabled=active_embeddings, loaded=loaded_embeddings),
+    )
+    cols[1].metric("Backend semântico", "Modelo" if loaded_embeddings else "Lexical")
+    cols[2].metric(
+        "Reranker",
+        runtime_status_label(enabled=active_reranker, loaded=loaded_reranker),
+    )
     cols[3].metric("Cache de trechos", engine.get("chunk_embedding_cache_entries", 0))
 
     st.markdown(f"**Modelo semântico:** `{engine.get('embedding_model', 'não configurado')}`")
@@ -288,9 +295,11 @@ def render_agents(result: AnalysisResult) -> None:
         st.markdown(f"**Modelo de reranqueamento:** `{engine.get('reranker_model', 'não configurado')}`")
         st.caption("Carregado nesta execução." if loaded_reranker else "Ainda não carregado ou indisponível.")
     if engine.get("embedding_error"):
-        st.warning(f"O modelo semântico não pôde ser usado; o fallback local foi acionado. Detalhe: {engine['embedding_error']}")
+        reason = backend_error_reason(engine["embedding_error"])
+        st.warning(f"O modelo semântico não pôde ser usado; fallback local ativo ({reason}).")
     if engine.get("reranker_error"):
-        st.warning(f"O reranker não pôde ser usado. Detalhe: {engine['reranker_error']}")
+        reason = backend_error_reason(engine["reranker_error"])
+        st.warning(f"O reranker não pôde ser usado; ordem lexical preservada ({reason}).")
 
     with st.expander("Detalhes técnicos avançados"):
         st.json(engine)
