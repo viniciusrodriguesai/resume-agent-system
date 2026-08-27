@@ -1,6 +1,6 @@
 """Resume Match AI V6 — análise local, explicável e orientada à privacidade."""
 
-__version__ = "6.0.1"
+__version__ = "6.0.2"
 
 from .application.analyze_resume import ResumeAnalysisService
 from .settings import Settings
