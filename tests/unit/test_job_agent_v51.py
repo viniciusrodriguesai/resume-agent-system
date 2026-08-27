@@ -131,3 +131,50 @@ def test_short_unbulleted_section_headings_are_not_requirements(tmp_path, headin
     profile, _ = JobAgent(make_settings(tmp_path)).run(job_text)
 
     assert heading.rstrip(":") not in {item.text for item in profile.requirements}
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "BACKEND SOFTWARE ENGINEER",
+        "ENGENHEIRO DE SOFTWARE SÊNIOR",
+        "Desenvolvedor Backend Sênior",
+    ],
+)
+def test_explicit_job_title_precedes_blank_line_and_intro(tmp_path, title: str):
+    job_text = f"""{title}
+
+Estamos procurando uma pessoa desenvolvedora para integrar a equipe.
+
+REQUISITOS
+- Python
+"""
+
+    profile, _ = JobAgent(make_settings(tmp_path)).run(job_text)
+
+    assert profile.title == title
+
+
+def test_job_title_can_follow_a_company_line(tmp_path):
+    job_text = """ACME TECNOLOGIA
+BACKEND SOFTWARE ENGINEER
+Somos uma empresa de produtos digitais.
+REQUISITOS
+- Python
+"""
+
+    profile, _ = JobAgent(make_settings(tmp_path)).run(job_text)
+
+    assert profile.title == "BACKEND SOFTWARE ENGINEER"
+
+
+def test_job_without_explicit_title_uses_safe_fallback(tmp_path):
+    job_text = """Somos uma empresa de produtos digitais em crescimento.
+Buscamos pessoas para integrar a equipe.
+REQUISITOS
+- Python
+"""
+
+    profile, _ = JobAgent(make_settings(tmp_path)).run(job_text)
+
+    assert profile.title == "Vaga não identificada"

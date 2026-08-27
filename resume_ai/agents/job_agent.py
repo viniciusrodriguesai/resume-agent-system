@@ -23,7 +23,8 @@ ALTERNATIVE_MARKERS = ("requisitos alternativos", "alternative requirements")
 INFRASTRUCTURE_MARKERS = ("requisitos de infraestrutura", "infrastructure requirements", "infraestrutura")
 TECHNICAL_MARKERS = ("requisitos tecnicos", "technical requirements")
 TITLE_MARKERS = (
-    "estágio", "estagio", "intern", "analista", "cientista", "engenheiro", "developer", "desenvolvedor",
+    "estagio", "intern", "analista", "cientista", "engenheiro", "engineer", "developer", "desenvolvedor",
+    "arquiteto", "architect", "especialista", "specialist",
 )
 BULLET_PREFIXES = ("-", "•", "*", "–", "—")
 GENERIC_QUALIFICATION_HEADINGS = {"qualifications", "qualification"}
@@ -53,6 +54,16 @@ def _heading_section(line: str, *, is_bullet: bool) -> str | None:
     return None
 
 
+def _is_job_title(raw_line: str, line: str) -> bool:
+    is_bullet = raw_line.lstrip().startswith(BULLET_PREFIXES)
+    if is_bullet or len(line) > 120 or len(line.split()) > 10:
+        return False
+    if line.endswith((".", "!", "?")) or _heading_section(line, is_bullet=False) is not None:
+        return False
+    normalized = normalize(line)
+    return any(marker in normalized for marker in TITLE_MARKERS)
+
+
 class JobAgent:
     name = "Agente de Vaga"
 
@@ -64,8 +75,12 @@ class JobAgent:
             raw_lines = [line.rstrip() for line in text.splitlines() if line.strip()]
             clean_lines = [line.strip(" •-*–—\t") for line in raw_lines]
             title = next(
-                (line for line in clean_lines[:8] if any(marker in normalize(line) for marker in TITLE_MARKERS)),
-                clean_lines[0] if clean_lines else "Vaga não identificada",
+                (
+                    line
+                    for raw_line, line in zip(raw_lines[:8], clean_lines[:8], strict=True)
+                    if _is_job_title(raw_line, line)
+                ),
+                "Vaga não identificada",
             )
 
             section = "preamble"
