@@ -23,6 +23,29 @@ TITLE_MARKERS = (
     "estágio", "estagio", "intern", "analista", "cientista", "engenheiro", "developer", "desenvolvedor",
 )
 BULLET_PREFIXES = ("-", "•", "*", "–", "—")
+GENERIC_SECTION_HEADINGS = {
+    "qualifications",
+    "qualification",
+    "infraestrutura",
+}
+
+
+def _heading_section(line: str, *, is_bullet: bool) -> str | None:
+    if is_bullet or len(line.split()) > 8:
+        return None
+    normalized = normalize(line)
+    if any(marker in normalized for marker in RESPONSIBILITY_MARKERS):
+        return "responsibilities"
+    if any(marker in normalized for marker in DESIRED_MARKERS):
+        return "desired"
+    if any(marker in normalized for marker in REQUIRED_MARKERS):
+        return "required"
+    first_word = normalized.split(maxsplit=1)[0] if normalized else ""
+    if first_word in {"requisito", "requisitos", "requirement", "requirements"}:
+        return "heading"
+    if normalized in GENERIC_SECTION_HEADINGS:
+        return "heading"
+    return None
 
 
 class JobAgent:
@@ -46,20 +69,13 @@ class JobAgent:
             seen: set[str] = set()
 
             for raw_line, line in zip(raw_lines, clean_lines, strict=True):
-                normalized = normalize(line)
                 if len(line) < 2:
                     continue
                 is_bullet = raw_line.lstrip().startswith(BULLET_PREFIXES)
-                is_short_header = len(line.split()) <= 8
-
-                if is_short_header and any(marker in normalized for marker in RESPONSIBILITY_MARKERS):
-                    section = "responsibilities"
-                    continue
-                if is_short_header and any(marker in normalized for marker in DESIRED_MARKERS):
-                    section = "desired"
-                    continue
-                if is_short_header and any(marker in normalized for marker in REQUIRED_MARKERS):
-                    section = "required"
+                heading_section = _heading_section(line, is_bullet=is_bullet)
+                if heading_section is not None:
+                    if heading_section != "heading":
+                        section = heading_section
                     continue
 
                 if line == title:
