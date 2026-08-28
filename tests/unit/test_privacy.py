@@ -115,3 +115,47 @@ def test_regex_privacy_handles_labeled_and_unicode_names_without_losing_technica
     assert private_name not in text
     assert technical_line in text
     assert any(entity.entity_type == "NOME_CANDIDATO" for entity in report.entities)
+
+
+def test_presidio_does_not_remove_technical_terms_but_still_removes_person(tmp_path) -> None:
+    pytest.importorskip("presidio_analyzer")
+    pytest.importorskip("presidio_anonymizer")
+    original = """Trabalhei com Prometheus em produção.
+Nunca utilizei Grafana.
+Li artigos sobre RabbitMQ.
+Não tenho experiência com Apache Kafka.
+Utilizo Pulumi, Terraform, Kubernetes, FastAPI, Docker, PostgreSQL, Redis e Java.
+Utilizo AlphaDB e BetaDB profissionalmente.
+João Prometheus Silva
+"""
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+        presidio_enabled=True,
+        embedding_enabled=False,
+        history_enabled=False,
+        cache_enabled=False,
+    )
+
+    text, report = PrivacyService(settings).anonymize(original)
+
+    for technology in (
+        "Prometheus",
+        "Grafana",
+        "RabbitMQ",
+        "Apache Kafka",
+        "Pulumi",
+        "Terraform",
+        "Kubernetes",
+        "FastAPI",
+        "Docker",
+        "PostgreSQL",
+        "Redis",
+        "Java",
+        "AlphaDB",
+        "BetaDB",
+    ):
+        assert technology in text
+    assert "João Prometheus Silva" not in text
+    assert "Presidio" in report.method

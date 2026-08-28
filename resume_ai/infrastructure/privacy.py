@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from typing import Any
 
 from resume_ai.domain.models import PrivacyEntity, PrivacyReport
 from resume_ai.settings import Settings
@@ -22,10 +23,95 @@ PATTERNS = {
 }
 
 _RESUME_HEADINGS = {"curriculo", "curriculum vitae", "resume", "cv"}
+_TECHNICAL_CONTEXT_WORDS = {
+    "administro",
+    "artigos",
+    "com",
+    "configurei",
+    "conhecimento",
+    "desenvolvi",
+    "experiencia",
+    "implementei",
+    "li",
+    "monitoramento",
+    "nao",
+    "nunca",
+    "operei",
+    "producao",
+    "sobre",
+    "trabalhei",
+    "utilizei",
+    "utilizo",
+}
+
+
+def _technical_spans(text: str) -> list[tuple[int, int]]:
+    from resume_ai.agents.catalog import SKILLS
+
+    terms = {
+        value
+        for canonical, (_, aliases) in SKILLS.items()
+        for value in (canonical, *aliases)
+        if value
+    }
+    spans = {
+        match.span()
+        for term in terms
+        for match in re.finditer(
+            rf"(?<![\w+#]){re.escape(term)}(?![\w+#])",
+            text,
+            flags=re.IGNORECASE,
+        )
+    }
+    spans.update(
+        match.span()
+        for match in re.finditer(
+            r"\b[A-Z][A-Za-z0-9]*(?:API|DB|JS|ML|MQ|SQL)\b",
+            text,
+        )
+    )
+    return sorted(spans)
+
+
+def _looks_like_person_name_line(value: str) -> bool:
+    if not value or re.search(r"[@\d:<>]", value):
+        return False
+    normalized_words = set(normalize(value).split())
+    if normalized_words & _TECHNICAL_CONTEXT_WORDS:
+        return False
+    words = re.findall(r"[^\W\d_]+(?:['’-][^\W\d_]+)?", value, flags=re.UNICODE)
+    if not 2 <= len(words) <= 6:
+        return False
+    connectors = {"da", "das", "de", "do", "dos", "e"}
+    if not all(word.lower() in connectors or word[0].isupper() for word in words):
+        return False
+    return len(_technical_spans(value)) < 2
+
+
+def _filter_presidio_results(text: str, results: list[Any]) -> list[Any]:
+    """Drop PERSON false positives on technical lines while retaining real names."""
+    filtered: list[Any] = []
+    for item in results:
+        if item.entity_type != "PERSON":
+            filtered.append(item)
+            continue
+        line_start = text.rfind("\n", 0, item.start) + 1
+        line_end = text.find("\n", item.end)
+        if line_end < 0:
+            line_end = len(text)
+        line = text[line_start:line_end].strip()
+        if _technical_spans(line) and not _looks_like_person_name_line(line):
+            continue
+        filtered.append(item)
+    return filtered
 
 
 def _is_probable_name_line(value: str) -> bool:
     if not value or len(value.split()) > 6 or re.search(r"[@\d:<>]", value):
+        return False
+    if _looks_like_person_name_line(value):
+        return True
+    if _technical_spans(value):
         return False
     # Import locally to keep the privacy module independent during agent package import.
     from resume_ai.agents.catalog import detect_skills
@@ -97,6 +183,7 @@ class PrivacyService:
                     )
                 )
             results = analyzer.analyze(text=baseline_text, language="en")
+            results = _filter_presidio_results(baseline_text, results)
             anonymizer_results = [
                 AnonymizerRecognizerResult(
                     entity_type=item.entity_type,
