@@ -97,6 +97,8 @@ class EvidenceCandidate(BaseModel):
     superficially_mentioned: bool = False
     weak_experience: bool = False
     operational_experience: bool = False
+    production_experience: bool = False
+    evidence_strength: int = 0
     quantified_scale: bool = False
     semantic_rule_match: bool = False
     exact_requirement: bool = False

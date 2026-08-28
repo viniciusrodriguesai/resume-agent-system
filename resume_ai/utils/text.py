@@ -255,6 +255,15 @@ def operational_experience_phrase(text: str, phrase: str) -> bool:
     )
 
 
+def production_experience_phrase(text: str, phrase: str) -> bool:
+    """Return true when a positive concept mention is explicitly tied to production."""
+    return any(
+        not _is_negated_context(context)
+        and re.search(r"\b(?:producao|production)\b", f"{context[0]} {context[1]}") is not None
+        for context in _phrase_contexts(text, phrase)
+    )
+
+
 def high_volume_request_requirement(text: str) -> bool:
     normalized = normalize(text)
     volume = "alto volume" in normalized or "high volume" in normalized

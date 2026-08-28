@@ -15,6 +15,7 @@ from resume_ai.utils.text import (
     negated_phrase,
     normalize,
     operational_experience_phrase,
+    production_experience_phrase,
     quantified_request_volume,
     requirement_demands_experience,
     requirement_intent,
@@ -32,6 +33,11 @@ OPERATIONAL_EXPERIENCE_BONUS = 0.06
 OPERATIONAL_EXPERIENCE_FLOOR = THRESHOLDS["conservador"]["matched"]
 ZERO_CONCEPT_COVERAGE_CEILING = THRESHOLDS["flexível"]["partial"] - 0.01
 MIN_RERANK_POOL = 12
+EXPERIENCE_LISTING_FLOOR = THRESHOLDS["flexível"]["matched"]
+EXPERIENCE_LISTING_CEILING = THRESHOLDS["conservador"]["matched"] - 0.01
+OPERATIONAL_EXPERIENCE_CEILING = 0.84
+PRODUCTION_EXPERIENCE_FLOOR = 0.85
+WEAK_EXPERIENCE_FLOOR = 0.16
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
@@ -45,6 +51,24 @@ def _apply_final_safety_constraints(score: float, candidate: dict[str, Any]) -> 
     concept_count = int(candidate.get("concept_count", 0))
     alternatives = bool(candidate.get("alternative_concepts", False))
     superficial = bool(candidate.get("superficially_mentioned", False))
+    evidence_strength = int(candidate.get("evidence_strength", 0))
+
+    complete_class_evidence = concept_count <= 1 or alternatives or coverage == 1.0
+    if candidate.get("requirement_intent") != "knowledge" and complete_class_evidence:
+        if evidence_strength >= 4:
+            adjusted = max(adjusted, PRODUCTION_EXPERIENCE_FLOOR)
+        elif evidence_strength == 3:
+            adjusted = max(
+                OPERATIONAL_EXPERIENCE_FLOOR,
+                min(adjusted, OPERATIONAL_EXPERIENCE_CEILING),
+            )
+        elif evidence_strength == 2:
+            adjusted = max(
+                EXPERIENCE_LISTING_FLOOR,
+                min(adjusted, EXPERIENCE_LISTING_CEILING),
+            )
+        elif evidence_strength == 1:
+            adjusted = max(WEAK_EXPERIENCE_FLOOR, min(adjusted, WEAK_EXPERIENCE_CEILING))
 
     if (
         candidate.get("operational_experience", False)
@@ -248,9 +272,26 @@ class EmbeddingEngine:
                 for group in concept_groups
                 for alias in group
             )
+            production_experience = experience_required and any(
+                production_experience_phrase(chunk, alias)
+                for group in concept_groups
+                for alias in group
+            )
             quantified_scale = high_volume_request_requirement(
                 requirement_text
             ) and quantified_request_volume(chunk)
+            if explicitly_negated:
+                evidence_strength = 0
+            elif weak_experience or superficially_mentioned:
+                evidence_strength = 1
+            elif coverage > 0.0 and production_experience:
+                evidence_strength = 4
+            elif coverage > 0.0 and operational_experience:
+                evidence_strength = 3
+            elif coverage > 0.0:
+                evidence_strength = 2
+            else:
+                evidence_strength = 0
 
             if model_available:
                 final = 0.42 * semantic + 0.28 * lexical + 0.15 * fuzzy + 0.15 * coverage
@@ -317,6 +358,8 @@ class EmbeddingEngine:
                 "superficially_mentioned": superficially_mentioned,
                 "weak_experience": weak_experience,
                 "operational_experience": operational_experience,
+                "production_experience": production_experience,
+                "evidence_strength": evidence_strength,
                 "quantified_scale": quantified_scale,
                 "semantic_rule_match": quantified_scale,
                 "exact_requirement": exact_requirement,

@@ -22,6 +22,18 @@ class FakeReranker:
         return list(self.scores[: len(pairs)])
 
 
+class AdversarialStrengthReranker:
+    def predict(self, pairs, **_kwargs):
+        scores = {
+            "Utilizo FastAPI em produção.": 0.0,
+            "Desenvolvo APIs REST utilizando FastAPI.": 0.01,
+            "FastAPI": 1.0,
+            "Estudei FastAPI.": 1.0,
+            "Nunca utilizei FastAPI.": 1.0,
+        }
+        return [scores[text] for _, text in pairs]
+
+
 def make_engine(tmp_path, *scores: float, top_n: int = 5) -> EmbeddingEngine:
     settings = Settings(
         project_root=tmp_path,
@@ -238,3 +250,32 @@ def test_high_volume_candidate_survives_retrieval_and_is_considered(tmp_path) ->
 
     assert "2 milhões" in (matches[0].evidence or "")
     assert matches[0].top_candidates[0].quantified_scale is True
+
+
+def test_fastapi_strength_classes_survive_adversarial_reranker(tmp_path) -> None:
+    requirement = "Experiência com FastAPI"
+    engine = make_engine(tmp_path, *([0.0] * 5), top_n=5)
+    engine._reranker = AdversarialStrengthReranker()
+    group = concept_group_for(requirement)
+    candidates = engine.retrieve(
+        requirement,
+        [
+            "FastAPI",
+            "Desenvolvo APIs REST utilizando FastAPI.",
+            "Utilizo FastAPI em produção.",
+            "Estudei FastAPI.",
+            "Nunca utilizei FastAPI.",
+        ],
+        top_k=5,
+        concept_groups=group.alias_groups,
+    )
+
+    results = engine.rerank(requirement, candidates)
+
+    assert [item["text"] for item in results] == [
+        "Utilizo FastAPI em produção.",
+        "Desenvolvo APIs REST utilizando FastAPI.",
+        "FastAPI",
+        "Estudei FastAPI.",
+        "Nunca utilizei FastAPI.",
+    ]
