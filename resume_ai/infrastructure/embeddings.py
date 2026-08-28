@@ -29,11 +29,48 @@ SUPERFICIAL_EVIDENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 WEAK_EXPERIENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 QUANTIFIED_SCALE_FLOOR = THRESHOLDS["conservador"]["partial"]
 OPERATIONAL_EXPERIENCE_BONUS = 0.06
+OPERATIONAL_EXPERIENCE_FLOOR = THRESHOLDS["conservador"]["matched"]
 ZERO_CONCEPT_COVERAGE_CEILING = THRESHOLDS["flexível"]["partial"] - 0.01
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
     return f"{stage}:{type(error).__name__}"
+
+
+def _apply_final_safety_constraints(score: float, candidate: dict[str, Any]) -> float:
+    """Keep model scores subordinate to deterministic evidence policy."""
+    adjusted = max(0.0, min(score, 1.0))
+    coverage = float(candidate.get("concept_coverage", 0.0))
+    concept_count = int(candidate.get("concept_count", 0))
+    alternatives = bool(candidate.get("alternative_concepts", False))
+    superficial = bool(candidate.get("superficially_mentioned", False))
+
+    if (
+        candidate.get("operational_experience", False)
+        and coverage > 0.0
+        and (concept_count <= 1 or alternatives or coverage == 1.0)
+        and not candidate.get("explicitly_negated", False)
+        and not candidate.get("weak_experience", False)
+        and (not superficial or alternatives)
+    ):
+        adjusted = max(adjusted, OPERATIONAL_EXPERIENCE_FLOOR)
+    if candidate.get("quantified_scale", False):
+        adjusted = max(adjusted, QUANTIFIED_SCALE_FLOOR)
+    if concept_count > 1 and not alternatives and 0.0 < coverage < 1.0:
+        adjusted = max(
+            INCOMPLETE_CUMULATIVE_FLOOR,
+            min(adjusted, INCOMPLETE_CUMULATIVE_CEILING),
+        )
+
+    if candidate.get("explicitly_negated", False):
+        adjusted = min(adjusted, 0.15)
+    elif candidate.get("weak_experience", False):
+        adjusted = min(adjusted, WEAK_EXPERIENCE_CEILING)
+    elif superficial and (not alternatives or coverage == 0.0):
+        adjusted = min(adjusted, SUPERFICIAL_EVIDENCE_CEILING)
+    if concept_count > 0 and coverage == 0.0:
+        adjusted = min(adjusted, ZERO_CONCEPT_COVERAGE_CEILING)
+    return adjusted
 
 
 class EmbeddingEngine:
@@ -257,7 +294,9 @@ class EmbeddingEngine:
                 "fuzzy_score": round(fuzzy, 4),
                 "semantic_score": round(semantic, 4),
                 "reranker_score": 0.0,
+                "base_score": round(max(0.0, min(final, 1.0)), 4),
                 "final_score": round(max(0.0, min(final, 1.0)), 4),
+                "policy_adjusted_score": round(max(0.0, min(final, 1.0)), 4),
                 "retrieval_method": " · ".join(method_parts),
                 "concept_coverage": round(coverage, 4),
                 "concept_count": len(concept_groups),
@@ -267,6 +306,7 @@ class EmbeddingEngine:
                 "superficially_mentioned": superficially_mentioned,
                 "weak_experience": weak_experience,
                 "operational_experience": operational_experience,
+                "quantified_scale": quantified_scale,
             })
 
         candidates.sort(key=lambda item: item["final_score"], reverse=True)
@@ -354,23 +394,9 @@ class EmbeddingEngine:
                 normalized = value if 0 <= value <= 1 else 1 / (1 + math.exp(-value))
                 item["reranker_score"] = round(normalized, 4)
                 reranked = 0.35 * item["final_score"] + 0.65 * normalized
-                if (
-                    item.get("concept_count", 0) > 0
-                    and item.get("concept_coverage", 0.0) == 0.0
-                ):
-                    reranked = min(reranked, ZERO_CONCEPT_COVERAGE_CEILING)
-                # Em requisitos cumulativos, o reranker não pode transformar uma
-                # evidência de apenas uma competência em correspondência completa.
-                if (
-                    item.get("concept_count", 0) > 1
-                    and not item.get("alternative_concepts", False)
-                    and item.get("concept_coverage", 0.0) < 1.0
-                ):
-                    reranked = max(
-                        INCOMPLETE_CUMULATIVE_FLOOR,
-                        min(reranked, INCOMPLETE_CUMULATIVE_CEILING),
-                    )
-                item["final_score"] = round(reranked, 4)
+                reranked = _apply_final_safety_constraints(reranked, item)
+                item["policy_adjusted_score"] = round(reranked, 4)
+                item["final_score"] = item["policy_adjusted_score"]
                 item["retrieval_method"] += " · CrossEncoder"
             top.sort(key=lambda item: item["final_score"], reverse=True)
             return top + candidates[len(top):]

@@ -84,7 +84,9 @@ class EvidenceCandidate(BaseModel):
     fuzzy_score: float = 0.0
     semantic_score: float = 0.0
     reranker_score: float = 0.0
+    base_score: float = 0.0
     final_score: float = 0.0
+    policy_adjusted_score: float = 0.0
     retrieval_method: str = "lexical"
     concept_coverage: float = 0.0
     concept_count: int = 0
@@ -94,6 +96,7 @@ class EvidenceCandidate(BaseModel):
     superficially_mentioned: bool = False
     weak_experience: bool = False
     operational_experience: bool = False
+    quantified_scale: bool = False
     literal_concept_fallback: bool = False
 
 
