@@ -169,7 +169,17 @@ def _is_negated_context(context: tuple[str, str]) -> bool:
         r"\s+(?:professional\s+)?experience\b",
         after,
     )
-    return negation.search(before) is not None or no_concept_experience is not None
+    explicit_lack_of_experience = re.search(
+        r"\b(?:nao\s+tenho|nao\s+possuo|sem|no)\s+"
+        r"(?:experiencia|experience)\s+(?:profissional\s+)?"
+        r"(?:com|em|with|in)\s+(?:[a-z0-9+#./-]+\s+){0,3}$",
+        before,
+    )
+    return (
+        negation.search(before) is not None
+        or no_concept_experience is not None
+        or explicit_lack_of_experience is not None
+    )
 
 
 def exact_phrase(text: str, phrase: str) -> bool:
@@ -245,8 +255,10 @@ def operational_experience_phrase(text: str, phrase: str) -> bool:
         r"modelo|otimizo|trabalho|administro|construo|"
         r"usei|utilizei|implementei|desenvolvi|criei|operei|configurei|"
         r"mantive|modelei|otimizei|trabalhei|administrei|construi|"
+        r"automatizo|automatizei|escrevo|escrevi|"
         r"use|implement|develop|build|operate|configure|maintain|deploy|"
         r"used|implemented|developed|built|operated|configured|maintained|deployed|"
+        r"automate|automated|write|wrote|"
         r"experiencia\s+profissional|professional\s+experience|producao|production)\b"
     )
     return any(

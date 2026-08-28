@@ -51,3 +51,17 @@ def test_cached_export_identity_is_consistent(tmp_path):
     assert second.engine_status["original_processing_timings"] == first.timings_ms
     assert set(second.timings_ms) == {"cache_lookup", "report_regeneration"}
     assert all(duration >= 0.0 for duration in second.timings_ms.values())
+
+
+def test_cache_hit_preserves_score_requirements_and_match_semantics(tmp_path):
+    _, first, second = analyze_twice(tmp_path)
+
+    assert first.score == second.score
+    assert first.job.requirements == second.job.requirements
+    assert [
+        (match.requirement.id, match.status, match.final_score, match.evidence)
+        for match in first.matches
+    ] == [
+        (match.requirement.id, match.status, match.final_score, match.evidence)
+        for match in second.matches
+    ]

@@ -152,6 +152,36 @@ def analyze_scenario(tmp_path, strictness: str = "equilibrado") -> AnalysisResul
     )
 
 
+class RejectingReranker:
+    def predict(self, pairs, **_kwargs):
+        return [0.0] * len(pairs)
+
+
+def analyze_with_mocked_models(tmp_path, strictness: str = "equilibrado") -> AnalysisResult:
+    settings = Settings(
+        project_root=tmp_path,
+        data_dir=tmp_path / "data",
+        cache_dir=tmp_path / "cache",
+        embedding_enabled=False,
+        reranker_enabled=True,
+        reranker_top_n=5,
+        history_enabled=False,
+        cache_enabled=False,
+        store_raw_documents=False,
+        store_anonymized_documents=False,
+    )
+    service = ResumeAnalysisService(settings)
+    service.engine._reranker = RejectingReranker()
+    return service.analyze(
+        AnalysisRequest(
+            resume_text=RESUME_TEXT,
+            job_text=JOB_TEXT,
+            profile="balanced",
+            strictness=strictness,
+        )
+    )
+
+
 def test_manual_603_fixture_has_17_real_requirements(tmp_path):
     result = analyze_scenario(tmp_path)
 
@@ -269,3 +299,46 @@ def test_strictness_statuses_are_monotonic_for_manual_603_fixture(tmp_path):
         assert strength[statuses["equilibrado"][requirement]] >= strength[
             statuses["conservador"][requirement]
         ]
+
+
+def test_model_active_manual_fixture_regression(tmp_path) -> None:
+    result = analyze_with_mocked_models(tmp_path)
+    matches = {item.requirement.text: item for item in result.matches}
+
+    assert len(result.job.requirements) == 17
+    assert not [
+        match
+        for match in result.matches
+        if match.status == "matched"
+        and match.top_candidates
+        and match.top_candidates[0].concept_count > 0
+        and match.top_candidates[0].concept_coverage == 0.0
+        and not match.top_candidates[0].semantic_rule_match
+    ]
+    for requirement in (
+        "Experiência profissional com Python",
+        "Experiência com FastAPI",
+        "Experiência com PostgreSQL",
+        "Experiência com Docker",
+        "Experiência com AWS",
+        "Experiência com testes automatizados utilizando pytest",
+        "Experiência com CI/CD",
+        "Conhecimento de Git",
+        "Experiência com Redis ou Memcached",
+        "Experiência com Prometheus e Grafana",
+        "Experiência com sistemas distribuídos",
+        "Linux",
+        "GitHub Actions",
+    ):
+        assert matches[requirement].status == "matched", requirement
+
+    assert matches["Experiência prática com Kubernetes em produção"].status != "matched"
+    assert matches["Experiência com Terraform ou Pulumi"].status != "matched"
+    assert matches["Experiência com RabbitMQ ou Apache Kafka"].status == "missing"
+    assert matches["Experiência com aplicações de alto volume de requisições"].status in {
+        "matched",
+        "partial",
+    }
+    for match in result.matches:
+        scores = [candidate.final_score for candidate in match.top_candidates]
+        assert scores == sorted(scores, reverse=True)

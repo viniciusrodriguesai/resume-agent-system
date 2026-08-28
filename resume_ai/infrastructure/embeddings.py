@@ -38,6 +38,7 @@ EXPERIENCE_LISTING_CEILING = THRESHOLDS["conservador"]["matched"] - 0.01
 OPERATIONAL_EXPERIENCE_CEILING = 0.84
 PRODUCTION_EXPERIENCE_FLOOR = 0.85
 WEAK_EXPERIENCE_FLOOR = 0.16
+KNOWLEDGE_EVIDENCE_FLOOR = THRESHOLDS["equilibrado"]["matched"]
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
@@ -54,7 +55,14 @@ def _apply_final_safety_constraints(score: float, candidate: dict[str, Any]) -> 
     evidence_strength = int(candidate.get("evidence_strength", 0))
 
     complete_class_evidence = concept_count <= 1 or alternatives or coverage == 1.0
-    if candidate.get("requirement_intent") != "knowledge" and complete_class_evidence:
+    if (
+        candidate.get("requirement_intent") == "knowledge"
+        and complete_class_evidence
+        and coverage > 0.0
+        and evidence_strength >= 2
+    ):
+        adjusted = max(adjusted, KNOWLEDGE_EVIDENCE_FLOOR)
+    elif candidate.get("requirement_intent") != "knowledge" and complete_class_evidence:
         if evidence_strength >= 4:
             adjusted = max(adjusted, PRODUCTION_EXPERIENCE_FLOOR)
         elif evidence_strength == 3:

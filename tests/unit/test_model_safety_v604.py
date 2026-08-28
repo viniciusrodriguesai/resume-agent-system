@@ -279,3 +279,20 @@ def test_fastapi_strength_classes_survive_adversarial_reranker(tmp_path) -> None
         "Estudei FastAPI.",
         "Nunca utilizei FastAPI.",
     ]
+
+
+def test_multiword_concept_negation_also_covers_short_alias(tmp_path) -> None:
+    requirement = "Experiência com RabbitMQ ou Apache Kafka"
+    engine = make_engine(tmp_path, 1.0)
+    group = concept_group_for(requirement)
+    candidates = engine.retrieve(
+        requirement,
+        ["Não tenho experiência com Apache Kafka."],
+        concept_groups=group.alias_groups,
+    )
+
+    result = engine.rerank(requirement, candidates)[0]
+
+    assert result["concept_coverage"] == 0.0
+    assert result["explicitly_negated"] is True
+    assert classify(result["final_score"], "flexível") == "missing"
