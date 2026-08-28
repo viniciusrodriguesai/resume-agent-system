@@ -2,7 +2,7 @@
 
 ### Análise local, explicável e multiagente de currículos e vagas
 
-[![Version 6.0.3](https://img.shields.io/badge/version-6.0.3-5B5BD6)](pyproject.toml)
+[![Version 6.0.4](https://img.shields.io/badge/version-6.0.4-5B5BD6)](pyproject.toml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776AB)](pyproject.toml)
 [![CI](https://github.com/viniciusrodriguesai/resume-agent-system/actions/workflows/ci.yml/badge.svg)](https://github.com/viniciusrodriguesai/resume-agent-system/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0F766E)](LICENSE)
