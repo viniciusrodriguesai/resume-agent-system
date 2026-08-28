@@ -66,3 +66,14 @@ def test_explanation_reflects_actual_evidence_signals(
     expected: str,
 ):
     assert expected in explain(tmp_path, requirement, evidence)
+
+
+def test_explanation_with_zero_coverage_is_not_positive(tmp_path) -> None:
+    explanation = explain(
+        tmp_path,
+        "Experiência com RabbitMQ ou Apache Kafka",
+        "Engenheira de software com cinco anos em sistemas backend e APIs REST.",
+    )
+
+    assert "Nenhum conceito exigido foi comprovado neste trecho." in explanation
+    assert "cita explicitamente" not in explanation

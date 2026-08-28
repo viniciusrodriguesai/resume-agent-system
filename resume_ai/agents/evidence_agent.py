@@ -30,6 +30,10 @@ def _explain_evidence(
     details: list[str] = []
     if candidate["explicitly_negated"]:
         details.append(f"{labels or requirement.text} foi explicitamente negado nesta evidência.")
+    elif candidate.get("semantic_rule_match", False) and candidate.get("quantified_scale", False):
+        details.append("Há evidência quantificada de escala operacional neste trecho.")
+    elif candidate["concept_coverage"] == 0.0:
+        details.append("Nenhum conceito exigido foi comprovado neste trecho.")
     elif (
         group.operator == "AND"
         and 0.0 < candidate["concept_coverage"] < 1.0
@@ -44,10 +48,13 @@ def _explain_evidence(
         and not candidate["weak_experience"]
     ):
         details.append("Uma alternativa válida do requisito OR foi comprovada.")
-    elif candidate["weak_experience"] or candidate["superficially_mentioned"]:
+    elif candidate["superficially_mentioned"]:
         details.append(
-            f"{labels or requirement.text} foi citado apenas em contexto teórico; "
-            "o requisito pede experiência aplicada."
+            f"{labels or requirement.text} foi apenas mencionado em contexto superficial."
+        )
+    elif candidate["weak_experience"]:
+        details.append(
+            f"{labels or requirement.text} aparece apenas como conhecimento básico ou teórico."
         )
     elif candidate["operational_experience"]:
         details.append(f"A evidência demonstra uso operacional de {labels or requirement.text}.")
