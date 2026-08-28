@@ -256,6 +256,7 @@ def operational_experience_phrase(text: str, phrase: str) -> bool:
         r"usei|utilizei|implementei|desenvolvi|criei|operei|configurei|"
         r"mantive|modelei|otimizei|trabalhei|administrei|construi|"
         r"automatizo|automatizei|escrevo|escrevi|"
+        r"projeto|project|"
         r"use|implement|develop|build|operate|configure|maintain|deploy|"
         r"used|implemented|developed|built|operated|configured|maintained|deployed|"
         r"automate|automated|write|wrote|"

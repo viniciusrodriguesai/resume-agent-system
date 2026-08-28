@@ -31,7 +31,7 @@ WEAK_EXPERIENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 QUANTIFIED_SCALE_FLOOR = THRESHOLDS["conservador"]["partial"]
 OPERATIONAL_EXPERIENCE_BONUS = 0.06
 OPERATIONAL_EXPERIENCE_FLOOR = THRESHOLDS["conservador"]["matched"]
-ZERO_CONCEPT_COVERAGE_CEILING = THRESHOLDS["flexível"]["partial"] - 0.01
+ZERO_CONCEPT_COVERAGE_CEILING = THRESHOLDS["flexível"]["partial"]
 MIN_RERANK_POOL = 12
 EXPERIENCE_LISTING_FLOOR = THRESHOLDS["flexível"]["matched"]
 EXPERIENCE_LISTING_CEILING = THRESHOLDS["conservador"]["matched"] - 0.01
@@ -347,7 +347,7 @@ class EmbeddingEngine:
             if operational_experience:
                 method_parts.append("contexto operacional")
 
-            candidates.append({
+            candidate = {
                 "text": chunk,
                 "lexical_score": round(lexical, 4),
                 "fuzzy_score": round(fuzzy, 4),
@@ -371,7 +371,11 @@ class EmbeddingEngine:
                 "quantified_scale": quantified_scale,
                 "semantic_rule_match": quantified_scale,
                 "exact_requirement": exact_requirement,
-            })
+            }
+            policy_adjusted = _apply_final_safety_constraints(final, candidate)
+            candidate["policy_adjusted_score"] = round(policy_adjusted, 4)
+            candidate["final_score"] = candidate["policy_adjusted_score"]
+            candidates.append(candidate)
 
         candidates.sort(key=lambda item: item["final_score"], reverse=True)
         selected = candidates[:top_k]
@@ -475,10 +479,12 @@ class EmbeddingEngine:
                 normalized = value if 0 <= value <= 1 else 1 / (1 + math.exp(-value))
                 item["reranker_score"] = round(normalized, 4)
                 reranked = 0.35 * item["final_score"] + 0.65 * normalized
-                reranked = _apply_final_safety_constraints(reranked, item)
-                item["policy_adjusted_score"] = round(reranked, 4)
-                item["final_score"] = item["policy_adjusted_score"]
+                item["final_score"] = round(reranked, 4)
                 item["retrieval_method"] += " · CrossEncoder"
+            for item in candidates:
+                policy_adjusted = _apply_final_safety_constraints(item["final_score"], item)
+                item["policy_adjusted_score"] = round(policy_adjusted, 4)
+                item["final_score"] = item["policy_adjusted_score"]
             return sorted(
                 candidates,
                 key=lambda item: (

@@ -296,3 +296,30 @@ def test_multiword_concept_negation_also_covers_short_alias(tmp_path) -> None:
     assert result["concept_coverage"] == 0.0
     assert result["explicitly_negated"] is True
     assert classify(result["final_score"], "flexível") == "missing"
+
+
+def test_unreranked_candidate_still_receives_final_safety_constraints(tmp_path) -> None:
+    engine = make_engine(tmp_path, 0.5, top_n=1)
+    candidates = [
+        {
+            "text": "Top reranqueado",
+            "final_score": 0.90,
+            "concept_count": 0,
+            "concept_coverage": 0.0,
+            "lexical_score": 0.9,
+            "retrieval_method": "teste",
+        },
+        {
+            "text": "Sem RabbitMQ ou Kafka",
+            "final_score": 0.86,
+            "concept_count": 2,
+            "concept_coverage": 0.0,
+            "lexical_score": 0.86,
+            "retrieval_method": "teste",
+        },
+    ]
+
+    results = engine.rerank("Experiência com RabbitMQ ou Apache Kafka", candidates)
+    uncovered = next(item for item in results if item["text"] == "Sem RabbitMQ ou Kafka")
+
+    assert classify(uncovered["final_score"], "flexível") != "matched"
