@@ -29,6 +29,7 @@ SUPERFICIAL_EVIDENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 WEAK_EXPERIENCE_CEILING = THRESHOLDS["flexível"]["matched"] - 0.01
 QUANTIFIED_SCALE_FLOOR = THRESHOLDS["conservador"]["partial"]
 OPERATIONAL_EXPERIENCE_BONUS = 0.06
+ZERO_CONCEPT_COVERAGE_CEILING = THRESHOLDS["flexível"]["partial"] - 0.01
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
@@ -353,6 +354,11 @@ class EmbeddingEngine:
                 normalized = value if 0 <= value <= 1 else 1 / (1 + math.exp(-value))
                 item["reranker_score"] = round(normalized, 4)
                 reranked = 0.35 * item["final_score"] + 0.65 * normalized
+                if (
+                    item.get("concept_count", 0) > 0
+                    and item.get("concept_coverage", 0.0) == 0.0
+                ):
+                    reranked = min(reranked, ZERO_CONCEPT_COVERAGE_CEILING)
                 # Em requisitos cumulativos, o reranker não pode transformar uma
                 # evidência de apenas uma competência em correspondência completa.
                 if (
