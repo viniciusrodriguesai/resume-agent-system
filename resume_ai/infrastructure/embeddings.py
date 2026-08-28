@@ -386,6 +386,7 @@ class EmbeddingEngine:
         reranker = self._load_reranker()
         if reranker is None:
             return candidates
+        original_indexes = {id(item): index for index, item in enumerate(candidates)}
         top = candidates[: self.settings.reranker_top_n]
         try:
             scores = reranker.predict([[query, item["text"]] for item in top], show_progress_bar=False)
@@ -398,8 +399,16 @@ class EmbeddingEngine:
                 item["policy_adjusted_score"] = round(reranked, 4)
                 item["final_score"] = item["policy_adjusted_score"]
                 item["retrieval_method"] += " · CrossEncoder"
-            top.sort(key=lambda item: item["final_score"], reverse=True)
-            return top + candidates[len(top):]
+            return sorted(
+                candidates,
+                key=lambda item: (
+                    -float(item.get("final_score", 0.0)),
+                    -float(item.get("concept_coverage", 0.0)),
+                    -int(bool(item.get("operational_experience", False))),
+                    -float(item.get("lexical_score", 0.0)),
+                    original_indexes[id(item)],
+                ),
+            )
         except Exception as exc:
             self._reranker_error = _safe_backend_error("inference", exc)
             return candidates

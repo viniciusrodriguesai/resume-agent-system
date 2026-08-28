@@ -169,3 +169,33 @@ def test_quantified_scale_floor_survives_low_reranker(tmp_path) -> None:
 
     assert result["quantified_scale"] is True
     assert classify(result["final_score"], "conservador") == "partial"
+
+
+def test_reranked_candidates_are_globally_resorted(tmp_path) -> None:
+    engine = make_engine(tmp_path, 0.01, top_n=1)
+    candidates = [
+        {
+            "text": "Candidato A",
+            "final_score": 0.90,
+            "concept_coverage": 0.0,
+            "operational_experience": False,
+            "lexical_score": 0.90,
+            "reranker_score": 0.0,
+            "retrieval_method": "teste",
+        },
+        {
+            "text": "Candidato B",
+            "final_score": 0.86,
+            "concept_coverage": 0.0,
+            "operational_experience": False,
+            "lexical_score": 0.86,
+            "reranker_score": 0.0,
+            "retrieval_method": "teste",
+        },
+    ]
+
+    results = engine.rerank("requisito genérico", candidates)
+
+    assert len(results) == 2
+    assert results[0]["text"] == "Candidato B"
+    assert results[0]["final_score"] > results[1]["final_score"]
