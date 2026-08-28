@@ -89,6 +89,7 @@ class EvidenceCandidate(BaseModel):
     policy_adjusted_score: float = 0.0
     retrieval_method: str = "lexical"
     concept_coverage: float = 0.0
+    strong_coverage: float = 0.0
     concept_count: int = 0
     alternative_concepts: bool = False
     requirement_intent: str = "knowledge"
@@ -97,6 +98,8 @@ class EvidenceCandidate(BaseModel):
     weak_experience: bool = False
     operational_experience: bool = False
     quantified_scale: bool = False
+    semantic_rule_match: bool = False
+    exact_requirement: bool = False
     literal_concept_fallback: bool = False
 
 

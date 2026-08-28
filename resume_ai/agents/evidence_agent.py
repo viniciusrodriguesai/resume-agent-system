@@ -72,7 +72,7 @@ class EvidenceAgent:
             retrieved = self.engine.retrieve_many(
                 queries,
                 candidate.chunks,
-                top_k=top_k,
+                top_k=self.engine.retrieval_pool_size(top_k),
                 concept_groups=[group.alias_groups for group in concept_groups],
             )
 
@@ -85,6 +85,7 @@ class EvidenceAgent:
                 strict=True,
             ):
                 candidates = self.engine.rerank(query, candidates)
+                candidates = candidates[:top_k]
                 for item in candidates:
                     item["text"] = best_snippet(item["text"], requirement.text)
                     item["literal_concept_fallback"] = group.uses_literal_fallback

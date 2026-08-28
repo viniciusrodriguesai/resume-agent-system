@@ -31,6 +31,7 @@ QUANTIFIED_SCALE_FLOOR = THRESHOLDS["conservador"]["partial"]
 OPERATIONAL_EXPERIENCE_BONUS = 0.06
 OPERATIONAL_EXPERIENCE_FLOOR = THRESHOLDS["conservador"]["matched"]
 ZERO_CONCEPT_COVERAGE_CEILING = THRESHOLDS["flexível"]["partial"] - 0.01
+MIN_RERANK_POOL = 12
 
 
 def _safe_backend_error(stage: str, error: BaseException) -> str:
@@ -68,7 +69,11 @@ def _apply_final_safety_constraints(score: float, candidate: dict[str, Any]) -> 
         adjusted = min(adjusted, WEAK_EXPERIENCE_CEILING)
     elif superficial and (not alternatives or coverage == 0.0):
         adjusted = min(adjusted, SUPERFICIAL_EVIDENCE_CEILING)
-    if concept_count > 0 and coverage == 0.0:
+    if (
+        concept_count > 0
+        and coverage == 0.0
+        and not candidate.get("semantic_rule_match", False)
+    ):
         adjusted = min(adjusted, ZERO_CONCEPT_COVERAGE_CEILING)
     return adjusted
 
@@ -127,6 +132,11 @@ class EmbeddingEngine:
             self._reranker_error = _safe_backend_error("load", exc)
             self._reranker = None
         return self._reranker
+
+    def retrieval_pool_size(self, final_top_k: int) -> int:
+        if not self.settings.reranker_enabled:
+            return final_top_k
+        return max(final_top_k * 4, self.settings.reranker_top_n * 3, MIN_RERANK_POOL)
 
     def _prepare_for_model(self, texts: list[str], *, query: bool) -> list[str]:
         if "e5" not in self.settings.embedding_model.lower():
@@ -299,6 +309,7 @@ class EmbeddingEngine:
                 "policy_adjusted_score": round(max(0.0, min(final, 1.0)), 4),
                 "retrieval_method": " · ".join(method_parts),
                 "concept_coverage": round(coverage, 4),
+                "strong_coverage": round(strong_coverage, 4),
                 "concept_count": len(concept_groups),
                 "alternative_concepts": alternatives,
                 "requirement_intent": intent.value,
@@ -307,10 +318,28 @@ class EmbeddingEngine:
                 "weak_experience": weak_experience,
                 "operational_experience": operational_experience,
                 "quantified_scale": quantified_scale,
+                "semantic_rule_match": quantified_scale,
+                "exact_requirement": exact_requirement,
             })
 
         candidates.sort(key=lambda item: item["final_score"], reverse=True)
-        return candidates[:top_k]
+        selected = candidates[:top_k]
+        selected_ids = {id(item) for item in selected}
+        selected.extend(
+            item
+            for item in candidates[top_k:]
+            if id(item) not in selected_ids
+            and (
+                item["exact_requirement"]
+                or item["strong_coverage"] > 0.0
+                or item["operational_experience"]
+                or item["quantified_scale"]
+                or item["explicitly_negated"]
+                or item["superficially_mentioned"]
+            )
+        )
+        selected.sort(key=lambda item: item["final_score"], reverse=True)
+        return selected
 
     def retrieve_many(
         self,

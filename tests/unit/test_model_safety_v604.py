@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import uuid
+
 import pytest
 
 from resume_ai.agents.catalog import concept_group_for
+from resume_ai.agents.evidence_agent import EvidenceAgent
+from resume_ai.domain.models import CandidateProfile, JobProfile, Requirement
 from resume_ai.domain.scoring import classify
 from resume_ai.infrastructure.embeddings import EmbeddingEngine
 from resume_ai.settings import Settings
@@ -160,9 +164,11 @@ def test_positive_or_survives_low_reranker(tmp_path) -> None:
 def test_quantified_scale_floor_survives_low_reranker(tmp_path) -> None:
     requirement = "Experiência com aplicações de alto volume de requisições"
     engine = make_engine(tmp_path, 0.0)
+    group = concept_group_for(requirement)
     candidates = engine.retrieve(
         requirement,
         ["Um serviço processa aproximadamente 2 milhões de requisições por dia."],
+        concept_groups=group.alias_groups,
     )
 
     result = engine.rerank(requirement, candidates)[0]
@@ -199,3 +205,36 @@ def test_reranked_candidates_are_globally_resorted(tmp_path) -> None:
     assert len(results) == 2
     assert results[0]["text"] == "Candidato B"
     assert results[0]["final_score"] > results[1]["final_score"]
+
+
+def test_deterministic_high_value_candidate_survives_pre_rerank_pool(tmp_path) -> None:
+    requirement = "Experiência com aplicações de alto volume de requisições"
+    engine = make_engine(tmp_path, 0.0, top_n=2)
+    quantified = "Um serviço processa aproximadamente 2 milhões de requisições por dia."
+    decoys = ["Desenvolvi aplicações de alto volume."] * 13
+
+    candidates = engine.retrieve(requirement, [*decoys, quantified], top_k=12)
+
+    assert any(item["text"] == quantified for item in candidates)
+
+
+def test_high_volume_candidate_survives_retrieval_and_is_considered(tmp_path) -> None:
+    requirement_text = "Experiência com aplicações de alto volume de requisições"
+    engine = make_engine(tmp_path, 0.0, top_n=2)
+    requirement = Requirement(id=str(uuid.uuid4()), text=requirement_text)
+    candidate = CandidateProfile(
+        chunks=[
+            "Desenvolvi aplicações de alto volume.",
+            "Experiência com aplicações web de requisições.",
+            "Um serviço processa aproximadamente 2 milhões de requisições por dia.",
+        ]
+    )
+
+    matches, _ = EvidenceAgent(engine).run(
+        candidate,
+        JobProfile(requirements=[requirement]),
+        top_k=1,
+    )
+
+    assert "2 milhões" in (matches[0].evidence or "")
+    assert matches[0].top_candidates[0].quantified_scale is True
