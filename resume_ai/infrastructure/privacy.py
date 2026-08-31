@@ -40,6 +40,8 @@ _TECHNICAL_CONTEXT_WORDS = {
     "operei",
     "producao",
     "sobre",
+    "tested",
+    "testei",
     "trabalhei",
     "utilizei",
     "utilizo",

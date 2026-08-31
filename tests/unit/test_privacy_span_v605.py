@@ -103,3 +103,12 @@ def test_broad_false_positive_is_split_away_from_technical_term() -> None:
     filtered = _filter_presidio_results(text, [result])
 
     assert all("RabbitMQ" not in text[item.start:item.end] for item in filtered)
+
+
+def test_sentence_initial_technical_verb_does_not_turn_technology_into_person() -> None:
+    text = "Testei Kubernetes em um cluster local."
+    result = person_result(text, "Testei Kubernetes")
+
+    filtered = _filter_presidio_results(text, [result])
+
+    assert all("Kubernetes" not in text[item.start:item.end] for item in filtered)
