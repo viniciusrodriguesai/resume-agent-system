@@ -270,7 +270,10 @@ def operational_experience_phrase(text: str, phrase: str) -> bool:
 
 def evidence_context(text: str, phrase: str) -> EvidenceContext:
     """Classify the context of positive concept mentions independently of intent."""
-    personal = re.compile(r"\b(?:projetos?\s+pesso(?:al|ais)|personal\s+projects?)\b")
+    personal = re.compile(
+        r"\b(?:(?:projetos?|aplicac(?:ao|oes)|apis?|sistemas?)\s+pesso(?:al|ais)|"
+        r"personal\s+(?:projects?|applications?|apis?|systems?))\b"
+    )
     academic = re.compile(
         r"\b(?:academico|academica|faculdade|universidade|laboratorio|curso|"
         r"hackathon|estudo|academic|college|university|laboratory|course|study)\b"

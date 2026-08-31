@@ -77,14 +77,23 @@ def test_professional_experience_rejects_skill_list(
 
 
 @pytest.mark.parametrize("reranker_score", [0.0, 1.0])
+@pytest.mark.parametrize(
+    "evidence",
+    [
+        "Desenvolvi um projeto pessoal em Python.",
+        "Desenvolvi uma aplicação pessoal em Python.",
+        "Desenvolvi uma API pessoal em Python.",
+    ],
+)
 def test_professional_experience_rejects_personal_project(
     tmp_path,
     reranker_score: float,
+    evidence: str,
 ) -> None:
     result = evaluate(
         tmp_path,
         "Experiência profissional com Python",
-        "Desenvolvi um projeto pessoal em Python.",
+        evidence,
         reranker_score,
     )
 
