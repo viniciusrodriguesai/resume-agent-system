@@ -179,7 +179,7 @@ class AnalysisResult(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str = "ok"
-    version: str = "6.0.4"
+    version: str = "6.0.5"
     profile: str
     model_loaded: bool
     memory_mb: float | None = None
