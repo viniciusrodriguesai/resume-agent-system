@@ -270,7 +270,8 @@ def test_superficial_reading_is_not_equivalent_to_operational_evidence(tmp_path)
         concept_groups=concept_alias_groups(requirement),
     )[0]
 
-    assert 0.28 <= superficial["final_score"] < 0.50
+    assert superficial["concept_coverage"] == 0.0
+    assert superficial["final_score"] < 0.28
     assert operational["final_score"] >= 0.80
     assert superficial["final_score"] < operational["final_score"]
 
