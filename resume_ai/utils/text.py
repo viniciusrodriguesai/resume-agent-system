@@ -6,7 +6,7 @@ import re
 import unicodedata
 from collections import Counter
 
-from resume_ai.domain.concepts import RequirementIntent
+from resume_ai.domain.concepts import EvidenceContext, RequirementIntent
 
 STOPWORDS = {
     "a", "as", "ao", "aos", "com", "da", "das", "de", "do", "dos", "e", "em",
@@ -268,13 +268,66 @@ def operational_experience_phrase(text: str, phrase: str) -> bool:
     )
 
 
+def evidence_context(text: str, phrase: str) -> EvidenceContext:
+    """Classify the context of positive concept mentions independently of intent."""
+    personal = re.compile(r"\b(?:projetos?\s+pesso(?:al|ais)|personal\s+projects?)\b")
+    academic = re.compile(
+        r"\b(?:academico|academica|faculdade|universidade|laboratorio|curso|"
+        r"hackathon|estudo|academic|college|university|laboratory|course|study)\b"
+    )
+    production = re.compile(
+        r"\b(?:em\s+producao|de\s+producao|ambiente\s+produtivo|"
+        r"sistema\s+produtivo|servico\s+em\s+producao|production|"
+        r"deployed\s+to\s+production)\b"
+    )
+    professional = re.compile(
+        r"\b(?:experiencia\s+profissional|professional\s+experience|"
+        r"profissionalmente|professionally|emprego|employment|empresa|company|"
+        r"clientes?|clients?|no\s+trabalho|at\s+work|na\s+empresa|cargo|role)\b"
+    )
+    non_production = re.compile(
+        r"\b(?:localmente|cluster\s+local|ambiente\s+local|staging|"
+        r"desenvolvimento|development)\b"
+    )
+
+    has_personal = False
+    has_academic = False
+    has_professional = False
+    has_production = False
+    for context in _phrase_contexts(text, phrase):
+        if _is_negated_context(context):
+            continue
+        local_context = f"{context[0]} {context[1]}"
+        personal_here = personal.search(local_context) is not None
+        academic_here = academic.search(local_context) is not None
+        production_here = production.search(local_context) is not None
+        has_personal = has_personal or personal_here
+        has_academic = has_academic or academic_here
+        has_professional = has_professional or (
+            not personal_here
+            and not academic_here
+            and (
+                professional.search(local_context) is not None
+                or production_here
+            )
+        )
+        has_production = has_production or (
+            production_here
+            and not personal_here
+            and not academic_here
+            and non_production.search(local_context) is None
+        )
+    return EvidenceContext(
+        professional_experience=has_professional,
+        production_experience=has_production,
+        personal_project_context=has_personal,
+        academic_context=has_academic,
+    )
+
+
 def production_experience_phrase(text: str, phrase: str) -> bool:
     """Return true when a positive concept mention is explicitly tied to production."""
-    return any(
-        not _is_negated_context(context)
-        and re.search(r"\b(?:producao|production)\b", f"{context[0]} {context[1]}") is not None
-        for context in _phrase_contexts(text, phrase)
-    )
+    return evidence_context(text, phrase).production_experience
 
 
 def high_volume_request_requirement(text: str) -> bool:

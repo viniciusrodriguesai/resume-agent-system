@@ -15,6 +15,14 @@ class RequirementIntent(StrEnum):
 
 
 @dataclass(frozen=True)
+class EvidenceContext:
+    professional_experience: bool = False
+    production_experience: bool = False
+    personal_project_context: bool = False
+    academic_context: bool = False
+
+
+@dataclass(frozen=True)
 class Concept:
     canonical: str
     aliases: tuple[str, ...]

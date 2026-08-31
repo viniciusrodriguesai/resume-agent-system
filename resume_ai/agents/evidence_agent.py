@@ -48,6 +48,27 @@ def _explain_evidence(
         and not candidate["weak_experience"]
     ):
         details.append("Uma alternativa válida do requisito OR foi comprovada.")
+    elif (
+        candidate.get("requirement_intent") == "professional_experience"
+        and not candidate.get("professional_experience", False)
+    ):
+        details.append(
+            f"{labels or requirement.text} foi citado sem contexto profissional comprovado."
+        )
+    elif (
+        candidate.get("requirement_intent") == "production_experience"
+        and not candidate.get("production_experience", False)
+    ):
+        details.append(
+            f"{labels or requirement.text} não foi comprovado em ambiente de produção."
+        )
+    elif (
+        candidate.get("requirement_intent") == "experience"
+        and not candidate.get("operational_experience", False)
+    ):
+        details.append(
+            f"{labels or requirement.text} foi citado sem evidência de uso aplicado."
+        )
     elif candidate["superficially_mentioned"]:
         details.append(
             f"{labels or requirement.text} foi apenas mencionado em contexto superficial."
