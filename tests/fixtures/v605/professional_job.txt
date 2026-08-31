@@ -1,0 +1,9 @@
+BACKEND ENGINEER
+
+REQUISITOS OBRIGATÓRIOS
+
+- Experiência profissional com Python.
+- Experiência profissional com PostgreSQL.
+- Experiência com Docker.
+- Experiência com Kubernetes em produção.
+- Experiência com Redis em produção.

@@ -1,0 +1,6 @@
+SOFTWARE ENGINEER
+
+REQUISITOS OBRIGATÓRIOS
+
+- Experiência profissional com Python.
+- Experiência com Python em produção.

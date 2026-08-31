@@ -1,0 +1,11 @@
+CURRÍCULO
+
+Lucas Teste
+
+TECNOLOGIAS
+
+Python
+
+PROJETOS PESSOAIS
+
+- Desenvolvi uma aplicação pessoal em Python.

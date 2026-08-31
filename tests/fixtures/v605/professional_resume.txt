@@ -1,0 +1,23 @@
+CURRÍCULO
+
+Lucas Teste
+
+TECNOLOGIAS
+
+Python
+Docker
+Kubernetes
+
+PROJETOS PESSOAIS
+
+- Desenvolvi uma API pessoal em Python.
+- Utilizei Docker localmente.
+- Testei Kubernetes em um cluster local.
+
+EXPERIÊNCIA PROFISSIONAL
+
+Backend Developer — Empresa Exemplo
+
+- Trabalhei profissionalmente com PostgreSQL.
+- Utilizei Redis em produção.
+- Administrei serviços Python em produção.
