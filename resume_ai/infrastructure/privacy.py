@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from copy import copy
 from typing import Any
 
 from resume_ai.domain.models import PrivacyEntity, PrivacyReport
@@ -88,21 +89,90 @@ def _looks_like_person_name_line(value: str) -> bool:
     return len(_technical_spans(value)) < 2
 
 
+def _probable_person_name_spans(value: str, offset: int) -> list[tuple[int, int]]:
+    """Find title-cased name sequences inside a broader Presidio PERSON span."""
+    word_matches = list(
+        re.finditer(r"[^\W\d_]+(?:['â€™-][^\W\d_]+)?", value, flags=re.UNICODE)
+    )
+    connectors = {"da", "das", "de", "do", "dos", "e"}
+    sequences: list[list[re.Match[str]]] = []
+    current: list[re.Match[str]] = []
+    for word_match in word_matches:
+        word = word_match.group()
+        if word[0].isupper() or (current and word.lower() in connectors):
+            current.append(word_match)
+            continue
+        if current:
+            sequences.append(current)
+            current = []
+    if current:
+        sequences.append(current)
+
+    spans: list[tuple[int, int]] = []
+    for sequence in sequences:
+        while sequence and sequence[-1].group().lower() in connectors:
+            sequence.pop()
+        if len(sequence) < 2:
+            continue
+        start = sequence[0].start()
+        end = sequence[-1].end()
+        if _looks_like_person_name_line(value[start:end]):
+            spans.append((offset + start, offset + end))
+    return spans
+
+
 def _filter_presidio_results(text: str, results: list[Any]) -> list[Any]:
-    """Drop PERSON false positives on technical lines while retaining real names."""
+    """Drop PERSON false positives only when their spans are technical terms."""
+    technical_spans = _technical_spans(text)
     filtered: list[Any] = []
     for item in results:
         if item.entity_type != "PERSON":
             filtered.append(item)
             continue
-        line_start = text.rfind("\n", 0, item.start) + 1
-        line_end = text.find("\n", item.end)
-        if line_end < 0:
-            line_end = len(text)
-        line = text[line_start:line_end].strip()
-        if _technical_spans(line) and not _looks_like_person_name_line(line):
+        overlapping_spans = [
+            (max(item.start, technical_start), min(item.end, technical_end))
+            for technical_start, technical_end in technical_spans
+            if max(item.start, technical_start) < min(item.end, technical_end)
+        ]
+        if not overlapping_spans:
+            filtered.append(item)
             continue
-        filtered.append(item)
+
+        person_value = text[item.start:item.end].strip()
+        if _looks_like_person_name_line(person_value):
+            filtered.append(item)
+            continue
+
+        probable_name_spans = _probable_person_name_spans(
+            text[item.start:item.end],
+            item.start,
+        )
+        overlapping_spans = [
+            technical_span
+            for technical_span in overlapping_spans
+            if not any(
+                max(technical_span[0], name_start)
+                < min(technical_span[1], name_end)
+                for name_start, name_end in probable_name_spans
+            )
+        ]
+        if not overlapping_spans:
+            filtered.append(item)
+            continue
+
+        cursor = item.start
+        for technical_start, technical_end in overlapping_spans:
+            if technical_start > cursor:
+                fragment = copy(item)
+                fragment.start = cursor
+                fragment.end = technical_start
+                filtered.append(fragment)
+            cursor = max(cursor, technical_end)
+        if cursor < item.end:
+            fragment = copy(item)
+            fragment.start = cursor
+            fragment.end = item.end
+            filtered.append(fragment)
     return filtered
 
 
