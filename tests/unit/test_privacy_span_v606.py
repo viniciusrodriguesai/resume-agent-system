@@ -140,3 +140,21 @@ Trabalhei com Python em produção.
     assert "Lucas Almeida" not in anonymized
     assert "Python" in anonymized
     assert "Trabalhei" in anonymized
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Desenvolvo APIs REST em Python utilizando FastAPI.",
+        "Administrei Kubernetes em produção.",
+        "Criei imagens Docker para a aplicação.",
+        "Modelei bancos PostgreSQL e otimizei consultas SQL.",
+    ],
+)
+def test_operational_sentences_are_not_mistaken_for_person_names(
+    tmp_path,
+    text: str,
+) -> None:
+    anonymized, _ = privacy_service(tmp_path).anonymize(text)
+
+    assert anonymized == text
