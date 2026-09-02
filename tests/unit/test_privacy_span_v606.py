@@ -51,6 +51,9 @@ def privacy_service(tmp_path) -> PrivacyService:
             ("Bruno", "Santos"),
             "PostgreSQL",
         ),
+        ("Bruno Santos Python Python", ("Bruno", "Santos"), "Python"),
+        ("Bruno Santos Python Kafka", ("Bruno", "Santos"), "Kafka"),
+        ("Bruno Santos NovaCache", ("Bruno", "Santos"), "NovaCache"),
     ],
 )
 def test_regex_privacy_removes_inline_people_without_removing_technology(

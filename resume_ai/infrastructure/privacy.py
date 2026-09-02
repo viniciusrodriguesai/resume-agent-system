@@ -69,7 +69,7 @@ def _technical_spans(text: str) -> list[tuple[int, int]]:
     spans.update(
         match.span()
         for match in re.finditer(
-            r"\b[A-Z][A-Za-z0-9]*(?:API|DB|JS|ML|MQ|SQL)\b",
+            r"\b[A-Z][A-Za-z0-9]*(?:API|Cache|DB|JS|ML|MQ|SQL)\b",
             text,
         )
     )
@@ -122,6 +122,17 @@ def _probable_person_name_spans(value: str, offset: int) -> list[tuple[int, int]
         end = sequence[-1].end()
         if _looks_like_person_name_line(value[start:end]):
             spans.append((offset + start, offset + end))
+            continue
+        for fragment_start, fragment_end in _nontechnical_fragments(
+            value,
+            start,
+            end,
+            _technical_spans(value),
+        ):
+            if _looks_like_person_name_line(value[fragment_start:fragment_end]):
+                spans.append(
+                    (offset + fragment_start, offset + fragment_end)
+                )
     return spans
 
 
