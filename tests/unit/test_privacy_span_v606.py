@@ -4,7 +4,11 @@ from dataclasses import dataclass
 
 import pytest
 
-from resume_ai.infrastructure.privacy import PrivacyService, _filter_presidio_results
+from resume_ai.infrastructure.privacy import (
+    PrivacyService,
+    _filter_presidio_results,
+    _looks_like_person_name_line,
+)
 from resume_ai.settings import Settings
 
 
@@ -123,6 +127,28 @@ def test_presidio_keeps_real_person_while_dropping_operational_verb() -> None:
     fragments = [text[item.start:item.end] for item in filtered]
 
     assert fragments == ["João Silva"]
+
+
+def test_presidio_does_not_discard_single_token_person() -> None:
+    text = "Bruno trabalhou com PostgreSQL."
+    result = FakeResult(entity_type="PERSON", start=0, end=len("Bruno"))
+
+    filtered = _filter_presidio_results(text, [result])
+
+    assert filtered == [result]
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("João da Silva", True),
+        ("João Silva 123", False),
+        ("joão silva", False),
+        ("", False),
+    ],
+)
+def test_probable_person_name_guardrails(value: str, expected: bool) -> None:
+    assert _looks_like_person_name_line(value) is expected
 
 
 def test_name_remains_anonymized_after_contact_placeholders(tmp_path) -> None:
