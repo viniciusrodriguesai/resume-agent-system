@@ -16,6 +16,15 @@ _REQUIREMENT_PREFIX_RE = re.compile(
     r"conhecimento|dominio|familiaridade|knowledge|familiarity)"
     r"(?:\s+(?:com|em|de|with|in|of))?)\s+"
 )
+_PRODUCTION_CONTEXT_SUFFIX_RE = re.compile(
+    r"\s+(?:(?:em|de)\s+producao|in\s+production)$"
+)
+
+
+def _literal_concept(text: str) -> str:
+    """Remove requirement intent wording while retaining the literal concept."""
+    literal = _REQUIREMENT_PREFIX_RE.sub("", text).strip()
+    return _PRODUCTION_CONTEXT_SUFFIX_RE.sub("", literal).strip()
 
 SKILLS: dict[str, tuple[str, list[str]]] = {
     "Python": ("programação", ["python"]),
@@ -100,7 +109,7 @@ def concept_alias_groups(text: str) -> list[list[str]]:
     coordinated_parts = _COORDINATED_CONCEPT_RE.split(coordinated_text)
     if len(coordinated_parts) > 1:
         for part in coordinated_parts:
-            literal = _REQUIREMENT_PREFIX_RE.sub("", part).strip()
+            literal = _literal_concept(part)
             if not literal or len(literal.split()) > 6:
                 continue
             if any(
@@ -112,8 +121,8 @@ def concept_alias_groups(text: str) -> list[list[str]]:
             groups.append([literal])
 
     if not groups:
-        literal = _REQUIREMENT_PREFIX_RE.sub("", normalized).strip()
-        prefix_was_removed = literal != normalized
+        literal = _literal_concept(normalized)
+        prefix_was_removed = _REQUIREMENT_PREFIX_RE.sub("", normalized).strip() != normalized
         if prefix_was_removed and 0 < len(literal.split()) <= 8:
             groups.append([literal])
     return groups
