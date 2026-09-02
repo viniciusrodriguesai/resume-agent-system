@@ -87,3 +87,36 @@ def test_broad_person_span_is_split_around_embedded_technology() -> None:
 
     assert fragments == ["Bruno", "Santos"]
     assert all("Kafka" not in fragment for fragment in fragments)
+
+
+def test_presidio_person_false_positive_does_not_remove_operational_verb() -> None:
+    text = "Trabalhei com PostgreSQL na Empresa X."
+    start = text.index("Trabalhei")
+    result = FakeResult(entity_type="PERSON", start=start, end=start + len("Trabalhei"))
+
+    filtered = _filter_presidio_results(text, [result])
+
+    assert filtered == []
+
+
+def test_presidio_keeps_real_person_while_dropping_operational_verb() -> None:
+    text = "Trabalhei com João Silva usando PostgreSQL."
+    verb_start = text.index("Trabalhei")
+    name_start = text.index("João Silva")
+    results = [
+        FakeResult(
+            entity_type="PERSON",
+            start=verb_start,
+            end=verb_start + len("Trabalhei"),
+        ),
+        FakeResult(
+            entity_type="PERSON",
+            start=name_start,
+            end=name_start + len("João Silva"),
+        ),
+    ]
+
+    filtered = _filter_presidio_results(text, results)
+    fragments = [text[item.start:item.end] for item in filtered]
+
+    assert fragments == ["João Silva"]

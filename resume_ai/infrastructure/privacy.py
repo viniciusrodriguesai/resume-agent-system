@@ -187,6 +187,9 @@ def _filter_presidio_results(text: str, results: list[Any]) -> list[Any]:
         if item.entity_type != "PERSON":
             filtered.append(item)
             continue
+        person_value = normalize(text[item.start:item.end])
+        if " " not in person_value and person_value in _TECHNICAL_CONTEXT_WORDS:
+            continue
         overlapping_spans = [
             (max(item.start, technical_start), min(item.end, technical_end))
             for technical_start, technical_end in technical_spans
