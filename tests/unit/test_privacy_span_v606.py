@@ -106,6 +106,19 @@ def test_presidio_person_false_positive_does_not_remove_operational_verb() -> No
     assert filtered == []
 
 
+def test_broad_cross_line_person_span_does_not_remove_operational_verb() -> None:
+    text = "Prometheus\nTrabalhei com PostgreSQL."
+    result = FakeResult(
+        entity_type="PERSON",
+        start=0,
+        end=text.index("Trabalhei") + len("Trabalhei"),
+    )
+
+    filtered = _filter_presidio_results(text, [result])
+
+    assert filtered == []
+
+
 def test_presidio_keeps_real_person_while_dropping_operational_verb() -> None:
     text = "Trabalhei com João Silva usando PostgreSQL."
     verb_start = text.index("Trabalhei")

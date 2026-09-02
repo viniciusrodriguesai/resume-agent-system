@@ -218,6 +218,11 @@ def _redact_probable_person_names(text: str) -> tuple[str, int]:
     return output, len(person_spans)
 
 
+def _is_operational_person_fragment(text: str, start: int, end: int) -> bool:
+    value = normalize(text[start:end])
+    return len(value.split()) == 1 and value in _TECHNICAL_CONTEXT_WORDS
+
+
 def _filter_presidio_results(text: str, results: list[Any]) -> list[Any]:
     """Drop PERSON false positives only when their spans are technical terms."""
     technical_spans = _technical_spans(text)
@@ -226,8 +231,7 @@ def _filter_presidio_results(text: str, results: list[Any]) -> list[Any]:
         if item.entity_type != "PERSON":
             filtered.append(item)
             continue
-        person_value = normalize(text[item.start:item.end])
-        if " " not in person_value and person_value in _TECHNICAL_CONTEXT_WORDS:
+        if _is_operational_person_fragment(text, item.start, item.end):
             continue
         overlapping_spans = [
             (max(item.start, technical_start), min(item.end, technical_end))
@@ -250,6 +254,8 @@ def _filter_presidio_results(text: str, results: list[Any]) -> list[Any]:
                 source_end,
                 technical_spans,
             ):
+                if _is_operational_person_fragment(text, start, end):
+                    continue
                 fragment = copy(item)
                 fragment.start = start
                 fragment.end = end
