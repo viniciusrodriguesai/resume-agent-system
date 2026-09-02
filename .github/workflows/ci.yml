@@ -22,13 +22,13 @@ jobs:
         include:
           - suite: unit
             python-version: "3.11"
-            paths: tests/unit tests/test_app_smoke.py
+            paths: tests/unit tests/property tests/test_app_smoke.py
           - suite: unit
             python-version: "3.12"
-            paths: tests/unit tests/test_app_smoke.py
+            paths: tests/unit tests/property tests/test_app_smoke.py
           - suite: unit
             python-version: "3.13"
-            paths: tests/unit tests/test_app_smoke.py
+            paths: tests/unit tests/property tests/test_app_smoke.py
           - suite: integration
             python-version: "3.11"
             paths: tests/integration
