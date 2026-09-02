@@ -123,3 +123,20 @@ def test_presidio_keeps_real_person_while_dropping_operational_verb() -> None:
     fragments = [text[item.start:item.end] for item in filtered]
 
     assert fragments == ["João Silva"]
+
+
+def test_name_remains_anonymized_after_contact_placeholders(tmp_path) -> None:
+    text = """Lucas Almeida
+Recife, PE
+lucas.almeida@example.invalid
++55 81 99999-9999
+
+EXPERIÊNCIA
+Trabalhei com Python em produção.
+"""
+
+    anonymized, _ = privacy_service(tmp_path).anonymize(text)
+
+    assert "Lucas Almeida" not in anonymized
+    assert "Python" in anonymized
+    assert "Trabalhei" in anonymized

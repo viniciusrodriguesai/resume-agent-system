@@ -102,6 +102,12 @@ def _probable_person_name_spans(value: str, offset: int) -> list[tuple[int, int]
     sequences: list[list[re.Match[str]]] = []
     current: list[re.Match[str]] = []
     for word_match in word_matches:
+        if current and re.search(
+            r"[\r\n.!?;]",
+            value[current[-1].end():word_match.start()],
+        ):
+            sequences.append(current)
+            current = []
         word = word_match.group()
         if word[0].isupper() or (current and word.lower() in connectors):
             current.append(word_match)
