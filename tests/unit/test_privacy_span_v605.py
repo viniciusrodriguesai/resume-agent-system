@@ -58,7 +58,7 @@ def test_exact_technical_person_false_positive_is_suppressed(
         ("João Silva utilizou AlphaDB.", "João Silva", "AlphaDB"),
     ],
 )
-def test_real_person_is_retained_for_anonymization_despite_technology_on_line(
+def test_real_person_fragments_are_retained_without_overlapping_technology(
     text: str,
     person: str,
     technology: str,
@@ -66,9 +66,15 @@ def test_real_person_is_retained_for_anonymization_despite_technology_on_line(
     result = person_result(text, person)
 
     filtered = _filter_presidio_results(text, [result])
-
+    fragments = [text[item.start:item.end] for item in filtered]
     assert technology in text
-    assert filtered == [result]
+    assert fragments
+    assert all(technology not in fragment for fragment in fragments)
+    assert any(
+        token in fragment
+        for token in person.split()
+        for fragment in fragments
+    )
 
 
 def test_non_person_results_are_untouched() -> None:
@@ -78,11 +84,15 @@ def test_non_person_results_are_untouched() -> None:
     assert _filter_presidio_results(text, [result]) == [result]
 
 
-def test_technology_inside_name_is_not_carved_from_broad_person_span() -> None:
+def test_technology_inside_name_is_carved_from_broad_person_span() -> None:
     text = "Maria Kafka desenvolveu uma API em FastAPI."
     result = FakeResult(entity_type="PERSON", start=0, end=text.index(" em FastAPI"))
 
-    assert _filter_presidio_results(text, [result]) == [result]
+    filtered = _filter_presidio_results(text, [result])
+    fragments = [text[item.start:item.end].strip() for item in filtered]
+
+    assert fragments == ["Maria"]
+    assert all("Kafka" not in fragment for fragment in fragments)
 
 
 def test_broad_person_span_anonymizes_name_but_excludes_unrelated_technology() -> None:
@@ -92,8 +102,11 @@ def test_broad_person_span_anonymizes_name_but_excludes_unrelated_technology() -
     filtered = _filter_presidio_results(text, [result])
 
     assert filtered
-    assert any("Kafka Oliveira" in text[item.start:item.end] for item in filtered)
-    assert all("PostgreSQL" not in text[item.start:item.end] for item in filtered)
+    fragments = [text[item.start:item.end] for item in filtered]
+
+    assert any("Oliveira" in fragment for fragment in fragments)
+    assert all("Kafka" not in fragment for fragment in fragments)
+    assert all("PostgreSQL" not in fragment for fragment in fragments)
 
 
 def test_broad_false_positive_is_split_away_from_technical_term() -> None:

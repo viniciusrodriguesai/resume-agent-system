@@ -79,6 +79,8 @@ def _technical_spans(text: str) -> list[tuple[int, int]]:
 def _looks_like_person_name_line(value: str) -> bool:
     if not value or re.search(r"[@\d:<>]", value):
         return False
+    if re.fullmatch(r"[A-Z0-9_]+(?:-[A-Z0-9_]+)+", value):
+        return False
     normalized_words = set(normalize(value).split())
     if normalized_words & _TECHNICAL_CONTEXT_WORDS:
         return False
@@ -123,6 +125,60 @@ def _probable_person_name_spans(value: str, offset: int) -> list[tuple[int, int]
     return spans
 
 
+def _nontechnical_fragments(
+    text: str,
+    start: int,
+    end: int,
+    technical_spans: list[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    """Split a PERSON span around overlapping technology spans."""
+    overlaps = [
+        (max(start, technical_start), min(end, technical_end))
+        for technical_start, technical_end in technical_spans
+        if max(start, technical_start) < min(end, technical_end)
+    ]
+    if not overlaps:
+        return [(start, end)]
+
+    fragments: list[tuple[int, int]] = []
+    cursor = start
+    for technical_start, technical_end in overlaps:
+        fragment_start = cursor
+        fragment_end = technical_start
+        while fragment_start < fragment_end and text[fragment_start].isspace():
+            fragment_start += 1
+        while fragment_end > fragment_start and text[fragment_end - 1].isspace():
+            fragment_end -= 1
+        if fragment_start < fragment_end:
+            fragments.append((fragment_start, fragment_end))
+        cursor = max(cursor, technical_end)
+
+    fragment_start = cursor
+    fragment_end = end
+    while fragment_start < fragment_end and text[fragment_start].isspace():
+        fragment_start += 1
+    while fragment_end > fragment_start and text[fragment_end - 1].isspace():
+        fragment_end -= 1
+    if fragment_start < fragment_end:
+        fragments.append((fragment_start, fragment_end))
+    return fragments
+
+
+def _redact_probable_person_names(text: str) -> tuple[str, int]:
+    """Anonymize detectable title-cased names without consuming technologies."""
+    technical_spans = _technical_spans(text)
+    person_spans = _probable_person_name_spans(text, 0)
+    fragments = [
+        fragment
+        for start, end in person_spans
+        for fragment in _nontechnical_fragments(text, start, end, technical_spans)
+    ]
+    output = text
+    for start, end in reversed(fragments):
+        output = f"{output[:start]}<NOME_CANDIDATO>{output[end:]}"
+    return output, len(person_spans)
+
+
 def _filter_presidio_results(text: str, results: list[Any]) -> list[Any]:
     """Drop PERSON false positives only when their spans are technical terms."""
     technical_spans = _technical_spans(text)
@@ -140,41 +196,22 @@ def _filter_presidio_results(text: str, results: list[Any]) -> list[Any]:
             filtered.append(item)
             continue
 
-        person_value = text[item.start:item.end].strip()
-        if _looks_like_person_name_line(person_value):
-            filtered.append(item)
-            continue
-
         probable_name_spans = _probable_person_name_spans(
             text[item.start:item.end],
             item.start,
         )
-        overlapping_spans = [
-            technical_span
-            for technical_span in overlapping_spans
-            if not any(
-                max(technical_span[0], name_start)
-                < min(technical_span[1], name_end)
-                for name_start, name_end in probable_name_spans
-            )
-        ]
-        if not overlapping_spans:
-            filtered.append(item)
-            continue
-
-        cursor = item.start
-        for technical_start, technical_end in overlapping_spans:
-            if technical_start > cursor:
+        source_spans = probable_name_spans or [(item.start, item.end)]
+        for source_start, source_end in source_spans:
+            for start, end in _nontechnical_fragments(
+                text,
+                source_start,
+                source_end,
+                technical_spans,
+            ):
                 fragment = copy(item)
-                fragment.start = cursor
-                fragment.end = technical_start
+                fragment.start = start
+                fragment.end = end
                 filtered.append(fragment)
-            cursor = max(cursor, technical_end)
-        if cursor < item.end:
-            fragment = copy(item)
-            fragment.start = cursor
-            fragment.end = item.end
-            filtered.append(fragment)
     return filtered
 
 
@@ -211,6 +248,9 @@ class PrivacyService:
                 counts[entity_type] += len(matches)
                 output = re.sub(pattern, f"<{entity_type}>", output, flags=re.IGNORECASE)
 
+        output, probable_names = _redact_probable_person_names(output)
+        if probable_names:
+            counts["NOME_CANDIDATO"] += probable_names
         if not counts["NOME_CANDIDATO"]:
             lines = output.splitlines()
             for index, line in enumerate(lines[:4]):
