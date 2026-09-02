@@ -145,17 +145,22 @@ def tfidf_similarity(a: str, b: str) -> float:
 
 def _phrase_contexts(text: str, phrase: str) -> list[tuple[str, str]]:
     normalized_phrase = normalize(phrase)
-    normalized_text = normalize(text)
-    if not normalized_phrase or not normalized_text:
+    if not normalized_phrase:
         return []
     pattern = rf"(?<![a-z0-9+#]){re.escape(normalized_phrase)}(?![a-z0-9+#])"
-    return [
-        (
-            normalized_text[max(0, match.start() - 60) : match.start()],
-            normalized_text[match.end() : match.end() + 60],
-        )
-        for match in re.finditer(pattern, normalized_text)
-    ]
+    segments = re.split(
+        r"(?<=[!?;])\s*|(?<=\.)\s+|[\r\n]+|\s+[â€¢*â€“â€”]\s+",
+        text or "",
+    )
+    contexts: list[tuple[str, str]] = []
+    for segment in segments:
+        normalized_segment = normalize(segment)
+        for match in re.finditer(pattern, normalized_segment):
+            contexts.append((
+                normalized_segment[max(0, match.start() - 60) : match.start()],
+                normalized_segment[match.end() : match.end() + 60],
+            ))
+    return contexts
 
 
 def _is_negated_context(context: tuple[str, str]) -> bool:
