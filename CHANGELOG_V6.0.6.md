@@ -46,11 +46,17 @@ feature nova ou alteração de thresholds globais.
 
 ## VALIDAÇÃO
 
-- 505 testes aprovados e 2 ignorados na suíte completa pré-release;
-- coverage comparável de 90,56%, acima dos 90,25% medidos na auditoria da
+- 511 testes aprovados e 2 ignorados na suíte completa pré-release;
+- coverage comparável de 90,58%, acima dos 90,25% medidos na auditoria da
   6.0.5 com o mesmo escopo;
+- 500 casos controlados executados com Microsoft Presidio real: zero vazamentos
+  de pessoa, zero tecnologias removidas e zero falsos positivos do verbo
+  operacional `Trabalhei`;
 - mutation testing: 120 mutantes, 84 mortos, 36 sobreviventes, zero timeout e
   score de 70,00%;
 - Ruff, mypy, avaliação semântica, `pip check` e auditorias runtime/dev
   aprovados;
+- wheel, sdist, import limpo, API e Streamlit aprovados em Python 3.13;
+- Docker Compose validado; runtime Docker não validado porque o daemon local
+  estava indisponível;
 - CI aprovado em Python 3.11, 3.12 e 3.13.
