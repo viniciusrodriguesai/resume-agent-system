@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import argparse
 import time
+from typing import Literal
 
 import psutil
 from sentence_transformers import SentenceTransformer
 
-MODELS = [
+Backend = Literal["torch", "onnx", "openvino"]
+
+MODELS: list[tuple[str, str, Backend]] = [
     ("MiniLM Torch", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", "torch"),
     ("E5-small Torch", "intfloat/multilingual-e5-small", "torch"),
 ]
