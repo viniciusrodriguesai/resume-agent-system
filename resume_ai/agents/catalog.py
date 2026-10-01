@@ -27,6 +27,9 @@ def _literal_concept(text: str) -> str:
     return _PRODUCTION_CONTEXT_SUFFIX_RE.sub("", literal).strip()
 
 SKILLS: dict[str, tuple[str, list[str]]] = {
+    "Data Science": ("formação", ["data science", "ciência de dados", "ciencia de dados"]),
+    "Artificial Intelligence": ("formação", ["artificial intelligence", "inteligência artificial", "inteligencia artificial"]),
+    "Computer Science": ("formação", ["computer science", "ciência da computação", "ciencia da computacao"]),
     "Python": ("programação", ["python"]),
     "SQL": ("banco de dados", ["sql", "structured query language"]),
     "Pandas": ("dados e IA", ["pandas"]),
@@ -105,6 +108,24 @@ def concept_alias_groups(text: str) -> list[list[str]]:
         if any(exact_phrase(normalized, value) for value in values):
             groups.append(list(dict.fromkeys(values)))
 
+    # Enrollment is a state and an academic field, not a completed degree.
+    if any(exact_phrase(normalized, marker) for marker in
+           ("estar cursando", "cursando", "currently enrolled", "enrolled in", "current student")):
+        fields = [alias for name in ("Data Science", "Artificial Intelligence",
+                                    "Computer Science", "Estatística")
+                  for alias in [name, *SKILLS[name][1]]
+                  if any(exact_phrase(normalized, value)
+                         for value in [name, *SKILLS[name][1]])]
+        if fields:
+            return [["cursando", "estar cursando", "enrolled in", "currently enrolled",
+                     "student at", "student in", "undergraduate student"], fields]
+
+    # A mention of ML alone does not establish deployment.
+    if any(exact_phrase(normalized, marker) for marker in
+           ("implantação", "implantacao", "deployment", "deploying", "deploy")):
+        groups.append(["implantação", "implantacao", "deployment", "deployed",
+                       "deploying", "implantei", "implantados", "implantado"])
+
     coordinated_text = normalize(re.sub(r"[,;]", " and ", text))
     coordinated_parts = _COORDINATED_CONCEPT_RE.split(coordinated_text)
     if len(coordinated_parts) > 1:
@@ -139,6 +160,9 @@ def concept_group_for(text: str) -> ConceptGroup:
         if len(_COORDINATED_CONCEPT_RE.split(normalized)) > 1
         else "SINGLE"
     )
+    if any(exact_phrase(normalized, marker) for marker in
+           ("estar cursando", "cursando", "currently enrolled", "enrolled in", "current student")):
+        operator = "AND"
     concepts: list[Concept] = []
     for aliases in concept_alias_groups(text):
         canonical = aliases[0]
