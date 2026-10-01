@@ -4,11 +4,9 @@ import time
 from dataclasses import asdict, dataclass
 from typing import Any
 
-import psutil
-
 from evaluation.benchmarks.rankers import Ranker
 from evaluation.metrics.classification import f1_score, precision, recall
-from evaluation.metrics.performance import PerformanceStats, summarize_performance
+from evaluation.metrics.performance import MemoryTracker, PerformanceStats, summarize_performance
 from evaluation.metrics.ranking import mean_reciprocal_rank, ndcg_at_k, precision_at_k, recall_at_k
 from evaluation.schema import RetrievalCase
 
@@ -47,9 +45,7 @@ def run_retrieval_benchmark(
     if runs <= 0:
         raise ValueError("runs must be greater than zero")
 
-    process = psutil.Process()
-    baseline_rss = process.memory_info().rss
-    peak_rss = baseline_rss
+    memory = MemoryTracker()
     latencies_ms: list[float] = []
     reference_rankings: list[list[str]] | None = None
 
@@ -59,7 +55,7 @@ def run_retrieval_benchmark(
             started = time.perf_counter()
             ranking = ranker.rank(case)
             latencies_ms.append((time.perf_counter() - started) * 1000.0)
-            peak_rss = max(peak_rss, process.memory_info().rss)
+            memory.sample()
             current_rankings.append(ranking)
         if reference_rankings is None:
             reference_rankings = current_rankings
@@ -94,7 +90,7 @@ def run_retrieval_benchmark(
             for ranking, relevant_ids in zip(rankings, relevance_sets, strict=True)
         ) / len(cases),
     }
-    memory_delta_mb = max(0.0, (peak_rss - baseline_rss) / 1024 / 1024)
+    memory_delta_mb = memory.delta_mb()
     return RetrievalBenchmarkResult(
         variant=ranker.name,
         case_count=len(cases),
