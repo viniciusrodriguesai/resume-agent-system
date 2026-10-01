@@ -5,9 +5,7 @@ import time
 from dataclasses import asdict, dataclass
 from typing import Any
 
-import psutil
-
-from evaluation.metrics.performance import PerformanceStats, summarize_performance
+from evaluation.metrics.performance import MemoryTracker, PerformanceStats, summarize_performance
 from evaluation.schema import AnalysisCase
 from resume_ai.application.analyze_resume import ResumeAnalysisService
 from resume_ai.domain.models import AnalysisRequest
@@ -48,9 +46,7 @@ def run_pipeline_benchmark(
     if service.settings.cache_enabled:
         raise ValueError("pipeline benchmarks require cache_enabled=false")
 
-    process = psutil.Process()
-    baseline_rss = process.memory_info().rss
-    peak_rss = baseline_rss
+    memory = MemoryTracker()
     latencies_ms: list[float] = []
     agent_durations: dict[str, list[float]] = {}
     expected_labels: list[str] = []
@@ -69,7 +65,7 @@ def run_pipeline_benchmark(
                 )
             )
             latencies_ms.append((time.perf_counter() - started) * 1000.0)
-            peak_rss = max(peak_rss, process.memory_info().rss)
+            memory.sample()
 
             actual_by_requirement = {normalize(match.requirement.text): match.status for match in result.matches}
             expected_by_requirement = {
@@ -95,7 +91,7 @@ def run_pipeline_benchmark(
             raise RuntimeError("pipeline produced non-deterministic labels across benchmark runs")
 
     predictions = reference_predictions or []
-    memory_delta_mb = max(0.0, (peak_rss - baseline_rss) / 1024 / 1024)
+    memory_delta_mb = memory.delta_mb()
     engine_status = service.engine.status
     backend_status = {
         "profile": service.settings.profile,

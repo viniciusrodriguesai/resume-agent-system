@@ -4,6 +4,8 @@ A local application that compares a resume with a job description and returns ev
 
 [Português](README.pt-BR.md) · [Architecture](docs/architecture.md) · [API](docs/API.md) · [Validation](VALIDATION.md)
 
+[Try the runnable lexical demo](docs/DEMO.md), including an actual output walkthrough and observed matching failures.
+
 ## What it demonstrates
 
 - Separate parsing, requirement extraction, retrieval, scoring and review stages.

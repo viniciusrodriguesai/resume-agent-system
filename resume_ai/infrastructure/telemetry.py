@@ -64,9 +64,14 @@ class Telemetry:
             target[name] = round((time.perf_counter() - start) * 1000, 2)
 
     @staticmethod
-    def process_memory_mb() -> float:
-        process = psutil.Process()
-        return float(round(process.memory_info().rss / 1024 / 1024, 2))
+    def process_memory_mb() -> float | None:
+        # Optional observability must not abort a completed analysis when the
+        # process namespace or permissions prevent access to memory statistics.
+        try:
+            process = psutil.Process()
+            return float(round(process.memory_info().rss / 1024 / 1024, 2))
+        except (psutil.Error, OSError):
+            return None
 
     def info(self, event: str, **safe_fields: object) -> None:
         correlation_id = current_correlation_id()

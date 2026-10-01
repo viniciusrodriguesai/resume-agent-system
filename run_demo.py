@@ -10,7 +10,7 @@ def main() -> None:
     resume = (base / "examples" / "sample_resume.txt").read_text(encoding="utf-8")
     job = (base / "examples" / "vaga_exemplo.txt").read_text(encoding="utf-8")
     settings = Settings.for_profile("demo").model_copy(
-        update={"embedding_enabled": False, "history_enabled": False}
+        update={"embedding_enabled": False, "reranker_enabled": False, "history_enabled": False}
     )
     result = ResumeAnalysisService(settings).analyze(
         AnalysisRequest(resume_text=resume, job_text=job)
