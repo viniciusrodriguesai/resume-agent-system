@@ -1,3 +1,20 @@
+# Validation evidence
+
+## Portfolio audit — 2026-10-01
+
+Local environment: Linux, Python 3.12.14, NumPy 2.2.4; optional embedding and reranking models disabled. Dependency versions and results describe this environment, not all installations.
+
+- Test suite: 511 passed, 2 skipped after the dependency bound change (11.92 seconds).
+- Ruff passed during the audit.
+- Mypy: no issues in 62 source files with the default Python 3.11 target after selecting NumPy 2.2.4. NumPy 2.5.3 had introduced Python 3.12 syntax in dependency stubs that this target could not parse.
+- A three-run lexical pipeline benchmark completed on four synthetic cases. Perfect scores on this tiny internal fixture are not evidence of generalization; no real-applicant accuracy claim is made.
+
+Large optional models, Docker deployment, real-world hiring outcomes, fairness and probability calibration were not validated. The two skipped tests do not count as passed checks.
+
+## Historical V5.2 evidence
+
+The following section is preserved for historical context and does not describe the current suite:
+
 # Validação da V5.2
 
 - todos os arquivos Python passaram por `compileall`;
