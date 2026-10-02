@@ -1,0 +1,542 @@
+{
+  "mode": "lexical",
+  "annotation_origin": "Internal synthetic cases and labels authored during portfolio improvement; not independent human annotations.",
+  "total": 36,
+  "accuracy": 0.8333,
+  "macro_f1": 0.8036,
+  "per_label": {
+    "matched": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 14
+    },
+    "partial": {
+      "precision": 0.4545,
+      "recall": 1.0,
+      "f1": 0.625,
+      "support": 5
+    },
+    "missing": {
+      "precision": 1.0,
+      "recall": 0.6471,
+      "f1": 0.7857,
+      "support": 17
+    }
+  },
+  "model_revisions": {},
+  "engine_status": {
+    "embedding_enabled": false,
+    "embedding_model": "intfloat/multilingual-e5-small",
+    "embedding_backend": "torch",
+    "embedding_loaded": false,
+    "embedding_error": null,
+    "reranker_enabled": false,
+    "reranker_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+    "reranker_loaded": false,
+    "reranker_error": null,
+    "chunk_embedding_cache_entries": 0
+  },
+  "settings": {
+    "profile": "demo",
+    "project_root": "/workspace/scratch/5d94770aff53/resume-model-evaluation",
+    "data_dir": "/workspace/scratch/5d94770aff53/resume-model-evaluation/data",
+    "cache_dir": "/workspace/scratch/5d94770aff53/resume-model-evaluation/.cache/resume-ai",
+    "embedding_enabled": false,
+    "embedding_model": "intfloat/multilingual-e5-small",
+    "embedding_backend": "torch",
+    "embedding_device": "cpu",
+    "embedding_batch_size": 16,
+    "normalize_embeddings": true,
+    "reranker_enabled": false,
+    "reranker_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+    "reranker_top_n": 3,
+    "docling_enabled": false,
+    "presidio_enabled": false,
+    "full_ner_enabled": false,
+    "top_k": 3,
+    "max_requirements": 30,
+    "max_chunk_chars": 420,
+    "max_document_chars": 30000,
+    "max_job_chars": 30000,
+    "max_revisions": 1,
+    "cache_enabled": false,
+    "cache_backend": "memory",
+    "cache_max_entries": 128,
+    "cache_ttl_seconds": 86400,
+    "store_raw_documents": false,
+    "store_anonymized_documents": false,
+    "max_upload_mb": 10,
+    "allowed_extensions": [
+      ".pdf",
+      ".docx",
+      ".txt"
+    ],
+    "log_pii": false,
+    "log_level": "ERROR",
+    "api_key": null,
+    "environment": "development",
+    "allowed_profiles": [
+      "demo",
+      "balanced",
+      "complete"
+    ],
+    "api_max_body_mb": 1,
+    "api_rate_limit_per_minute": 60,
+    "require_login": false,
+    "cors_origins": "http://localhost:8501,http://127.0.0.1:8501",
+    "history_enabled": false,
+    "history_max_entries": 500,
+    "history_query_limit": 100,
+    "history_busy_timeout_ms": 5000
+  },
+  "seed": 0,
+  "torch_threads": 2,
+  "load_seconds_includes_download_if_uncached": 8.120005077216774e-07,
+  "median_case_seconds": 0.007899010500295844,
+  "p95_case_seconds": 0.010100752999278484,
+  "process_high_water_rss_bytes": 252018688,
+  "python": "3.12.14",
+  "versions": {
+    "torch": "2.8.0+cpu",
+    "sentence-transformers": "5.1.2",
+    "transformers": "4.57.6",
+    "numpy": "2.2.6",
+    "pandas": "3.0.6",
+    "rapidfuzz": "3.14.6",
+    "pydantic": "2.13.5"
+  },
+  "dataset_sha256": "fc05181ca755c56a7353bdc01806e3383166576d386d95686f1207d5741539a8",
+  "script_sha256": "84b236487b9dffe6608e27c42d967c6ed66ee2119923f8d6127724714c5ee5c6",
+  "source_commit": "844ce74f75aac7f1b31481749eab2cbe7388e9e9",
+  "cases": [
+    {
+      "id": "challenge-001",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "enrollment",
+      "score": 0.8714,
+      "evidence": "Data Science student at.",
+      "seconds": 0.01801972800058138,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-002",
+      "expected": "missing",
+      "predicted": "partial",
+      "category": "enrollment",
+      "score": 0.49,
+      "evidence": "Completed a degree in Data Science in 2020.",
+      "seconds": 0.007901940000010654,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-003",
+      "expected": "missing",
+      "predicted": "partial",
+      "category": "enrollment",
+      "score": 0.35,
+      "evidence": "History student at.",
+      "seconds": 0.007146210000428255,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-004",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "enrollment",
+      "score": 0.8742,
+      "evidence": "Computer Science student at.",
+      "seconds": 0.007915889998912462,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-005",
+      "expected": "missing",
+      "predicted": "partial",
+      "category": "enrollment",
+      "score": 0.49,
+      "evidence": "Completed a degree in Computer Science in 2020.",
+      "seconds": 0.007896081000581034,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-006",
+      "expected": "missing",
+      "predicted": "partial",
+      "category": "enrollment",
+      "score": 0.35,
+      "evidence": "History student at.",
+      "seconds": 0.007503037999413209,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-007",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "enrollment",
+      "score": 0.8772,
+      "evidence": "Artificial Intelligence student at.",
+      "seconds": 0.009434003999558627,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-008",
+      "expected": "missing",
+      "predicted": "partial",
+      "category": "enrollment",
+      "score": 0.4647,
+      "evidence": "Completed a degree in Artificial Intelligence in 2020.",
+      "seconds": 0.010100752999278484,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-009",
+      "expected": "missing",
+      "predicted": "partial",
+      "category": "enrollment",
+      "score": 0.35,
+      "evidence": "History student at.",
+      "seconds": 0.009048187001098995,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-010",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "negation",
+      "score": 0.15,
+      "evidence": "No experience with Python.",
+      "seconds": 0.00700396600041131,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 0% · menção negada"
+      ]
+    },
+    {
+      "id": "challenge-011",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "negation",
+      "score": 0.15,
+      "evidence": "Não tenho experiência com Python.",
+      "seconds": 0.007406572000036249,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 0% · menção negada"
+      ]
+    },
+    {
+      "id": "challenge-012",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "applied",
+      "score": 0.8912,
+      "evidence": "Implemented services using Python in production.",
+      "seconds": 0.00933778299986443,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100% · contexto operacional"
+      ]
+    },
+    {
+      "id": "challenge-013",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "negation",
+      "score": 0.15,
+      "evidence": "No experience with Docker.",
+      "seconds": 0.007517419000578229,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 0% · menção negada"
+      ]
+    },
+    {
+      "id": "challenge-014",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "negation",
+      "score": 0.15,
+      "evidence": "Não tenho experiência com Docker.",
+      "seconds": 0.007886325000072247,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 0% · menção negada"
+      ]
+    },
+    {
+      "id": "challenge-015",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "applied",
+      "score": 0.8912,
+      "evidence": "Implemented services using Docker in production.",
+      "seconds": 0.008740292998481891,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100% · contexto operacional"
+      ]
+    },
+    {
+      "id": "challenge-016",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "negation",
+      "score": 0.15,
+      "evidence": "No experience with SQL.",
+      "seconds": 0.0059107179986312985,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 0% · menção negada"
+      ]
+    },
+    {
+      "id": "challenge-017",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "negation",
+      "score": 0.15,
+      "evidence": "Não tenho experiência com SQL.",
+      "seconds": 0.007210116000351263,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 0% · menção negada"
+      ]
+    },
+    {
+      "id": "challenge-018",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "applied",
+      "score": 0.8912,
+      "evidence": "Implemented services using SQL in production.",
+      "seconds": 0.006654109000010067,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100% · contexto operacional"
+      ]
+    },
+    {
+      "id": "challenge-019",
+      "expected": "partial",
+      "predicted": "partial",
+      "category": "cumulative",
+      "score": 0.35,
+      "evidence": "Implemented a project using Python.",
+      "seconds": 0.00801911599955929,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-020",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "cumulative",
+      "score": 0.8836,
+      "evidence": "Implemented a project using Python and SQL.",
+      "seconds": 0.007935329000247293,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-021",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "alternatives",
+      "score": 0.8525,
+      "evidence": "Implemented a project using Python.",
+      "seconds": 0.0071076519998314325,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-022",
+      "expected": "partial",
+      "predicted": "partial",
+      "category": "cumulative",
+      "score": 0.35,
+      "evidence": "Implemented a project using Docker.",
+      "seconds": 0.00905328500084579,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-023",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "cumulative",
+      "score": 0.8836,
+      "evidence": "Implemented a project using Docker and Linux.",
+      "seconds": 0.008385167000596994,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-024",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "alternatives",
+      "score": 0.8487,
+      "evidence": "Implemented a project using Docker.",
+      "seconds": 0.007447343999956502,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-025",
+      "expected": "partial",
+      "predicted": "partial",
+      "category": "cumulative",
+      "score": 0.35,
+      "evidence": "Implemented a project using Pandas.",
+      "seconds": 0.008215371000915184,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-026",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "cumulative",
+      "score": 0.8836,
+      "evidence": "Implemented a project using Pandas and NumPy.",
+      "seconds": 0.008123403000354301,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-027",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "alternatives",
+      "score": 0.8487,
+      "evidence": "Implemented a project using Pandas.",
+      "seconds": 0.007068682998578879,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-028",
+      "expected": "partial",
+      "predicted": "partial",
+      "category": "deployment",
+      "score": 0.4422,
+      "evidence": "Built predictive machine learning models.",
+      "seconds": 0.01115048400060914,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 50%"
+      ]
+    },
+    {
+      "id": "challenge-029",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "deployment",
+      "score": 0.8616,
+      "evidence": "Deployed machine learning models behind an inference API.",
+      "seconds": 0.009583032999216812,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100%"
+      ]
+    },
+    {
+      "id": "challenge-030",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "deployment",
+      "score": 0.15,
+      "evidence": "No experience with deployment of machine learning models.",
+      "seconds": 0.00930612499905692,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 0% · menção negada"
+      ]
+    },
+    {
+      "id": "challenge-031",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "context",
+      "score": 0.0,
+      "evidence": null,
+      "seconds": 0.005570366000029026,
+      "retrieval_methods": []
+    },
+    {
+      "id": "challenge-032",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "context",
+      "score": 0.1473,
+      "evidence": "Worked in a kitchen, managing food orders.",
+      "seconds": 0.006502840000393917,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 0%"
+      ]
+    },
+    {
+      "id": "challenge-033",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "context",
+      "score": 0.0,
+      "evidence": null,
+      "seconds": 0.007768597999529447,
+      "retrieval_methods": []
+    },
+    {
+      "id": "challenge-034",
+      "expected": "missing",
+      "predicted": "missing",
+      "category": "context",
+      "score": 0.2649,
+      "evidence": "Read articles about Docker.",
+      "seconds": 0.007628798000951065,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 0% · menção superficial"
+      ]
+    },
+    {
+      "id": "challenge-035",
+      "expected": "partial",
+      "predicted": "partial",
+      "category": "context",
+      "score": 0.49,
+      "evidence": "Implemented an AWS service in a personal project.",
+      "seconds": 0.008567741999286227,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100% · contexto operacional"
+      ]
+    },
+    {
+      "id": "challenge-036",
+      "expected": "matched",
+      "predicted": "matched",
+      "category": "context",
+      "score": 0.8778,
+      "evidence": "Developed a production service using PostgreSQL.",
+      "seconds": 0.007566844000393758,
+      "retrieval_methods": [
+        "TF-IDF + RapidFuzz · cobertura de conceitos 100% · contexto operacional"
+      ]
+    }
+  ]
+}

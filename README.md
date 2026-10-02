@@ -83,3 +83,7 @@ Academic project by Vinicius Rodrigues (Vinicius Mangueira). [MIT](LICENSE).
 ## Expanded evaluation and hosting
 
 Inspect the [36-case end-to-end challenge](docs/CHALLENGE_EVALUATION.md), including six missing/partial disagreements, and the [independent annotation handoff](docs/INDEPENDENT_EVALUATION.md). This remains internal evidence. The [Render guide](docs/HOSTED_DEMO.md) prepares the actual lexical Streamlit app for a free instance; a live URL is not claimed until verified.
+
+### Measured optional models
+
+The [36-case internal ablation](docs/MODEL_ABLATION.md) ran E5-small embeddings and a multilingual MiniLM reranker without fallback. All three modes produced identical labels (accuracy 0.8333 / macro-F1 0.8036); optional models increased measured CPU latency. Independent annotation remains pending.
