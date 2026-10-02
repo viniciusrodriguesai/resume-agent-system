@@ -18,14 +18,17 @@ somente aos campos que não foram definidos explicitamente.
 
 | Perfil | Embedding | Backend | Reranker | Parser e PII | Top K |
 |---|---|---|---|---|---|
-| `demo` | MiniLM multilingual | Torch | não | parsers base e regex | 3 |
+| `demo` | desabilitado (MiniLM opcional) | Torch | não | parsers base e regex | 3 |
 | `balanced` | multilingual-e5-small | Torch | top 3 | parsers base e regex | 4 |
 | `complete` | BGE-M3 | Torch | BGE reranker top 5 | Docling e Presidio | 5 |
 
 Perfis declaram intenção. Dependências e modelos continuam opcionais: falha de
-carregamento aciona fallback e aparece em `engine_status`. O perfil demo tenta
-embedding por padrão; para execução garantidamente lexical, defina
-`RESUME_EMBEDDING_ENABLED=false`.
+carregamento aciona fallback e aparece em `engine_status`. O perfil demo usa o
+modo lexical por padrão. Para experimentar embedding, instale as dependências
+opcionais e defina `RESUME_EMBEDDING_ENABLED=true`. Os perfis balanced e complete
+ainda habilitam modelos quando escolhidos explicitamente. A ablação interna de
+36 casos não mostrou melhoria de rótulos com os modelos opcionais; isso não
+estabelece equivalência em outras vagas. Veja [a ablação](MODEL_ABLATION.md).
 
 ## Caminhos
 
@@ -43,7 +46,7 @@ permissão de escrita para UID 10001.
 
 | Campo | Padrão | Observação |
 |---|---|---|
-| `RESUME_EMBEDDING_ENABLED` | `true` | permite tentativa de embedding |
+| `RESUME_EMBEDDING_ENABLED` | `false` (demo) | permite tentativa de embedding |
 | `RESUME_EMBEDDING_MODEL` | MiniLM multilingual | identificador Sentence Transformers |
 | `RESUME_EMBEDDING_BACKEND` | `torch` | `onnx`, `torch` ou `openvino` |
 | `RESUME_EMBEDDING_DEVICE` | `cpu` | dispositivo entregue à biblioteca |

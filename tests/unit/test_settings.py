@@ -30,3 +30,16 @@ def test_profiles_use_supported_torch_embedding_backend(profile):
     settings = Settings.for_profile(profile)
 
     assert settings.embedding_backend == 'torch'
+
+
+def test_demo_is_lexical_without_an_explicit_override(monkeypatch, tmp_path):
+    monkeypatch.delenv("RESUME_EMBEDDING_ENABLED", raising=False)
+    monkeypatch.setenv("RESUME_PROJECT_ROOT", str(tmp_path))
+    monkeypatch.setenv("RESUME_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("RESUME_CACHE_DIR", str(tmp_path / "cache"))
+    assert Settings(_env_file=None).embedding_enabled is False
+    assert Settings.for_profile("demo").embedding_enabled is False
+    assert Settings.for_profile("balanced").embedding_enabled is True
+    assert Settings.for_profile("complete").embedding_enabled is True
+    monkeypatch.setenv("RESUME_EMBEDDING_ENABLED", "true")
+    assert Settings.for_profile("demo").embedding_enabled is True

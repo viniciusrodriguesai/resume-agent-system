@@ -1,0 +1,77 @@
+{
+  "protocol": "skillspan-catalog-token-v1",
+  "source_revision": "2ccf3de5b5af7a5409b8dd814fb1315dd6e0ae1b",
+  "dataset_sha256": "8438eda34939a5877b984ea5daf9e6ff39b2d5c7e3d73cca0499d3de3784d24a",
+  "script_sha256": "b516ac304d54eb567f1607d9ccf36474917295561cb1cf51186e2797788e651a",
+  "catalog_sha256": "1957051e94cc2ad7544ee7f3446f25e89878d4320b8e461b8748528695fee24b",
+  "normalizer_sha256": "eeb957d8eeb4e59fa45a0ed2b717ac284a9cf08d17cda9f180bd19537cdd25d6",
+  "protocol_sha256": "9f9bcf0a0dcb847d2e3e816ee0ab5c129820ad278331cc26b7dd8b4583b78f42",
+  "source_commit": "1f0c3ef444892e89ecfba43ae1252f7a426d180a",
+  "python": "3.12.14",
+  "versions": {
+    "numpy": "2.2.6",
+    "pydantic": "2.13.5",
+    "rapidfuzz": "3.14.6"
+  },
+  "posting_clusters": 65,
+  "groups": {
+    "all": {
+      "sentences": 3569,
+      "tokens": 42786,
+      "gold_tokens": 6280,
+      "predicted_tokens": 341,
+      "true_positive_tokens": 264,
+      "false_positive_tokens": 77,
+      "missed_tokens": 6016,
+      "gold_spans": 2248,
+      "fully_covered_gold_spans": 172,
+      "precision": 0.7741935483870968,
+      "recall": 0.04203821656050955,
+      "f1": 0.07974626189397373
+    },
+    "tech": {
+      "sentences": 2286,
+      "tokens": 20213,
+      "gold_tokens": 3124,
+      "predicted_tokens": 266,
+      "true_positive_tokens": 210,
+      "false_positive_tokens": 56,
+      "missed_tokens": 2914,
+      "gold_spans": 1237,
+      "fully_covered_gold_spans": 137,
+      "precision": 0.7894736842105263,
+      "recall": 0.06722151088348272,
+      "f1": 0.12389380530973453
+    },
+    "house": {
+      "sentences": 1283,
+      "tokens": 22573,
+      "gold_tokens": 3156,
+      "predicted_tokens": 75,
+      "true_positive_tokens": 54,
+      "false_positive_tokens": 21,
+      "missed_tokens": 3102,
+      "gold_spans": 1011,
+      "fully_covered_gold_spans": 35,
+      "precision": 0.72,
+      "recall": 0.017110266159695818,
+      "f1": 0.033426183844011144
+    }
+  },
+  "bootstrap_replicates": 500,
+  "cluster_bootstrap_ci95": {
+    "precision": [
+      0.7173155737704918,
+      0.8247206894667832
+    ],
+    "recall": [
+      0.03247031368823434,
+      0.053380232622695964
+    ],
+    "f1": [
+      0.062279503586652414,
+      0.1001756722650227
+    ]
+  },
+  "scope": "External human skill/knowledge annotations; adapter token metrics, not end-to-end matching labels"
+}
