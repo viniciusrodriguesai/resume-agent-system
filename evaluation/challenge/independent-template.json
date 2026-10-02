@@ -1,0 +1,13 @@
+{
+  "name": "Independent holdout - awaiting external annotation",
+  "annotation_origin": "Awaiting reviewer who did not author matching rules",
+  "cases": [
+    {
+      "id": "external-001",
+      "category": "reviewer-defined",
+      "resume": "",
+      "requirement": "",
+      "expected": ""
+    }
+  ]
+}

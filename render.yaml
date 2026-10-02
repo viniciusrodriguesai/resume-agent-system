@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: vinicius-resume-match-demo
+    runtime: python
+    plan: free
+    buildCommand: python -m pip install -r requirements.txt
+    startCommand: python -m streamlit run app.py --server.address=0.0.0.0 --server.port=$PORT
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: RESUME_PROFILE
+        value: demo
+      - key: RESUME_EMBEDDING_ENABLED
+        value: "false"
+      - key: RESUME_RERANKER_ENABLED
+        value: "false"
+      - key: RESUME_HISTORY_ENABLED
+        value: "false"
+      - key: RESUME_CACHE_ENABLED
+        value: "false"
+      - key: RESUME_STORE_RAW_DOCUMENTS
+        value: "false"
+      - key: RESUME_STORE_ANONYMIZED_DOCUMENTS
+        value: "false"
+      - key: RESUME_MAX_DOCUMENT_CHARS
+        value: "10000"
+      - key: RESUME_MAX_JOB_CHARS
+        value: "10000"
+      - key: RESUME_MAX_UPLOAD_MB
+        value: "2"
+      - key: RESUME_LOG_LEVEL
+        value: ERROR

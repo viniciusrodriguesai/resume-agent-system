@@ -1,0 +1,527 @@
+{
+  "dataset_name": "Lexical challenge v1",
+  "annotation_origin": "Internal synthetic cases and labels authored during portfolio improvement; not independent human annotations.",
+  "total": 36,
+  "accuracy": 0.8333,
+  "macro_f1": 0.8036,
+  "per_label": {
+    "matched": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 14
+    },
+    "partial": {
+      "precision": 0.4545,
+      "recall": 1.0,
+      "f1": 0.625,
+      "support": 5
+    },
+    "missing": {
+      "precision": 1.0,
+      "recall": 0.6471,
+      "f1": 0.7857,
+      "support": 17
+    }
+  },
+  "by_category": {
+    "alternatives": {
+      "accuracy": 1.0,
+      "macro_f1": 0.3333,
+      "per_label": {
+        "matched": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 3
+        },
+        "partial": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "missing": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        }
+      }
+    },
+    "applied": {
+      "accuracy": 1.0,
+      "macro_f1": 0.3333,
+      "per_label": {
+        "matched": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 3
+        },
+        "partial": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "missing": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        }
+      }
+    },
+    "context": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "per_label": {
+        "matched": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 1
+        },
+        "partial": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 1
+        },
+        "missing": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 4
+        }
+      }
+    },
+    "cumulative": {
+      "accuracy": 1.0,
+      "macro_f1": 0.6667,
+      "per_label": {
+        "matched": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 3
+        },
+        "partial": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 3
+        },
+        "missing": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        }
+      }
+    },
+    "deployment": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "per_label": {
+        "matched": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 1
+        },
+        "partial": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 1
+        },
+        "missing": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 1
+        }
+      }
+    },
+    "enrollment": {
+      "accuracy": 0.3333,
+      "macro_f1": 0.3333,
+      "per_label": {
+        "matched": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 3
+        },
+        "partial": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "missing": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 6
+        }
+      }
+    },
+    "negation": {
+      "accuracy": 1.0,
+      "macro_f1": 0.3333,
+      "per_label": {
+        "matched": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "partial": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "missing": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "support": 6
+        }
+      }
+    }
+  },
+  "dataset_sha256": "fc05181ca755c56a7353bdc01806e3383166576d386d95686f1207d5741539a8",
+  "script_sha256": "f9e46fd8ff532ba10f0e7cbf195224258f7707f481fe848c0ecb09c93dfda638",
+  "source_commit": "f77a8c59fd9f06de011595ef5d3f91ea0e8213e3",
+  "python": "3.12.14",
+  "cases": [
+    {
+      "id": "challenge-001",
+      "category": "enrollment",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Data Science student at.",
+      "score": 0.8714
+    },
+    {
+      "id": "challenge-002",
+      "category": "enrollment",
+      "expected": "missing",
+      "predicted": "partial",
+      "correct": false,
+      "evidence": "Completed a degree in Data Science in 2020.",
+      "score": 0.49
+    },
+    {
+      "id": "challenge-003",
+      "category": "enrollment",
+      "expected": "missing",
+      "predicted": "partial",
+      "correct": false,
+      "evidence": "History student at.",
+      "score": 0.35
+    },
+    {
+      "id": "challenge-004",
+      "category": "enrollment",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Computer Science student at.",
+      "score": 0.8742
+    },
+    {
+      "id": "challenge-005",
+      "category": "enrollment",
+      "expected": "missing",
+      "predicted": "partial",
+      "correct": false,
+      "evidence": "Completed a degree in Computer Science in 2020.",
+      "score": 0.49
+    },
+    {
+      "id": "challenge-006",
+      "category": "enrollment",
+      "expected": "missing",
+      "predicted": "partial",
+      "correct": false,
+      "evidence": "History student at.",
+      "score": 0.35
+    },
+    {
+      "id": "challenge-007",
+      "category": "enrollment",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Artificial Intelligence student at.",
+      "score": 0.8772
+    },
+    {
+      "id": "challenge-008",
+      "category": "enrollment",
+      "expected": "missing",
+      "predicted": "partial",
+      "correct": false,
+      "evidence": "Completed a degree in Artificial Intelligence in 2020.",
+      "score": 0.4647
+    },
+    {
+      "id": "challenge-009",
+      "category": "enrollment",
+      "expected": "missing",
+      "predicted": "partial",
+      "correct": false,
+      "evidence": "History student at.",
+      "score": 0.35
+    },
+    {
+      "id": "challenge-010",
+      "category": "negation",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": "No experience with Python.",
+      "score": 0.15
+    },
+    {
+      "id": "challenge-011",
+      "category": "negation",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": "Não tenho experiência com Python.",
+      "score": 0.15
+    },
+    {
+      "id": "challenge-012",
+      "category": "applied",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Implemented services using Python in production.",
+      "score": 0.8912
+    },
+    {
+      "id": "challenge-013",
+      "category": "negation",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": "No experience with Docker.",
+      "score": 0.15
+    },
+    {
+      "id": "challenge-014",
+      "category": "negation",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": "Não tenho experiência com Docker.",
+      "score": 0.15
+    },
+    {
+      "id": "challenge-015",
+      "category": "applied",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Implemented services using Docker in production.",
+      "score": 0.8912
+    },
+    {
+      "id": "challenge-016",
+      "category": "negation",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": "No experience with SQL.",
+      "score": 0.15
+    },
+    {
+      "id": "challenge-017",
+      "category": "negation",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": "Não tenho experiência com SQL.",
+      "score": 0.15
+    },
+    {
+      "id": "challenge-018",
+      "category": "applied",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Implemented services using SQL in production.",
+      "score": 0.8912
+    },
+    {
+      "id": "challenge-019",
+      "category": "cumulative",
+      "expected": "partial",
+      "predicted": "partial",
+      "correct": true,
+      "evidence": "Implemented a project using Python.",
+      "score": 0.35
+    },
+    {
+      "id": "challenge-020",
+      "category": "cumulative",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Implemented a project using Python and SQL.",
+      "score": 0.8836
+    },
+    {
+      "id": "challenge-021",
+      "category": "alternatives",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Implemented a project using Python.",
+      "score": 0.8525
+    },
+    {
+      "id": "challenge-022",
+      "category": "cumulative",
+      "expected": "partial",
+      "predicted": "partial",
+      "correct": true,
+      "evidence": "Implemented a project using Docker.",
+      "score": 0.35
+    },
+    {
+      "id": "challenge-023",
+      "category": "cumulative",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Implemented a project using Docker and Linux.",
+      "score": 0.8836
+    },
+    {
+      "id": "challenge-024",
+      "category": "alternatives",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Implemented a project using Docker.",
+      "score": 0.8487
+    },
+    {
+      "id": "challenge-025",
+      "category": "cumulative",
+      "expected": "partial",
+      "predicted": "partial",
+      "correct": true,
+      "evidence": "Implemented a project using Pandas.",
+      "score": 0.35
+    },
+    {
+      "id": "challenge-026",
+      "category": "cumulative",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Implemented a project using Pandas and NumPy.",
+      "score": 0.8836
+    },
+    {
+      "id": "challenge-027",
+      "category": "alternatives",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Implemented a project using Pandas.",
+      "score": 0.8487
+    },
+    {
+      "id": "challenge-028",
+      "category": "deployment",
+      "expected": "partial",
+      "predicted": "partial",
+      "correct": true,
+      "evidence": "Built predictive machine learning models.",
+      "score": 0.4422
+    },
+    {
+      "id": "challenge-029",
+      "category": "deployment",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Deployed machine learning models behind an inference API.",
+      "score": 0.8616
+    },
+    {
+      "id": "challenge-030",
+      "category": "deployment",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": "No experience with deployment of machine learning models.",
+      "score": 0.15
+    },
+    {
+      "id": "challenge-031",
+      "category": "context",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": null,
+      "score": 0.0
+    },
+    {
+      "id": "challenge-032",
+      "category": "context",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": "Worked in a kitchen, managing food orders.",
+      "score": 0.1473
+    },
+    {
+      "id": "challenge-033",
+      "category": "context",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": null,
+      "score": 0.0
+    },
+    {
+      "id": "challenge-034",
+      "category": "context",
+      "expected": "missing",
+      "predicted": "missing",
+      "correct": true,
+      "evidence": "Read articles about Docker.",
+      "score": 0.2649
+    },
+    {
+      "id": "challenge-035",
+      "category": "context",
+      "expected": "partial",
+      "predicted": "partial",
+      "correct": true,
+      "evidence": "Implemented an AWS service in a personal project.",
+      "score": 0.49
+    },
+    {
+      "id": "challenge-036",
+      "category": "context",
+      "expected": "matched",
+      "predicted": "matched",
+      "correct": true,
+      "evidence": "Developed a production service using PostgreSQL.",
+      "score": 0.8778
+    }
+  ]
+}

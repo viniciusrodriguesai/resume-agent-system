@@ -1,0 +1,258 @@
+{
+  "name": "Lexical challenge v1",
+  "annotation_origin": "Internal synthetic cases and labels authored during portfolio improvement; not independent human annotations.",
+  "cases": [
+    {
+      "id": "challenge-001",
+      "category": "enrollment",
+      "resume": "Data Science student at Example University.",
+      "requirement": "Estar cursando Data Science.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-002",
+      "category": "enrollment",
+      "resume": "Completed a degree in Data Science in 2020.",
+      "requirement": "Estar cursando Data Science.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-003",
+      "category": "enrollment",
+      "resume": "History student at Example University.",
+      "requirement": "Estar cursando Data Science.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-004",
+      "category": "enrollment",
+      "resume": "Computer Science student at Example University.",
+      "requirement": "Estar cursando Computer Science.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-005",
+      "category": "enrollment",
+      "resume": "Completed a degree in Computer Science in 2020.",
+      "requirement": "Estar cursando Computer Science.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-006",
+      "category": "enrollment",
+      "resume": "History student at Example University.",
+      "requirement": "Estar cursando Computer Science.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-007",
+      "category": "enrollment",
+      "resume": "Artificial Intelligence student at Example University.",
+      "requirement": "Estar cursando Artificial Intelligence.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-008",
+      "category": "enrollment",
+      "resume": "Completed a degree in Artificial Intelligence in 2020.",
+      "requirement": "Estar cursando Artificial Intelligence.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-009",
+      "category": "enrollment",
+      "resume": "History student at Example University.",
+      "requirement": "Estar cursando Artificial Intelligence.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-010",
+      "category": "negation",
+      "resume": "No experience with Python.",
+      "requirement": "Experiência com Python.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-011",
+      "category": "negation",
+      "resume": "Não tenho experiência com Python.",
+      "requirement": "Experiência com Python.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-012",
+      "category": "applied",
+      "resume": "Implemented services using Python in production.",
+      "requirement": "Experiência com Python.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-013",
+      "category": "negation",
+      "resume": "No experience with Docker.",
+      "requirement": "Experiência com Docker.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-014",
+      "category": "negation",
+      "resume": "Não tenho experiência com Docker.",
+      "requirement": "Experiência com Docker.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-015",
+      "category": "applied",
+      "resume": "Implemented services using Docker in production.",
+      "requirement": "Experiência com Docker.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-016",
+      "category": "negation",
+      "resume": "No experience with SQL.",
+      "requirement": "Experiência com SQL.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-017",
+      "category": "negation",
+      "resume": "Não tenho experiência com SQL.",
+      "requirement": "Experiência com SQL.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-018",
+      "category": "applied",
+      "resume": "Implemented services using SQL in production.",
+      "requirement": "Experiência com SQL.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-019",
+      "category": "cumulative",
+      "resume": "Implemented a project using Python.",
+      "requirement": "Conhecimento de Python e SQL.",
+      "expected": "partial"
+    },
+    {
+      "id": "challenge-020",
+      "category": "cumulative",
+      "resume": "Implemented a project using Python and SQL.",
+      "requirement": "Conhecimento de Python e SQL.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-021",
+      "category": "alternatives",
+      "resume": "Implemented a project using Python.",
+      "requirement": "Conhecimento de Python ou SQL.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-022",
+      "category": "cumulative",
+      "resume": "Implemented a project using Docker.",
+      "requirement": "Conhecimento de Docker e Linux.",
+      "expected": "partial"
+    },
+    {
+      "id": "challenge-023",
+      "category": "cumulative",
+      "resume": "Implemented a project using Docker and Linux.",
+      "requirement": "Conhecimento de Docker e Linux.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-024",
+      "category": "alternatives",
+      "resume": "Implemented a project using Docker.",
+      "requirement": "Conhecimento de Docker ou Linux.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-025",
+      "category": "cumulative",
+      "resume": "Implemented a project using Pandas.",
+      "requirement": "Conhecimento de Pandas e NumPy.",
+      "expected": "partial"
+    },
+    {
+      "id": "challenge-026",
+      "category": "cumulative",
+      "resume": "Implemented a project using Pandas and NumPy.",
+      "requirement": "Conhecimento de Pandas e NumPy.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-027",
+      "category": "alternatives",
+      "resume": "Implemented a project using Pandas.",
+      "requirement": "Conhecimento de Pandas ou NumPy.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-028",
+      "category": "deployment",
+      "resume": "Built predictive machine learning models.",
+      "requirement": "Implantação de modelos de machine learning.",
+      "expected": "partial"
+    },
+    {
+      "id": "challenge-029",
+      "category": "deployment",
+      "resume": "Deployed machine learning models behind an inference API.",
+      "requirement": "Implantação de modelos de machine learning.",
+      "expected": "matched"
+    },
+    {
+      "id": "challenge-030",
+      "category": "deployment",
+      "resume": "No experience with deployment of machine learning models.",
+      "requirement": "Implantação de modelos de machine learning.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-031",
+      "category": "context",
+      "resume": "I built a JavaScript web application.",
+      "requirement": "Java",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-032",
+      "category": "context",
+      "resume": "Worked in a kitchen, managing food orders.",
+      "requirement": "Docker",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-033",
+      "category": "context",
+      "resume": "Created classification models in a course.",
+      "requirement": "Experiência profissional com machine learning.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-034",
+      "category": "context",
+      "resume": "Read articles about Docker.",
+      "requirement": "Experiência com Docker.",
+      "expected": "missing"
+    },
+    {
+      "id": "challenge-035",
+      "category": "context",
+      "resume": "Implemented an AWS service in a personal project.",
+      "requirement": "Experiência profissional com AWS.",
+      "expected": "partial"
+    },
+    {
+      "id": "challenge-036",
+      "category": "context",
+      "resume": "Developed a production service using PostgreSQL.",
+      "requirement": "Experiência com PostgreSQL.",
+      "expected": "matched"
+    }
+  ]
+}

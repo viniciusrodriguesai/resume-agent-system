@@ -79,3 +79,7 @@ There is no official public deployment. Docker, large optional models and every 
 ## Author and license
 
 Academic project by Vinicius Rodrigues (Vinicius Mangueira). [MIT](LICENSE).
+
+## Expanded evaluation and hosting
+
+Inspect the [36-case end-to-end challenge](docs/CHALLENGE_EVALUATION.md), including six missing/partial disagreements, and the [independent annotation handoff](docs/INDEPENDENT_EVALUATION.md). This remains internal evidence. The [Render guide](docs/HOSTED_DEMO.md) prepares the actual lexical Streamlit app for a free instance; a live URL is not claimed until verified.
