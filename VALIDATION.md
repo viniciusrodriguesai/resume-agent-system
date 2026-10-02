@@ -31,3 +31,7 @@ The following section is preserved for historical context and does not describe 
 O lint com Ruff não foi executado neste ambiente porque a ferramenta não estava instalada. A configuração do projeto e o workflow de CI permanecem disponíveis para essa verificação no ambiente de desenvolvimento e no GitHub Actions.
 
 Os modelos ONNX devem ser testados no computador ou no ambiente de hospedagem após a cópia do pacote.
+
+## External human-annotated component benchmark
+
+See [SkillSpan results](docs/SKILLSPAN_RESULTS.md) for the complete published split: 3,569 sentences / 65 job-posting clusters, 77.42% token precision / 4.20% recall / 7.97% F1 for the unchanged catalog adapter. This is external annotation of skill mentions, not matched/partial/missing compatibility labels. No metric improvement is claimed for the downstream optional models. Demo defaults are now lexical, with explicit model overrides preserved. Full-pipeline independent review remains pending.

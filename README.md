@@ -9,7 +9,7 @@ A local application that compares a resume with a job description and returns ev
 ## What it demonstrates
 
 - Separate parsing, requirement extraction, retrieval, scoring and review stages.
-- A deterministic lexical path that works without downloading models.
+- A deterministic lexical demo that is the default and works without downloading models.
 - Optional multilingual embedding models and reranking, loaded lazily.
 - A Streamlit interface and typed FastAPI endpoints.
 - Requirement-level evidence, diagnostics and Markdown/JSON/CSV exports.
@@ -56,6 +56,12 @@ python -m mypy .
 ```
 
 NumPy is bounded below 2.3 to keep its typing interface compatible with this project's Python 3.11 type-checking target. NumPy 2.2.4 was used for the verified local checks; dependency ranges are not a full environment lock.
+
+## External component evaluation
+
+The unchanged catalog was evaluated on [SkillSpan's externally human-annotated test split](docs/SKILLSPAN_RESULTS.md): 3,569 sentences from 65 posting clusters. Token precision **0.7742**, recall **0.0420**, F1 **0.0797**. This exposes the catalog's limited coverage; it is not a general skill extractor or an end-to-end compatibility score. Protocol, complete-source counts, bootstrap intervals, reproduction code and honest task boundaries are published.
+
+The demo now defaults to lexical mode. The internal 36-case ablation found no label improvement from optional embeddings/reranking; explicit model-enabled experiments remain available. Real resume/job pairs with independently adjudicated per-requirement labels are still needed.
 
 ## Evaluation limits
 
