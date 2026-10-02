@@ -23,8 +23,9 @@ def test_external_gold_denominator_includes_uncatalogued_skills() -> None:
     assert adapter.bio_spans(["B", "I", "O", "B"], "Knowledge") == [(0, 2), (3, 4)]
     # Detecting one token of an unknown three-token gold set is not perfect recall.
     assert adapter.score(1, 0, 2)["recall"] == pytest.approx(1 / 3)
-    with pytest.raises(ValueError, match="Orphan"):
-        adapter.bio_spans(["I-Skill"], "Skill")
+    assert adapter.bio_spans(["I-Skill"], "Skill") == [(0, 1)]
+    with pytest.raises(ValueError, match="Invalid"):
+        adapter.bio_spans(["invalid"], "Skill")
 
 
 def test_overlaps_are_deduplicated_without_merging_adjacent_spans() -> None:

@@ -21,3 +21,5 @@ This supplies externally annotated component evidence beyond the 36 internal syn
 ## Input-format correction before completed scoring
 
 The first attempt aborted on the first record because the official JSONL uses plain B/I tags instead of the typed BIO examples in the upstream README. No sentence metric or aggregate result was produced. The parser now accepts both formats within each existing label column; annotations and catalog are unchanged. Parser correction and its regression check were committed before the completed evaluation.
+
+A second input-validation attempt stopped on an orphan I tag in the published sentence segmentation, before producing aggregate results. For secondary span coverage only, an I following O or starting a sentence opens a local span. The primary gold-positive token set remains exactly the union of the original non-O labels. No rows are removed. This convention and its regression check were recorded before completed scoring; the catalog and predictions were not tuned.

@@ -55,7 +55,9 @@ def bio_spans(tags: list[str], label: str) -> list[tuple[int, int]]:
         if tag not in {"O", f"B-{label}", f"I-{label}"}:
             raise ValueError(f"Invalid {label} BIO tag: {tag}")
         if tag == f"I-{label}" and start is None:
-            raise ValueError("Orphan I tag")
+            # Sentence segmentation can leave a continuation as the first tag.
+            # Keep the externally positive token; start a local span for coverage.
+            start = index
         if tag in {"O", f"B-{label}"} and start is not None:
             spans.append((start, index))
             start = None
@@ -126,8 +128,8 @@ def run(data: Path, output: Path, revision: str) -> dict[str, Any]:
     bootstrap: dict[str, list[float]] = {key: [] for key in ["precision", "recall", "f1"]}
     for _ in range(500):
         sampled = values[rng.integers(0, len(values), size=len(values))].sum(axis=0)
-        for key, value in score(*map(int, sampled)).items():
-            bootstrap[key].append(value)
+        for metric_key, metric_value in score(*map(int, sampled)).items():
+            bootstrap[metric_key].append(metric_value)
     report: dict[str, Any] = {
         "protocol": "skillspan-catalog-token-v1", "source_revision": revision,
         "dataset_sha256": sha(data), "script_sha256": sha(Path(__file__)),
