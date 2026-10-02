@@ -17,3 +17,7 @@ Cluster bootstrap 500 replicates with seed 20261002 over (source, posting idx); 
 ## Scope and remaining work
 
 This supplies externally annotated component evidence beyond the 36 internal synthetic matching cases. It cannot replace independently annotated real resume/job pairs for the full matched/partial/missing task. Keep the previous ablation: optional models did not improve those 36 labels. Default lexical operation is justified by that bounded evidence, not a claim that semantic models never help. Full-pipeline evaluation still requires consented or publicly licensed pairs and independent reviewers/adjudication.
+
+## Input-format correction before completed scoring
+
+The first attempt aborted on the first record because the official JSONL uses plain B/I tags instead of the typed BIO examples in the upstream README. No sentence metric or aggregate result was produced. The parser now accepts both formats within each existing label column; annotations and catalog are unchanged. Parser correction and its regression check were committed before the completed evaluation.

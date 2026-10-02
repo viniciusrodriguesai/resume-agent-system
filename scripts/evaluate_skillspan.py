@@ -49,7 +49,9 @@ def predicted_tokens(tokens: list[str]) -> set[int]:
 def bio_spans(tags: list[str], label: str) -> list[tuple[int, int]]:
     spans = []
     start: int | None = None
-    for index, tag in enumerate([*tags, "O"]):
+    for index, original in enumerate([*tags, "O"]):
+        # Official JSONL mixes plain B/I with typed BIO in each label column.
+        tag = f"{original}-{label}" if original in {"B", "I"} else original
         if tag not in {"O", f"B-{label}", f"I-{label}"}:
             raise ValueError(f"Invalid {label} BIO tag: {tag}")
         if tag == f"I-{label}" and start is None:
