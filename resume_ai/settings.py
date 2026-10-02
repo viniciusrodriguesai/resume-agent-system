@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     cache_dir: Path = Path(".cache/resume-ai")
 
-    embedding_enabled: bool = True
+    embedding_enabled: bool = False
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     embedding_backend: Literal["onnx", "torch", "openvino"] = "torch"
     embedding_device: str = "cpu"
@@ -97,7 +97,7 @@ class Settings(BaseSettings):
             defaults = {
                 "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
                 "embedding_backend": "torch",
-                "embedding_enabled": True,
+                "embedding_enabled": False,
                 "reranker_enabled": False,
                 "docling_enabled": False,
                 "presidio_enabled": False,
