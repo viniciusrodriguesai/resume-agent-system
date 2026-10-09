@@ -13,7 +13,7 @@ fsspec==2026.7.0
 h11==0.16.0
 hf-xet==1.6.0
 httptools==0.8.0
-huggingface_hub==0.36.2
+huggingface_hub==2.1.1
 idna==3.20
 itsdangerous==2.2.0
 Jinja2==3.1.6
