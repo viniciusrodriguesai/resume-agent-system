@@ -56,7 +56,7 @@ sentence-transformers==5.1.2
 setuptools==78.1.0
 six==1.17.0
 starlette==1.7.0
-streamlit==1.64.0
+streamlit==1.65.0
 sympy==1.14.0
 threadpoolctl==3.7.0
 tokenizers==0.22.2
