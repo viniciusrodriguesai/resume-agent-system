@@ -2,75 +2,92 @@
 
 ## Visão geral
 
-Resume Match AI é uma aplicação local organizada em camadas. Streamlit e FastAPI
-adaptam entradas e saídas; ambos chamam o mesmo serviço de aplicação. A lógica de
-matching fica em `resume_ai` e não depende dos frameworks de apresentação.
+Resume Match AI é um monólito modular local. Streamlit e FastAPI são adaptadores
+de entrada independentes e compartilham o mesmo caso de uso. A análise é executada
+por uma pipeline sequencial explícita, sem estado global de grafo e sem dependência
+de LangGraph.
 
 ```mermaid
-flowchart LR
-    UI[Streamlit] --> APP[ResumeAnalysisService]
-    API[FastAPI] --> APP
-    APP --> PIPE[Pipeline sequencial de agentes]
-    PIPE --> DOMAIN[Modelos e scoring de domínio]
-    PIPE --> INFRA[Privacidade, retrieval, cache e telemetria]
-    APP --> PORT[AnalysisHistoryWriter]
-    PORT --> SQLITE[SQLiteHistoryRepository]
+flowchart TD
+    USER[Usuário] --> UI[Streamlit<br/>app.py]
+    CLIENT[Cliente HTTP] --> API[FastAPI<br/>api/main.py]
+    UI --> SERVICE[ResumeAnalysisService<br/>application/analyze_resume.py]
+    API --> SERVICE
+
+    SERVICE --> CACHE[Cache seguro<br/>infrastructure/cache.py]
+    SERVICE --> PIPE[AnalysisPipeline<br/>application/pipeline.py]
+    SERVICE --> HISTORY_PORT[AnalysisHistoryWriter<br/>application/ports.py]
+    HISTORY_PORT --> HISTORY[SQLiteHistoryRepository<br/>infrastructure/history.py]
+
+    PIPE --> PRIV[1. Privacidade]
+    PRIV --> CAND[2. Currículo estruturado]
+    CAND --> EVID[4. Evidências]
+    CAND -. próxima etapa .-> JOB[3. Vaga estruturada]
+    JOB --> EVID
+    EVID --> SCORE[5. Pontuação]
+    SCORE --> REVIEW[6. Revisão diagnóstica]
+    CAND --> REC[7. Recomendações]
+    EVID --> REC
+    REVIEW --> RESULT[AnalysisResult<br/>domain/models.py]
+    REC --> RESULT
+    SCORE --> RESULT
+    JOB --> RESULT
+    PRIV --> RESULT
+    RESULT --> REPORT[8. Relatório Markdown]
+    REPORT --> SERVICE
+
+    EVID --> ENGINE[Motor de matching<br/>embeddings.py + catalog.py]
+    ENGINE -. opcional .-> MODELS[Embeddings e reranker]
 ```
 
-Não existe orquestração por LangGraph no código executado pela V6. O fluxo é uma
-sequência explícita em `resume_ai/application/analyze_resume.py`; o agente revisor
-produz diagnóstico e alertas, mas não dispara uma segunda passagem de recuperação.
+No código, os oito estágios são chamados nesta ordem: privacidade, estruturação do
+currículo, estruturação da vaga, recuperação de evidências, pontuação, revisão,
+recomendações e relatório. O currículo e a vaga são preparados em etapas separadas;
+ambos são necessários para recuperar evidências. A revisão diagnostica lacunas e
+casos limítrofes, sem alterar a nota nem repetir a busca.
 
-## Camadas e dependências
+## Limites e responsabilidades
 
-- `resume_ai/domain`: modelos Pydantic e cálculo de score, sem dependência de UI.
-- `resume_ai/application`: caso de uso `ResumeAnalysisService` e portas de
-  persistência.
-- `resume_ai/agents`: oito estágios pequenos, cada um retornando valor de domínio e
-  `AgentResult`.
-- `resume_ai/infrastructure`: documentos, uploads seguros, anonimização, embeddings,
-  cache, SQLite, correlação, logs e métricas.
-- `resume_ai/presentation`: componentes reutilizados pela interface Streamlit.
+- `resume_ai/domain`: modelos Pydantic e regras de pontuação do domínio.
+- `resume_ai/application`: caso de uso, pipeline sequencial e portas de persistência.
+- `resume_ai/agents`: etapas de domínio pequenas, com resultados e rastros tipados.
+- `resume_ai/infrastructure`: parsing, privacidade, embeddings, cache, SQLite,
+  correlação, logs e métricas.
+- `resume_ai/bootstrap.py`: composição padrão dos agentes e das dependências locais.
+- `resume_ai/presentation`: componentes compartilhados de apresentação Streamlit.
 - `api`: adaptador HTTP FastAPI, autenticação por chave, limites e erros públicos.
-- `app.py`: composição e apresentação Streamlit; não é uma segunda implementação do
-  pipeline.
+- `app.py`: composição da interface Streamlit; não reimplementa o pipeline.
 - `evaluation`: datasets sintéticos, métricas e runners de benchmark.
+
+`ResumeAnalysisService` coordena limites de entrada, cache, execução, histórico e
+telemetria. `AnalysisPipeline` contém a ordem dos estágios e monta o resultado. O
+conjunto `AnalysisAgents` é injetável no serviço para substituir etapas em integrações
+e ambientes de execução sem reescrever a orquestração. A composição padrão fica em
+`bootstrap.py`.
 
 As árvores históricas `agents`, `services`, `resume_v4` e `utils` não fazem parte do
 pacote distribuído nem da implementação canônica. O empacotamento inclui apenas
 `api`, `evaluation` e `resume_ai`, além do módulo `app`.
 
-## Pipeline multiagente real
+## Pipeline multiagente
 
-```mermaid
-flowchart TD
-    INPUT[Currículo e vaga] --> PRIV[1. Privacidade]
-    PRIV --> CAND[2. Estruturação do currículo]
-    CAND --> JOB[3. Estruturação da vaga]
-    JOB --> EVID[4. Recuperação de evidências]
-    EVID --> SCORE[5. Pontuação explicável]
-    SCORE --> REVIEW[6. Revisão diagnóstica]
-    REVIEW --> REC[7. Recomendações]
-    REC --> REPORT[8. Relatório]
-```
-
-1. O agente de privacidade anonimiza o currículo antes de qualquer embedding.
-2. O agente de currículo extrai competências e trechos estruturados do texto
-   anonimizado.
-3. O agente de vaga identifica título, requisitos e prioridades.
-4. O agente de evidências consulta os trechos em lote. TF-IDF, RapidFuzz e cobertura
-   de conceitos sempre compõem o caminho lexical; embeddings e reranker são
+1. **Privacidade:** anonimiza o currículo antes de qualquer embedding.
+2. **Currículo:** extrai competências, formação, experiência, projetos e trechos do
+   texto anonimizado.
+3. **Vaga:** identifica título, requisitos e prioridades.
+4. **Evidências:** compara currículo estruturado e vaga. TF-IDF, RapidFuzz e
+   cobertura de conceitos compõem o caminho lexical; embeddings e reranker são
    opcionais e têm fallback.
-5. O agente de pontuação aplica limiares e pesos por prioridade.
-6. O revisor marca lacunas obrigatórias e resultados próximos dos limiares para
-   inspeção humana. Ele não altera o score nem reexecuta a recuperação.
-7. Recomendações são derivadas apenas das evidências encontradas e das lacunas.
-8. O relatório gera Markdown; JSON e CSV são serializados pelo serviço.
+5. **Pontuação:** aplica limiares e pesos por prioridade.
+6. **Revisão:** sinaliza requisitos obrigatórios ausentes e resultados próximos dos
+   limiares para inspeção humana. Não altera a nota nem repete a recuperação.
+7. **Recomendações:** deriva ações das evidências e lacunas encontradas.
+8. **Relatório:** produz Markdown; JSON e CSV são serializados pelo serviço.
 
-Todos os estágios usam o executor comum de `resume_ai/agents/base.py`. O
-`AgentResult` registra `status`, `duration_ms`, `confidence`, `warnings`, referências
-de evidência e metadados operacionais. Uma falha preserva a causa privada para
-diagnóstico interno, mas produz um resultado seguro para logs e adaptadores.
+Todos os estágios usam o executor comum em `resume_ai/agents/base.py`. O `AgentTrace`
+registra status, duração, confiança, alertas, referências de evidência e metadados
+operacionais. Uma falha preserva sua causa privada para diagnóstico interno e gera
+um resultado seguro para logs e adaptadores.
 
 ## Matching e fallback
 
@@ -84,7 +101,7 @@ O currículo é dividido em trechos limitados. Para cada requisito, o motor calc
 
 Os embeddings dos trechos são calculados em lote e reutilizados durante a vida da
 instância. Se modelo, backend ou inferência falhar, a análise continua pelo caminho
-lexical e registra o fallback no estado do motor e nos warnings do agente. O perfil
+lexical e registra o fallback no estado do motor e nos alertas do agente. O perfil
 `demo` não significa “somente lexical”: por padrão ele tenta MiniLM com backend Torch.
 
 ## Estado, cache e persistência
@@ -116,8 +133,9 @@ desativado com `RESUME_HISTORY_ENABLED=false`.
 
 ## Pontos de extensão
 
-Novas interfaces devem depender de `ResumeAnalysisService`. Novos bancos devem
-implementar as portas da camada de aplicação. Novos retrievers podem ser colocados
-atrás do motor de embeddings sem alterar os agentes de score e relatório. Worker,
-fila, PostgreSQL e frontend React são evoluções possíveis, mas não fazem parte da
-V6.
+Novas interfaces devem depender de `ResumeAnalysisService`. Novas implementações de
+etapas podem ser agrupadas em `AnalysisAgents` e injetadas sem mudar a sequência da
+pipeline. Novos bancos devem implementar `AnalysisHistoryWriter`. Novos retrievers
+podem ser colocados atrás do motor de embeddings sem alterar os agentes de score e
+relatório. Worker, fila, PostgreSQL e frontend React são evoluções possíveis, mas não
+fazem parte da V6.

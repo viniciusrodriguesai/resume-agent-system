@@ -8,25 +8,19 @@ from datetime import UTC, datetime
 from time import perf_counter
 
 from resume_ai import __version__
-from resume_ai.agents import (
-    CandidateAgent,
-    EvidenceAgent,
-    JobAgent,
-    PrivacyAgent,
-    RecommendationAgent,
-    ReportAgent,
-    ReviewAgent,
-    ScoringAgent,
-)
 from resume_ai.agents.base import AgentExecutionError
 from resume_ai.application.ports import AnalysisHistoryWriter
+from resume_ai.application.pipeline import (
+    AnalysisAgents,
+    AnalysisPipeline,
+)
+from resume_ai.bootstrap import build_analysis_agents
 from resume_ai.domain.models import AgentResult, AnalysisRequest, AnalysisResult
 from resume_ai.infrastructure.cache import SafeResultCache
 from resume_ai.infrastructure.correlation import correlation_scope, current_correlation_id
 from resume_ai.infrastructure.embeddings import EmbeddingEngine
 from resume_ai.infrastructure.history import HistoryRepository
 from resume_ai.infrastructure.observability import METRICS
-from resume_ai.infrastructure.privacy import PrivacyService
 from resume_ai.infrastructure.telemetry import Telemetry
 from resume_ai.settings import Settings
 from resume_ai.utils.text import content_hash
@@ -50,6 +44,7 @@ class ResumeAnalysisService:
         self,
         settings: Settings | None = None,
         history: AnalysisHistoryWriter | None = None,
+        agents: AnalysisAgents | None = None,
     ) -> None:
         self.settings = settings or Settings()
         self.telemetry = Telemetry(self.settings)
@@ -58,14 +53,17 @@ class ResumeAnalysisService:
         self.history: AnalysisHistoryWriter = (
             history if history is not None else HistoryRepository(self.settings)
         )
-        self.privacy_agent = PrivacyAgent(PrivacyService(self.settings))
-        self.candidate_agent = CandidateAgent(self.settings)
-        self.job_agent = JobAgent(self.settings)
-        self.evidence_agent = EvidenceAgent(self.engine)
-        self.scoring_agent = ScoringAgent()
-        self.review_agent = ReviewAgent()
-        self.recommendation_agent = RecommendationAgent()
-        self.report_agent = ReportAgent()
+        self.agents = agents or build_analysis_agents(self.settings, self.engine)
+        self.pipeline = AnalysisPipeline(self.agents, self.settings.top_k)
+        # Compatibility aliases keep existing integrations and operational hooks stable.
+        self.privacy_agent = self.agents.privacy
+        self.candidate_agent = self.agents.candidate
+        self.job_agent = self.agents.job
+        self.evidence_agent = self.agents.evidence
+        self.scoring_agent = self.agents.scoring
+        self.review_agent = self.agents.review
+        self.recommendation_agent = self.agents.recommendation
+        self.report_agent = self.agents.report
 
     def analyze(self, request: AnalysisRequest) -> AnalysisResult:
         if current_correlation_id() is not None:
@@ -141,63 +139,13 @@ class ResumeAnalysisService:
             return result
         METRICS.record_cache(request.profile, hit=False)
 
-        traces = []
-        with self.telemetry.timer("total", timings):
-            with self.telemetry.timer("privacy", timings):
-                (anonymized, privacy), trace = self.privacy_agent.run(request.resume_text)
-                traces.append(trace)
-                self._record_agent_result("privacy", trace)
-            with self.telemetry.timer("candidate", timings):
-                candidate, trace = self.candidate_agent.run(request.resume_text, anonymized)
-                traces.append(trace)
-                self._record_agent_result("candidate", trace)
-            with self.telemetry.timer("job", timings):
-                job, trace = self.job_agent.run(request.job_text)
-                traces.append(trace)
-                self._record_agent_result("job", trace)
-            with self.telemetry.timer("evidence", timings):
-                matches, trace = self.evidence_agent.run(candidate, job, self.settings.top_k)
-                traces.append(trace)
-                self._record_agent_result("evidence", trace)
-            with self.telemetry.timer("scoring", timings):
-                score, trace = self.scoring_agent.run(matches, request.strictness)
-                traces.append(trace)
-                self._record_agent_result("scoring", trace)
-            with self.telemetry.timer("review", timings):
-                review, trace = self.review_agent.run(score, matches)
-                traces.append(trace)
-                self._record_agent_result("review", trace)
-            with self.telemetry.timer("recommendations", timings):
-                recommendations, trace = self.recommendation_agent.run(candidate, matches)
-                traces.append(trace)
-                self._record_agent_result("recommendations", trace)
-
-            result = AnalysisResult(
-                analysis_id=str(uuid.uuid4()),
-                profile=request.profile,
-                strictness=request.strictness,
-                candidate=candidate,
-                job=job,
-                privacy=privacy,
-                matches=matches,
-                score=score,
-                recommendations=recommendations,
-                review_summary=review,
-                traces=traces,
-                engine_status={
-                    **self.engine.status,
-                    "memory_mb": self.telemetry.process_memory_mb(),
-                    "cache_hit": False,
-                },
-                timings_ms=timings,
-            )
-            with self.telemetry.timer("report", timings):
-                markdown, trace = self.report_agent.run(result)
-                result.markdown_report = markdown
-                result.traces.append(trace)
-                self._record_agent_result("report", trace)
-
-        result.timings_ms = dict(timings)
+        result = self.pipeline.run(
+            request,
+            engine_status=self.engine.status,
+            memory_mb=self.telemetry.process_memory_mb(),
+            on_agent_result=self._record_agent_result,
+        )
+        timings = result.timings_ms
         payload = result.model_dump(mode="json")
         self.cache.set(key, payload)
         self.history.save(result)
