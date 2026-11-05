@@ -4,7 +4,7 @@ A local application that compares a resume with a job description and returns ev
 
 [Português](README.pt-BR.md) · [Architecture](docs/architecture.md) · [API](docs/API.md) · [Validation](VALIDATION.md)
 
-[Try the runnable lexical demo](docs/DEMO.md), including an actual output walkthrough and observed matching failures.
+[Try the live lexical demo](https://vinicius-resume-match-demo.onrender.com/) or inspect the [recorded example](docs/DEMO.md), including an output walkthrough and observed matching failures. The free service may take about a minute to wake after idle time; use fictional or deidentified inputs.
 
 ## What it demonstrates
 
@@ -75,7 +75,7 @@ The tool supports human review and resume improvement. It must not make automati
 
 ## Status and documentation
 
-There is no official public deployment. Docker, large optional models and every runtime profile were not validated during the portfolio audit. [VALIDATION.md](VALIDATION.md) records the tested configuration and distinguishes current evidence from historical V5.2 results.
+The [public lexical demo](https://vinicius-resume-match-demo.onrender.com/) was deployed on Render Free and its page and health endpoint were checked on 2026-11-05. The hosted interactive analysis was not retested through a browser in this verification. Docker, large optional models and every runtime profile were not validated during the portfolio audit. [VALIDATION.md](VALIDATION.md) records the tested configuration and distinguishes current evidence from historical V5.2 results.
 
 - [Security](SECURITY.md) and [authentication](AUTHENTICATION.md).
 - [Evaluation methodology](docs/EVALUATION.md).
