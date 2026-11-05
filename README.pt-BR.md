@@ -1,6 +1,6 @@
 # Resume Match AI
 
-### Análise local, explicável e multiagente de currículos e vagas
+### Análise explicável de currículos e vagas, com execução local ou demonstração hospedada
 
 [![Version 6.0.6](https://img.shields.io/badge/version-6.0.6-5B5BD6)](pyproject.toml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776AB)](pyproject.toml)
@@ -9,8 +9,10 @@
 
 Resume Match AI compara um currículo com uma descrição de vaga, encontra evidências
 por requisito e gera score, diagnóstico e recomendações rastreáveis. O processamento
-é local, funciona sem serviço pago e mantém um caminho lexical quando modelos
-opcionais não estão disponíveis.
+pode ocorrer localmente e mantém um caminho lexical quando modelos opcionais não
+estão disponíveis. A [demonstração pública](https://vinicius-resume-match-demo.onrender.com/)
+roda no servidor Render com histórico, cache e modelos opcionais desativados;
+use apenas dados fictícios ou desidentificados.
 
 > O resultado apoia revisão humana. Não deve decidir contratação, inferir atributos
 > sensíveis nem produzir ranking definitivo de pessoas.
