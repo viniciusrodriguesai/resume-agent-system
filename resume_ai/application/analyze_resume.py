@@ -8,12 +8,22 @@ from datetime import UTC, datetime
 from time import perf_counter
 
 from resume_ai import __version__
+from resume_ai.agents import (
+    CandidateAgent,
+    EvidenceAgent,
+    JobAgent,
+    PrivacyAgent,
+    RecommendationAgent,
+    ReportAgent,
+    ReviewAgent,
+    ScoringAgent,
+)
 from resume_ai.agents.base import AgentExecutionError
-from resume_ai.application.ports import AnalysisHistoryWriter
 from resume_ai.application.pipeline import (
     AnalysisAgents,
     AnalysisPipeline,
 )
+from resume_ai.application.ports import AnalysisHistoryWriter
 from resume_ai.bootstrap import build_analysis_agents
 from resume_ai.domain.models import AgentResult, AnalysisRequest, AnalysisResult
 from resume_ai.infrastructure.cache import SafeResultCache

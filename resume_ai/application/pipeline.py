@@ -89,7 +89,7 @@ class AnalysisPipeline:
         request: AnalysisRequest,
         *,
         engine_status: dict[str, object],
-        memory_mb: float,
+        memory_mb: float | None,
         on_agent_result: AgentTraceHandler,
     ) -> AnalysisResult:
         timings: dict[str, float] = {}
