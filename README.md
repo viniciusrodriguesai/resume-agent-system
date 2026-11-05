@@ -1,6 +1,6 @@
 # Resume Match AI
 
-A local application that compares a resume with a job description and returns evidence for individual requirements, a compatibility score and review suggestions. Built with Python, Streamlit and FastAPI, with optional embedding retrieval and reranking.
+An application that compares a resume with a job description and returns evidence for individual requirements, a compatibility score and review suggestions. Built with Python, Streamlit and FastAPI, with optional embedding retrieval and reranking.
 
 [Português](README.pt-BR.md) · [Architecture](docs/architecture.md) · [API](docs/API.md) · [Validation](VALIDATION.md)
 
